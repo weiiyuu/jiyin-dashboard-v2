@@ -43,6 +43,6 @@
 - Status: Complete
 - Main changes: Pure Green/state-hour aggregation, six-state sum-then-divide shares, 30/60-minute and daily buckets, independent period alignment/availability, selected-machine coverage, monthly expected intervals, continuous Red/Yellow runs, and pure-Green to pure-Yellow/mixed completion candidates
 - Tests: Final suite passed 35 tests across 7 files. Hand-verifiable cases cover NULL vs 0, zero denominator, 180/90-second Green totals, six-state 90/45/45 shares, quality-rule mismatch, 30/60/day buckets, February/March 26,880/29,760 expected intervals for two machines, missing vs not-applicable positions, cross-midnight Red runs, adjacency gaps, and completion candidates. Typecheck, lint, build, and production dependency audit all passed.
-- Commit: Pending
+- Commit: ab51351
 - Open issues: No full historical HTTP query routes or visualization pages were added; those belong to the next authorized UI/API slice.
 - Next: Review Stage 3 results, then authorize historical route handlers and the Stage 5 UI vertical slice if desired
