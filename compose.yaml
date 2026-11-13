@@ -1,0 +1,38 @@
+services:
+  web:
+    build:
+      context: .
+      target: development
+    command: npm run dev
+    environment:
+      APP_TIMEZONE: Asia/Taipei
+      DATABASE_PATH: /app/data/jiyin-dashboard.sqlite
+      PROVIDER_MODE: DEMO
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - app_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  collector:
+    build:
+      context: .
+      target: development
+    command: npm run collector:idle
+    environment:
+      DATA_DIRECTORY: /app/data
+    volumes:
+      - app_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('fs').accessSync('/app/data',6)"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  app_data:

@@ -1,0 +1,16 @@
+.git
+.next
+node_modules
+coverage
+data
+logs
+volumes
+_reference_inputs
+test_api
+.env*
+!.env.example
+*.db
+*.db-*
+*.sqlite*
+*.xlsx
+*.xls
