@@ -34,15 +34,15 @@
 - Status: Complete
 - Main changes: XLSX ZIP preflight limits and unsafe-content rejection; six-sheet/header parser; typed numeric/exception preservation; quality eligibility and issue codes; preview/confirm/list/detail/activate routes; file/canonical fingerprints; duplicate/conflict/replacement/rollback and Alarm regression transaction rules
 - Tests: Full suite passed 24 tests; synthetic tests cover empty quality_issues, NULL vs 0/Await, 24:00, duplicate business keys, missing vs provided-empty Alarm, formula/external-link/cell-count rejection, duplicate zero writes, explicit replacement, rollback, and injected failure rollback. Local-only private workbook contract and real temp-DB confirm passed at 3840/3840/11/0 rows; no private data was copied or tracked. Typecheck, lint, and production build passed.
-- Commit: Pending
+- Commit: a82a27f
 - Open issues: Formula and external-link policy is intentionally strict per approved v1 contract. The route layer currently returns safe rule codes/messages but has no upload UI in this authorization scope.
 - Next: Implement historical-statistics pure functions and hand-verifiable fixtures
 
 ## Stage 4 — Historical statistics
 
-- Status: Not started
-- Main changes: Pending
-- Tests: Pending
+- Status: Complete
+- Main changes: Pure Green/state-hour aggregation, six-state sum-then-divide shares, 30/60-minute and daily buckets, independent period alignment/availability, selected-machine coverage, monthly expected intervals, continuous Red/Yellow runs, and pure-Green to pure-Yellow/mixed completion candidates
+- Tests: Final suite passed 35 tests across 7 files. Hand-verifiable cases cover NULL vs 0, zero denominator, 180/90-second Green totals, six-state 90/45/45 shares, quality-rule mismatch, 30/60/day buckets, February/March 26,880/29,760 expected intervals for two machines, missing vs not-applicable positions, cross-midnight Red runs, adjacency gaps, and completion candidates. Typecheck, lint, build, and production dependency audit all passed.
 - Commit: Pending
-- Open issues: None
-- Next: Pending
+- Open issues: No full historical HTTP query routes or visualization pages were added; those belong to the next authorized UI/API slice.
+- Next: Review Stage 3 results, then authorize historical route handlers and the Stage 5 UI vertical slice if desired
