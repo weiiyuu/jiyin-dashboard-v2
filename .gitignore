@@ -1,0 +1,55 @@
+# Private enterprise/reference inputs
+_reference_inputs/
+test_api/
+private_replay/
+fixtures/private/
+data/private/
+values-*.json
+groups-*.json
+configs-*.json
+*.xlsx
+*.xls
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# SQLite and persistent runtime data
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+data/
+volumes/
+backups/
+
+# Logs and process output
+logs/
+*.log
+*.pid
+
+# Dependencies and build/test output
+node_modules/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+.turbo/
+
+# Local-only Docker overrides
+compose.private*.yml
+docker-compose.private*.yml
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
