@@ -77,3 +77,15 @@
 - Commit: `9c63234` (implementation); acceptance documentation follows in the local history.
 - Open issues: Re-run the unavailable original private 2025-06-03 workbook on the target laptop; optional typography taste check. Stage 6 Collector, Stage 7 live pages, enterprise API, deployment, and push remain out of scope.
 - Next: Stop after Stage 5.1 review. Do not begin Stage 6/7 without explicit authorization.
+
+## Stage 5.2 — Excel data quality, migration, import UX, and performance
+
+- Status: Complete for repository, public synthetic-data, migration, transaction, performance, and browser scopes. The unavailable complete private 2025-06-01–06-05 workbook set remains an explicit local human recheck.
+- Main changes: Added K/M/O field handling, nullable source preservation, metric-specific eligibility, `jiyin-quality-v2`, INFO/WARNING/SEVERE/blocking issue levels, grouped quality summaries, arrival-versus-valid counts, source-confirmed severe three-minute exclusion, and nullable Alarm descriptions. Added transactional schema migration v2 while preserving batch/version relationships and rollback behavior.
+- Import UI: Replaced large Preview cards with batch summary, compact expandable per-file results, Chinese grouped explanations, bounded scrolling, quality eligibility details, 24px section spacing, natural-height top cards, client limit messages, and whole-batch loading protection. Duplicate, conflict, replacement, active-version-change, Confirm, rollback, and Preview zero-write semantics remain unchanged.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test -- --reporter=dot` (77 passed; opt-in performance suite skipped), and `npm run build` with Webpack passed. `npm run measure:stage5.2` passed 1/2/4/8 full-day synthetic workbooks at 905.5/1,732.5/3,520.4/9,475.2 ms with HTTP 200 and zero Preview database writes.
+- Browser: Production localhost checks with disposable `/private/tmp` synthetic data passed no-file, nullable warning, Confirm, duplicate, mixed new/duplicate/invalid, and eight-file Preview flows. The eight-result list used a 460px internal viewport; 1280/1366/1440px had no page-level horizontal overflow and the final console contained no warnings/errors.
+- Data safety: No NULL was converted to zero, no abnormal seconds were rewritten, no AI/interpolation was used, no private workbook or enterprise endpoint was accessed, and no database/volume was deleted. Sensitive-file/credential-pattern and ignore-rule checks passed.
+- Commit: `dca36b7` (implementation); acceptance documentation follows in local history.
+- Open issues: Exact original private five-day workbook verification remains unclaimed; row-level quarantine is intentionally unsupported and critical unidentifiable rows block their file; RSS samples are cumulative-process observations rather than isolated-process deltas; team-owned history/event visual design remains outside this stage.
+- Next: Stop after Stage 5.2 review. Do not start Stage 6/7 or push without explicit authorization.
