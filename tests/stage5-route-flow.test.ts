@@ -6,6 +6,7 @@ import { openDatabase } from "@/server/db/connection";
 import { POST as previewPost } from "@/app/api/imports/preview/route";
 import { POST as confirmPost } from "@/app/api/imports/confirm/route";
 import { POST as activatePost } from "@/app/api/imports/[batchId]/activate/route";
+import { GET as batchesGet } from "@/app/api/imports/route";
 import { GET as processingGet } from "@/app/api/history/processing/route";
 import { GET as eventsGet } from "@/app/api/history/events/route";
 import { standardizedWorkbook } from "./fixtures/standardized-workbook";
@@ -20,6 +21,16 @@ async function preview(bytes:Buffer,name:string){const form=new FormData();form.
 async function confirm(bytes:Buffer,name:string,p:{sha256:string;canonicalFingerprint:string;activeBatchId:number|null},action:"INSERT"|"REPLACE"){const form=new FormData();form.append("file",upload(bytes,name));form.append("expectedSha256",p.sha256);form.append("expectedCanonicalFingerprint",p.canonicalFingerprint);form.append("expectedActiveBatchId",p.activeBatchId?.toString()??"");form.append("action",action);const response=await confirmPost(request("/api/imports/confirm",{method:"POST",body:form}));return{status:response.status,body:await response.json() as {data:{batchId:number;result:string}}};}
 
 describe("Stage 5 route-level user flow",()=>{
+  it("returns paginated version history with explicit sorting and filters",async()=>{
+    const root=mkdtempSync(join(tmpdir(),"jiyin-stage52-history-page-"));roots.push(root);process.env.DATABASE_PATH=join(root,"history.sqlite");
+    for(const date of ["2025-06-01","2025-06-02"]){const bytes=createSyntheticXlsx(standardizedWorkbook(date)),result=(await preview(bytes,`${date}.xlsx`)).data.files[0];expect((await confirm(bytes,`${date}.xlsx`,result,"INSERT")).status).toBe(200);}
+    const response=await batchesGet(request("/api/imports?page=1&pageSize=10&sortBy=sourceDate&sortDirection=asc&sourceDate=2025-06-02"));
+    expect(response.status).toBe(200);
+    const body=await response.json() as {data:{items:Array<{source_date:string;source_version:number}>;total:number;page:number;pageSize:number;totalPages:number}};
+    expect(body.data).toMatchObject({total:1,page:1,pageSize:10,totalPages:1});
+    expect(body.data.items).toEqual([expect.objectContaining({source_date:"2025-06-02",source_version:1})]);
+  });
+
   it("returns contract errors per file instead of turning one invalid workbook into HTTP 500",async()=>{
     const root=mkdtempSync(join(tmpdir(),"jiyin-stage5-invalid-"));roots.push(root);process.env.DATABASE_PATH=join(root,"invalid.sqlite");
     const validSheets=standardizedWorkbook("2025-06-03"),invalidSheets=standardizedWorkbook("2025-06-04");

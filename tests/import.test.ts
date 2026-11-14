@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { zipSync, strToU8 } from "fflate";
 import { openDatabase, type AppDatabase } from "@/server/db/connection";
 import { applyMigrations } from "@/server/db/migrations";
-import { activateImportBatch, confirmImport, inspectImportDecision } from "@/server/import/import-repository";
+import { activateImportBatch, confirmImport, inspectImportDecision, listImportBatchesPage } from "@/server/import/import-repository";
 import { CURRENT_QUALITY_RULE_VERSION, parseWorkbookSheets } from "@/server/import/workbook-parser";
 import { buildImportQualitySummary } from "@/server/import/quality-summary";
 import { preflightXlsx } from "@/server/import/xlsx-preflight";
@@ -167,6 +167,24 @@ describe("XLSX preflight",()=>{
 });
 
 describe("confirm, replace, and rollback transactions",()=>{
+  it("sorts, filters, and paginates complete version history before slicing rows",()=>{
+    const db=setup();
+    for(let day=1;day<=21;day++){
+      const date=`2025-07-${String(day).padStart(2,"0")}`;
+      confirmImport(db,parseWorkbookSheets(workbook(date),Buffer.from(`history-${day}`)),{nowMs:day*1000});
+    }
+    const firstPage=listImportBatchesPage(db,{page:1,pageSize:10,sortBy:"sourceDate",sortDirection:"desc"});
+    expect(firstPage).toMatchObject({total:21,page:1,pageSize:10,totalPages:3});
+    expect(firstPage.items.map((item)=>item.source_date)).toEqual(Array.from({length:10},(_,index)=>`2025-07-${String(21-index).padStart(2,"0")}`));
+    const thirdPage=listImportBatchesPage(db,{page:3,pageSize:10,sortBy:"sourceDate",sortDirection:"desc"});
+    expect(thirdPage.items.map((item)=>item.source_date)).toEqual(["2025-07-01"]);
+    const ascending=listImportBatchesPage(db,{page:1,pageSize:20,sortBy:"importedAt",sortDirection:"asc"});
+    expect(ascending.items[0]).toMatchObject({source_date:"2025-07-01",source_version:1});
+    const filtered=listImportBatchesPage(db,{page:1,pageSize:50,sortBy:"sourceDate",sortDirection:"desc",sourceDate:"2025-07-11",fileQuery:"synthetic"});
+    expect(filtered).toMatchObject({total:1,totalPages:1});
+    expect(filtered.items[0].source_date).toBe("2025-07-11");
+  });
+
   it("imports once and treats a second confirm as zero-write duplicate",()=>{
     const db=setup(); const preview=parseWorkbookSheets(workbook(),Buffer.from("same"));
     expect(confirmImport(db,preview,{nowMs:1}).outcome).toBe("IMPORTED");

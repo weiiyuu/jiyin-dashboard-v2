@@ -147,8 +147,50 @@ export function activateImportBatch(db: AppDatabase, targetBatchId: number, expe
 
 export function listImportBatches(db: AppDatabase) {
   return db.prepare(`SELECT batch_id,source_date,original_file_name,status,alarm_source_status,
-    machine_row_count,environment_row_count,alarm_row_count,quality_issue_row_count,error_count,warning_count,created_at_ms
-    FROM import_batches ORDER BY source_date DESC,created_at_ms DESC`).all();
+    machine_row_count,environment_row_count,alarm_row_count,quality_issue_row_count,error_count,warning_count,created_at_ms,
+    ROW_NUMBER() OVER(PARTITION BY source_date ORDER BY created_at_ms ASC,batch_id ASC) AS source_version,
+    MAX(CASE WHEN status='ACTIVE' THEN batch_id END) OVER(PARTITION BY source_date) AS active_batch_id
+    FROM import_batches ORDER BY source_date DESC,created_at_ms DESC,batch_id DESC`).all();
+}
+
+export type ImportBatchSort = "sourceDate" | "importedAt";
+export type ImportBatchSortDirection = "asc" | "desc";
+export interface ImportBatchPageQuery {
+  page:number;
+  pageSize:10|20|50;
+  sortBy:ImportBatchSort;
+  sortDirection:ImportBatchSortDirection;
+  sourceDate?:string;
+  fileQuery?:string;
+}
+
+function escapeLike(value:string){return value.replace(/[\\%_]/g,(character)=>`\\${character}`);}
+
+export function listImportBatchesPage(db:AppDatabase,query:ImportBatchPageQuery){
+  const where:string[]=[],parameters:Array<string>=[];
+  if(query.sourceDate){where.push("source_date = ?");parameters.push(query.sourceDate);}
+  if(query.fileQuery){where.push("original_file_name LIKE ? ESCAPE '\\'");parameters.push(`%${escapeLike(query.fileQuery)}%`);}
+  const whereSql=where.length?`WHERE ${where.join(" AND ")}`:"";
+  const total=Number((db.prepare(`SELECT COUNT(*) AS count FROM import_batches ${whereSql}`).get(...parameters) as {count:number}).count);
+  const totalPages=Math.max(1,Math.ceil(total/query.pageSize));
+  const page=Math.min(Math.max(1,query.page),totalPages),offset=(page-1)*query.pageSize;
+  const sortColumn=query.sortBy==="importedAt"?"created_at_ms":"source_date",direction=query.sortDirection==="asc"?"ASC":"DESC";
+  const items=db.prepare(`WITH versioned AS (
+      SELECT batch_id,source_date,original_file_name,status,alarm_source_status,
+        machine_row_count,environment_row_count,alarm_row_count,quality_issue_row_count,error_count,warning_count,created_at_ms,
+        ROW_NUMBER() OVER(PARTITION BY source_date ORDER BY created_at_ms ASC,batch_id ASC) AS source_version,
+        MAX(CASE WHEN status='ACTIVE' THEN batch_id END) OVER(PARTITION BY source_date) AS active_batch_id
+      FROM import_batches
+    )
+    SELECT * FROM versioned ${whereSql}
+    ORDER BY ${sortColumn} ${direction},created_at_ms ${direction},batch_id ${direction}
+    LIMIT ? OFFSET ?`).all(...parameters,query.pageSize,offset);
+  const overview=db.prepare(`SELECT COUNT(*) AS version_count,
+      COUNT(DISTINCT CASE WHEN status='ACTIVE' THEN source_date END) AS active_date_count,
+      MIN(CASE WHEN status='ACTIVE' THEN source_date END) AS earliest_active_date,
+      MAX(CASE WHEN status='ACTIVE' THEN source_date END) AS latest_active_date
+    FROM import_batches`).get() as {version_count:number;active_date_count:number;earliest_active_date:string|null;latest_active_date:string|null};
+  return{items,total,page,pageSize:query.pageSize,totalPages,sortBy:query.sortBy,sortDirection:query.sortDirection,overview:{versionCount:Number(overview.version_count),activeDateCount:Number(overview.active_date_count),earliestActiveDate:overview.earliest_active_date,latestActiveDate:overview.latest_active_date}};
 }
 
 function sanitizeFileName(name:string):string {
