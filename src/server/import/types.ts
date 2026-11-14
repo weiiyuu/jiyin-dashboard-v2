@@ -4,7 +4,7 @@ export const REQUIRED_SHEETS = [
 
 export type RequiredSheet = (typeof REQUIRED_SHEETS)[number];
 export type AlarmSourceStatus = "PROVIDED_NONEMPTY" | "PROVIDED_EMPTY" | "MISSING" | "UNKNOWN";
-export type IssueSeverity = "ERROR" | "WARNING" | "INFO";
+export type IssueSeverity = "ERROR" | "SEVERE" | "WARNING" | "INFO";
 
 export interface ImportIssue {
   ruleCode: string;
@@ -25,7 +25,7 @@ export interface MachineImportRow {
   sourceFourStateTotalSeconds: number | null; sourceProcessingHours: number | null;
   sourceYellowHours: number | null; sourceRedHours: number | null; sourceNoneHours: number | null;
   sourceIntervalProcessingRatio: number | null; sourcePoweredProcessingRatio: number | null;
-  sourceQualityStatus: string; sourceQualityNote: string | null; sourceExceptionJson: string | null;
+  sourceQualityStatus: string | null; sourceQualityNote: string | null; sourceExceptionJson: string | null;
   greenHoursEligible: number; fourStateRatioEligible: number; sixStateShareEligible: number;
   transitionEligible: number; qualityRuleVersion: string; issueCodesJson: string;
 }
@@ -36,15 +36,15 @@ export interface EnvironmentImportRow {
   area: string; sensorNumber: number; category: string;
   averageValue: number | null; maximumValue: number | null; medianValue: number | null;
   minimumValue: number | null; referenceThreshold: number | null;
-  sourceMaxJudgement: string | null; sourceQualityStatus: string; sourceNote: string | null;
+  sourceMaxJudgement: string | null; sourceQualityStatus: string | null; sourceNote: string | null;
   sourceExceptionJson: string | null; averageEligible: number; maximumEligible: number;
   medianEligible: number; minimumEligible: number; qualityRuleVersion: string; issueCodesJson: string;
 }
 
 export interface AlarmImportRow {
   sourceRowNumber: number; sourceDate: string; eventTimeText: string; eventAtMs: number;
-  sensorName: string; sensorId: string; sensorType: string; groupText: string | null;
-  ruleName: string; ruleConditionText: string; currentValueText: string | null;
+  sensorName: string | null; sensorId: string; sensorType: string | null; groupText: string | null;
+  ruleName: string | null; ruleConditionText: string | null; currentValueText: string | null;
   currentValueNumeric: number | null; durationOriginal: string | null;
   initialClassification: string | null; classificationStatus: string | null;
   eventFingerprint: string; duplicateWithinBatch: number; issueCodesJson: string;

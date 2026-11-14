@@ -231,7 +231,172 @@ INSERT INTO app_settings(singleton_id, provider_mode, mode_revision, updated_at_
 VALUES (1, 'DEMO', 0, 0);
 `;
 
-export const migrations: Migration[] = [{ version: 1, name: "initial_schema", sql: INITIAL_SCHEMA_SQL }];
+export const STAGE5_2_NULLABILITY_SQL = String.raw`
+CREATE TABLE stage52_severe_machine_rows (
+  batch_id INTEGER NOT NULL,
+  source_row_number INTEGER NOT NULL,
+  PRIMARY KEY(batch_id, source_row_number)
+) STRICT;
+
+INSERT INTO stage52_severe_machine_rows(batch_id,source_row_number)
+SELECT m.batch_id,m.source_row_number
+FROM history_machine_intervals m
+WHERE (
+  (
+    (m.source_quality_note LIKE '%六態%' OR m.source_quality_note LIKE '%秒數%' OR m.source_quality_note LIKE '%區間合計%')
+    AND (m.source_quality_note LIKE '%嚴重%' OR m.source_quality_note LIKE '%極度%' OR m.source_quality_note LIKE '%極少%')
+  ) OR EXISTS (
+    SELECT 1 FROM history_quality_issues q
+    WHERE q.batch_id=m.batch_id AND q.source_date=m.source_date AND q.time_label=m.time_label
+      AND instr(q.subject_text,m.machine_id)>0
+      AND (q.problem_text LIKE '%六態%' OR q.problem_text LIKE '%秒數%' OR q.problem_text LIKE '%區間合計%')
+      AND (q.problem_text LIKE '%嚴重%' OR q.problem_text LIKE '%極度%' OR q.problem_text LIKE '%極少%')
+  )
+);
+
+ALTER TABLE history_machine_intervals RENAME TO history_machine_intervals_v1;
+CREATE TABLE history_machine_intervals (
+  machine_interval_id INTEGER PRIMARY KEY,
+  batch_id INTEGER NOT NULL REFERENCES import_batches(batch_id) ON DELETE CASCADE,
+  source_row_number INTEGER NOT NULL CHECK (source_row_number >= 2),
+  source_date TEXT NOT NULL, time_label TEXT NOT NULL,
+  interval_start_text TEXT NOT NULL, interval_end_text TEXT NOT NULL,
+  interval_start_ms INTEGER NOT NULL, interval_end_ms INTEGER NOT NULL,
+  machine_id TEXT NOT NULL REFERENCES machines(machine_id), area TEXT NOT NULL CHECK (area IN ('A','B')),
+  none_seconds REAL, red_seconds REAL, yellow_seconds REAL, green_seconds REAL, blue_seconds REAL, white_seconds REAL,
+  source_four_state_total_seconds REAL, source_processing_hours REAL, source_yellow_hours REAL,
+  source_red_hours REAL, source_none_hours REAL, source_interval_processing_ratio REAL,
+  source_powered_processing_ratio REAL, source_quality_status TEXT, source_quality_note TEXT,
+  source_exception_json TEXT CHECK (source_exception_json IS NULL OR json_valid(source_exception_json)),
+  green_hours_eligible INTEGER NOT NULL CHECK (green_hours_eligible IN (0,1)),
+  four_state_ratio_eligible INTEGER NOT NULL CHECK (four_state_ratio_eligible IN (0,1)),
+  six_state_share_eligible INTEGER NOT NULL CHECK (six_state_share_eligible IN (0,1)),
+  transition_eligible INTEGER NOT NULL CHECK (transition_eligible IN (0,1)),
+  quality_rule_version TEXT NOT NULL, issue_codes_json TEXT NOT NULL CHECK (json_valid(issue_codes_json)),
+  CHECK (interval_end_ms - interval_start_ms = 180000),
+  CHECK (area = substr(machine_id, 1, 1)),
+  UNIQUE (batch_id, machine_id, source_date, time_label)
+) STRICT;
+INSERT INTO history_machine_intervals(
+  machine_interval_id,batch_id,source_row_number,source_date,time_label,interval_start_text,interval_end_text,
+  interval_start_ms,interval_end_ms,machine_id,area,none_seconds,red_seconds,yellow_seconds,green_seconds,blue_seconds,white_seconds,
+  source_four_state_total_seconds,source_processing_hours,source_yellow_hours,source_red_hours,source_none_hours,
+  source_interval_processing_ratio,source_powered_processing_ratio,source_quality_status,source_quality_note,source_exception_json,
+  green_hours_eligible,four_state_ratio_eligible,six_state_share_eligible,transition_eligible,quality_rule_version,issue_codes_json
+)
+SELECT
+  m.machine_interval_id,m.batch_id,m.source_row_number,m.source_date,m.time_label,m.interval_start_text,m.interval_end_text,
+  m.interval_start_ms,m.interval_end_ms,m.machine_id,m.area,m.none_seconds,m.red_seconds,m.yellow_seconds,m.green_seconds,m.blue_seconds,m.white_seconds,
+  m.source_four_state_total_seconds,m.source_processing_hours,m.source_yellow_hours,m.source_red_hours,m.source_none_hours,
+  m.source_interval_processing_ratio,m.source_powered_processing_ratio,NULLIF(m.source_quality_status,''),m.source_quality_note,m.source_exception_json,
+  CASE WHEN s.batch_id IS NULL THEN m.green_hours_eligible ELSE 0 END,
+  m.four_state_ratio_eligible,
+  CASE WHEN s.batch_id IS NULL THEN m.six_state_share_eligible ELSE 0 END,
+  CASE WHEN s.batch_id IS NULL THEN m.transition_eligible ELSE 0 END,
+  'jiyin-quality-v2',
+  CASE WHEN s.batch_id IS NULL THEN m.issue_codes_json ELSE json_insert(m.issue_codes_json,'$[#]','STATE_SEVERE_INCOMPLETE') END
+FROM history_machine_intervals_v1 m
+LEFT JOIN stage52_severe_machine_rows s ON s.batch_id=m.batch_id AND s.source_row_number=m.source_row_number;
+DROP TABLE history_machine_intervals_v1;
+CREATE INDEX idx_machine_query ON history_machine_intervals(machine_id, interval_start_ms);
+CREATE INDEX idx_machine_batch_time ON history_machine_intervals(batch_id, interval_start_ms);
+CREATE INDEX idx_machine_source_date ON history_machine_intervals(source_date, machine_id, time_label);
+
+ALTER TABLE history_environment_intervals RENAME TO history_environment_intervals_v1;
+CREATE TABLE history_environment_intervals (
+  environment_interval_id INTEGER PRIMARY KEY,
+  batch_id INTEGER NOT NULL REFERENCES import_batches(batch_id) ON DELETE CASCADE,
+  source_row_number INTEGER NOT NULL CHECK (source_row_number >= 2),
+  source_date TEXT NOT NULL, time_label TEXT NOT NULL,
+  interval_start_text TEXT NOT NULL, interval_end_text TEXT NOT NULL,
+  interval_start_ms INTEGER NOT NULL, interval_end_ms INTEGER NOT NULL,
+  area TEXT NOT NULL CHECK (area IN ('A','B')),
+  sensor_number INTEGER NOT NULL CHECK (sensor_number > 0), category TEXT NOT NULL,
+  average_value REAL, maximum_value REAL, median_value REAL, minimum_value REAL,
+  reference_threshold REAL, source_max_judgement TEXT, source_quality_status TEXT, source_note TEXT,
+  source_exception_json TEXT CHECK (source_exception_json IS NULL OR json_valid(source_exception_json)),
+  average_eligible INTEGER NOT NULL CHECK (average_eligible IN (0,1)),
+  maximum_eligible INTEGER NOT NULL CHECK (maximum_eligible IN (0,1)),
+  median_eligible INTEGER NOT NULL CHECK (median_eligible IN (0,1)),
+  minimum_eligible INTEGER NOT NULL CHECK (minimum_eligible IN (0,1)),
+  quality_rule_version TEXT NOT NULL, issue_codes_json TEXT NOT NULL CHECK (json_valid(issue_codes_json)),
+  CHECK (interval_end_ms - interval_start_ms = 180000),
+  UNIQUE (batch_id, area, sensor_number, category, source_date, time_label)
+) STRICT;
+INSERT INTO history_environment_intervals(
+  environment_interval_id,batch_id,source_row_number,source_date,time_label,interval_start_text,interval_end_text,
+  interval_start_ms,interval_end_ms,area,sensor_number,category,average_value,maximum_value,median_value,minimum_value,
+  reference_threshold,source_max_judgement,source_quality_status,source_note,source_exception_json,average_eligible,
+  maximum_eligible,median_eligible,minimum_eligible,quality_rule_version,issue_codes_json
+)
+SELECT environment_interval_id,batch_id,source_row_number,source_date,time_label,interval_start_text,interval_end_text,
+  interval_start_ms,interval_end_ms,area,sensor_number,category,average_value,maximum_value,median_value,minimum_value,
+  reference_threshold,source_max_judgement,NULLIF(source_quality_status,''),source_note,source_exception_json,average_eligible,
+  maximum_eligible,median_eligible,minimum_eligible,'jiyin-quality-v2',issue_codes_json
+FROM history_environment_intervals_v1;
+DROP TABLE history_environment_intervals_v1;
+CREATE INDEX idx_environment_query ON history_environment_intervals(area, sensor_number, category, interval_start_ms);
+CREATE INDEX idx_environment_batch_time ON history_environment_intervals(batch_id, interval_start_ms);
+
+ALTER TABLE history_alarm_events RENAME TO history_alarm_events_v1;
+CREATE TABLE history_alarm_events (
+  alarm_event_id INTEGER PRIMARY KEY,
+  batch_id INTEGER NOT NULL REFERENCES import_batches(batch_id) ON DELETE CASCADE,
+  source_row_number INTEGER NOT NULL CHECK (source_row_number >= 2), source_date TEXT NOT NULL,
+  event_time_text TEXT NOT NULL, event_at_ms INTEGER NOT NULL,
+  sensor_name TEXT, sensor_id TEXT NOT NULL, sensor_type TEXT, group_text TEXT,
+  rule_name TEXT, rule_condition_text TEXT, current_value_text TEXT, current_value_numeric REAL,
+  duration_original TEXT, initial_classification TEXT, classification_status TEXT,
+  event_fingerprint TEXT NOT NULL,
+  duplicate_within_batch INTEGER NOT NULL DEFAULT 0 CHECK (duplicate_within_batch IN (0,1)),
+  issue_codes_json TEXT NOT NULL CHECK (json_valid(issue_codes_json)),
+  UNIQUE (batch_id, source_row_number)
+) STRICT;
+INSERT INTO history_alarm_events(
+  alarm_event_id,batch_id,source_row_number,source_date,event_time_text,event_at_ms,sensor_name,sensor_id,sensor_type,
+  group_text,rule_name,rule_condition_text,current_value_text,current_value_numeric,duration_original,
+  initial_classification,classification_status,event_fingerprint,duplicate_within_batch,issue_codes_json
+)
+SELECT alarm_event_id,batch_id,source_row_number,source_date,event_time_text,event_at_ms,NULLIF(sensor_name,''),sensor_id,
+  NULLIF(sensor_type,''),group_text,NULLIF(rule_name,''),NULLIF(rule_condition_text,''),current_value_text,current_value_numeric,
+  duration_original,initial_classification,classification_status,event_fingerprint,duplicate_within_batch,issue_codes_json
+FROM history_alarm_events_v1;
+DROP TABLE history_alarm_events_v1;
+CREATE INDEX idx_alarm_time ON history_alarm_events(event_at_ms, sensor_id);
+CREATE INDEX idx_alarm_type_rule ON history_alarm_events(sensor_type, rule_name, event_at_ms);
+CREATE INDEX idx_alarm_fingerprint ON history_alarm_events(batch_id, event_fingerprint);
+
+ALTER TABLE validation_issues RENAME TO validation_issues_v1;
+CREATE TABLE validation_issues (
+  issue_id INTEGER PRIMARY KEY,
+  batch_id INTEGER NOT NULL REFERENCES import_batches(batch_id) ON DELETE CASCADE,
+  rule_code TEXT NOT NULL, quality_rule_version TEXT NOT NULL,
+  severity TEXT NOT NULL CHECK (severity IN ('ERROR','SEVERE','WARNING','INFO')),
+  sheet_name TEXT, source_row_number INTEGER, column_name TEXT, metric_scope TEXT,
+  message_safe TEXT NOT NULL, details_json TEXT CHECK (details_json IS NULL OR json_valid(details_json)),
+  created_at_ms INTEGER NOT NULL
+) STRICT;
+INSERT INTO validation_issues(issue_id,batch_id,rule_code,quality_rule_version,severity,sheet_name,source_row_number,column_name,metric_scope,message_safe,details_json,created_at_ms)
+SELECT issue_id,batch_id,rule_code,'jiyin-quality-v2',severity,sheet_name,source_row_number,column_name,metric_scope,message_safe,details_json,created_at_ms
+FROM validation_issues_v1;
+DROP TABLE validation_issues_v1;
+CREATE INDEX idx_validation_batch_severity ON validation_issues(batch_id, severity, sheet_name, source_row_number);
+INSERT INTO validation_issues(batch_id,rule_code,quality_rule_version,severity,sheet_name,source_row_number,metric_scope,message_safe,created_at_ms)
+SELECT s.batch_id,'STATE_SEVERE_INCOMPLETE','jiyin-quality-v2','SEVERE','machine_3min',s.source_row_number,
+  'GREEN_HOURS,SIX_STATE_SHARE,TRANSITION','來源已標示三分鐘秒數嚴重不完整；保留原值但排除相關統計',
+  COALESCE((SELECT confirmed_at_ms FROM import_batches WHERE batch_id=s.batch_id),0)
+FROM stage52_severe_machine_rows s;
+
+UPDATE import_batches
+SET warning_count=(SELECT COUNT(*) FROM validation_issues v WHERE v.batch_id=import_batches.batch_id AND v.severity<>'ERROR'),
+    error_count=(SELECT COUNT(*) FROM validation_issues v WHERE v.batch_id=import_batches.batch_id AND v.severity='ERROR');
+DROP TABLE stage52_severe_machine_rows;
+`;
+
+export const migrations: Migration[] = [
+  { version: 1, name: "initial_schema", sql: INITIAL_SCHEMA_SQL },
+  { version: 2, name: "stage5_2_nullable_quality_v2", sql: STAGE5_2_NULLABILITY_SQL },
+];
 
 function checksum(sql: string) {
   return createHash("sha256").update(sql).digest("hex");

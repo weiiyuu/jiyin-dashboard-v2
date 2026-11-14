@@ -15,7 +15,7 @@ const roots:string[]=[];const previousPath=process.env.DATABASE_PATH;
 afterEach(()=>{process.env.DATABASE_PATH=previousPath;while(roots.length)rmSync(roots.pop()!,{recursive:true,force:true});});
 function request(path:string,init?:RequestInit){return new Request(`http://localhost:3000${path}`,{...init,headers:{origin:"http://localhost:3000","sec-fetch-site":"same-origin",...init?.headers}});}
 function upload(bytes:Buffer,name:string){return new File([Uint8Array.from(bytes)],name,{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});}
-interface PreviewFile {sha256:string;canonicalFingerprint:string;decision:string;activeBatchId:number|null;errors:Array<{ruleCode:string}>}
+interface PreviewFile {sha256:string;canonicalFingerprint:string;decision:string;acceptance:string;activeBatchId:number|null;errors:Array<{ruleCode:string}>;warnings:Array<{ruleCode:string}>}
 async function preview(bytes:Buffer,name:string){const form=new FormData();form.append("files",upload(bytes,name));form.append("clientFileId",name);const response=await previewPost(request("/api/imports/preview",{method:"POST",body:form}));return await response.json() as {data:{files:PreviewFile[]}};}
 async function confirm(bytes:Buffer,name:string,p:{sha256:string;canonicalFingerprint:string;activeBatchId:number|null},action:"INSERT"|"REPLACE"){const form=new FormData();form.append("file",upload(bytes,name));form.append("expectedSha256",p.sha256);form.append("expectedCanonicalFingerprint",p.canonicalFingerprint);form.append("expectedActiveBatchId",p.activeBatchId?.toString()??"");form.append("action",action);const response=await confirmPost(request("/api/imports/confirm",{method:"POST",body:form}));return{status:response.status,body:await response.json() as {data:{batchId:number;result:string}}};}
 
@@ -23,7 +23,7 @@ describe("Stage 5 route-level user flow",()=>{
   it("returns contract errors per file instead of turning one invalid workbook into HTTP 500",async()=>{
     const root=mkdtempSync(join(tmpdir(),"jiyin-stage5-invalid-"));roots.push(root);process.env.DATABASE_PATH=join(root,"invalid.sqlite");
     const validSheets=standardizedWorkbook("2025-06-03"),invalidSheets=standardizedWorkbook("2025-06-04");
-    invalidSheets[2].data.push(["2025-06-04 01:00:00","", "sensor-1","analog","A","rule","value>1",2,null,"synthetic","initial"]);
+    invalidSheets[2].data.push(["2025-06-04 01:00:00",null,null,"analog","A","rule","value>1",2,null,"synthetic","initial"]);
     invalidSheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
     const form=new FormData();
     for(const [id,sheets] of [["valid",validSheets],["invalid",invalidSheets]] as const){form.append("files",upload(createSyntheticXlsx(sheets),`${id}.xlsx`));form.append("clientFileId",id);}
@@ -37,6 +37,20 @@ describe("Stage 5 route-level user flow",()=>{
     const db=openDatabase(process.env.DATABASE_PATH);expect(db.prepare("SELECT COUNT(*) count FROM import_batches").get()).toEqual({count:0});db.close();
   });
 
+  it("previews and confirms a 6/3-shaped workbook with missing Alarm descriptions",async()=>{
+    const root=mkdtempSync(join(tmpdir(),"jiyin-stage52-alarm-null-"));roots.push(root);process.env.DATABASE_PATH=join(root,"alarm-null.sqlite");
+    const sheets=standardizedWorkbook("2025-06-03");
+    for(const row of [16,18,19])sheets[2].data.push([`2025-06-03 01:${row}:00`,null,`sensor-${row}`,null,null,null,null,null,null,null,null]);
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=3;
+    const bytes=createSyntheticXlsx(sheets),result=(await preview(bytes,"2025-06-03.xlsx")).data.files[0];
+    expect(result).toMatchObject({decision:"INSERT",acceptance:"ACCEPT_WITH_WARNINGS",errors:[]});
+    expect(result.warnings.filter((item)=>item.ruleCode==="SOURCE_DESCRIPTION_MISSING")).toHaveLength(15);
+    expect((await confirm(bytes,"2025-06-03.xlsx",result,"INSERT")).status).toBe(200);
+    const db=openDatabase(process.env.DATABASE_PATH);
+    expect(db.prepare("SELECT COUNT(*) count FROM history_alarm_events WHERE rule_name IS NULL").get()).toEqual({count:3});
+    db.close();
+  });
+
   it("previews eight real files in one request and preserves every client identity",async()=>{
     const root=mkdtempSync(join(tmpdir(),"jiyin-stage5-eight-"));roots.push(root);process.env.DATABASE_PATH=join(root,"eight.sqlite");
     const form=new FormData();
@@ -46,6 +60,25 @@ describe("Stage 5 route-level user flow",()=>{
     const body=await response.json() as {data:{files:Array<{clientFileId:string;decision:string}>}};
     expect(body.data.files.map((item)=>item.clientFileId)).toEqual(Array.from({length:8},(_,index)=>`client-${index}`));
     expect(body.data.files.every((item)=>item.decision==="INSERT")).toBe(true);
+  });
+
+  it("keeps duplicate, nullable warning, valid, and blocking files independent in one Preview",async()=>{
+    const root=mkdtempSync(join(tmpdir(),"jiyin-stage52-mixed-"));roots.push(root);process.env.DATABASE_PATH=join(root,"mixed.sqlite");
+    const duplicateBytes=createSyntheticXlsx(standardizedWorkbook("2025-06-01")),duplicatePreview=(await preview(duplicateBytes,"duplicate.xlsx")).data.files[0];
+    expect((await confirm(duplicateBytes,"duplicate.xlsx",duplicatePreview,"INSERT")).status).toBe(200);
+    const nullable=standardizedWorkbook("2025-06-03");nullable[2].data.push(["2025-06-03 01:00:00",null,"sensor-null",null,null,null,null,null,null,null,null]);nullable[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
+    const valid=standardizedWorkbook("2025-06-07"),invalid=standardizedWorkbook("2025-06-08");invalid[0].data[0]=invalid[0].data[0].filter((name)=>name!=="機台");
+    const entries=[{id:"duplicate",bytes:duplicateBytes,sheets:null},{id:"nullable",bytes:createSyntheticXlsx(nullable),sheets:null},{id:"valid",bytes:createSyntheticXlsx(valid),sheets:null},{id:"invalid",bytes:createSyntheticXlsx(invalid),sheets:null}];
+    const form=new FormData();for(const entry of entries){form.append("files",upload(entry.bytes,`${entry.id}.xlsx`));form.append("clientFileId",entry.id);}
+    const response=await previewPost(request("/api/imports/preview",{method:"POST",body:form}));expect(response.status).toBe(200);
+    const body=await response.json() as {data:{files:Array<{clientFileId:string;decision:string;acceptance:string}>}};
+    expect(body.data.files).toEqual([
+      expect.objectContaining({clientFileId:"duplicate",decision:"DUPLICATE"}),
+      expect.objectContaining({clientFileId:"nullable",decision:"INSERT",acceptance:"ACCEPT_WITH_WARNINGS"}),
+      expect.objectContaining({clientFileId:"valid",decision:"INSERT",acceptance:"ACCEPT_WITH_WARNINGS"}),
+      expect.objectContaining({clientFileId:"invalid",decision:"INVALID",acceptance:"INVALID"}),
+    ]);
+    const db=openDatabase(process.env.DATABASE_PATH);expect(db.prepare("SELECT COUNT(*) count FROM import_batches").get()).toEqual({count:1});db.close();
   });
 
   it.each([1,2,4,8])("previews and confirms %i files with independent transactions",async(count)=>{

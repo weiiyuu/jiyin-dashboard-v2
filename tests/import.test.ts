@@ -6,7 +6,8 @@ import { zipSync, strToU8 } from "fflate";
 import { openDatabase, type AppDatabase } from "@/server/db/connection";
 import { applyMigrations } from "@/server/db/migrations";
 import { activateImportBatch, confirmImport, inspectImportDecision } from "@/server/import/import-repository";
-import { parseWorkbookSheets } from "@/server/import/workbook-parser";
+import { CURRENT_QUALITY_RULE_VERSION, parseWorkbookSheets } from "@/server/import/workbook-parser";
+import { buildImportQualitySummary } from "@/server/import/quality-summary";
 import { preflightXlsx } from "@/server/import/xlsx-preflight";
 import { standardizedWorkbook as workbook } from "./fixtures/standardized-workbook";
 
@@ -76,6 +77,18 @@ describe("standardized workbook parser",()=>{
     expect(preview.issues.some((issue)=>issue.ruleCode==="VALUE_NEGATIVE"&&issue.columnName==="Red秒")).toBe(true);
   });
 
+  it("does not turn a missing Green value or six missing states into zero",()=>{
+    const partial=workbook();partial[0].data[1][9]=null;partial[0].data[1][13]=null;partial[0].data[1][17]=null;partial[0].data[1][18]=null;
+    const partialPreview=parseWorkbookSheets(partial,Buffer.from("green-null"));
+    expect(partialPreview.machineRows[0]).toMatchObject({greenSeconds:null,greenHoursEligible:0,sixStateShareEligible:0});
+    expect(partialPreview.issues.some((issue)=>issue.ruleCode==="SOURCE_VALUE_MISSING"&&issue.columnName==="Green秒")).toBe(true);
+    const allMissing=workbook();for(let column=6;column<=11;column++)allMissing[0].data[1][column]=column===7?"Await":null;
+    for(let column=12;column<=18;column++)allMissing[0].data[1][column]=null;
+    const missingPreview=parseWorkbookSheets(allMissing,Buffer.from("all-states-null"));
+    expect([missingPreview.machineRows[0].noneSeconds,missingPreview.machineRows[0].redSeconds,missingPreview.machineRows[0].yellowSeconds,missingPreview.machineRows[0].greenSeconds,missingPreview.machineRows[0].blueSeconds,missingPreview.machineRows[0].whiteSeconds]).toEqual([null,null,null,null,null,null]);
+    expect(missingPreview.machineRows[0]).toMatchObject({greenHoursEligible:0,sixStateShareEligible:0,transitionEligible:0});
+  });
+
   it("blocks a dictionary semantic change but only warns on a compatible version name",()=>{
     const compatible=workbook();compatible[4].data[1][1]="compatible v4";
     expect(parseWorkbookSheets(compatible,Buffer.from("version")).issues.some((issue)=>issue.ruleCode==="DICTIONARY_VERSION_DIFFERENT"&&issue.severity==="WARNING")).toBe(true);
@@ -83,6 +96,62 @@ describe("standardized workbook parser",()=>{
     const preview=parseWorkbookSheets(changed,Buffer.from("semantic"));
     expect(preview.canConfirm).toBe(false);
     expect(preview.issues.some((issue)=>issue.ruleCode==="DICTIONARY_SEMANTIC_CHANGE")).toBe(true);
+  });
+
+  it("accepts nullable Alarm descriptions without inventing source values",()=>{
+    const sheets=workbook("2025-06-03");
+    sheets[2].data.push(["2025-06-03 01:00:00",null,"sensor-1",null,null,null,null,null,null,null,null]);
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
+    const preview=parseWorkbookSheets(sheets,Buffer.from("nullable-alarm"));
+    expect(preview.canConfirm).toBe(true);
+    expect(preview.alarmRows[0]).toMatchObject({
+      sensorId:"sensor-1",sensorName:null,sensorType:null,ruleName:null,ruleConditionText:null,
+      currentValueText:null,durationOriginal:null,
+    });
+    expect(preview.issues.filter((issue)=>issue.ruleCode==="SOURCE_DESCRIPTION_MISSING")).toHaveLength(5);
+    const db=setup();confirmImport(db,preview,{nowMs:1});
+    expect(db.prepare("SELECT sensor_name,sensor_type,rule_name,rule_condition_text FROM history_alarm_events").get()).toEqual({
+      sensor_name:null,sensor_type:null,rule_name:null,rule_condition_text:null,
+    });
+  });
+
+  it("preserves missing source quality and applies per-metric environment eligibility",()=>{
+    const sheets=workbook("2025-06-04");
+    sheets[0].data[1][19]=null;
+    sheets[1].data[1][7]=null;
+    sheets[1].data[1][8]=42;
+    const preview=parseWorkbookSheets(sheets,Buffer.from("nullable-quality"));
+    expect(preview.canConfirm).toBe(true);
+    expect(preview.machineRows[0]).toMatchObject({sourceQualityStatus:null,greenHoursEligible:0,sixStateShareEligible:0});
+    expect(preview.environmentRows[0]).toMatchObject({averageValue:null,maximumValue:42,averageEligible:0,maximumEligible:1});
+    expect(preview.issues.some((issue)=>issue.ruleCode==="SOURCE_QUALITY_MISSING"&&issue.severity==="WARNING")).toBe(true);
+    expect(preview.issues.some((issue)=>issue.ruleCode==="SOURCE_VALUE_MISSING"&&issue.columnName==="平均")).toBe(true);
+  });
+
+  it("keeps the known severe three-minute values but excludes only the affected metrics",()=>{
+    const sheets=workbook("2025-06-04"),machineSheet=sheets[0],qualitySheet=sheets[3];
+    machineSheet.data.length=1;
+    const totals=[0.06,0.01,0.02,0.05,0.18,0.05,0.12,0.07];
+    for(const [index,total] of totals.entries()){
+      const machine=`${index<4?"A":"B"}${index%4+1}`;
+      machineSheet.data.push(["2025-06-04","00:54","2025-06-04 00:51:00","2025-06-04 00:54:00",machine,machine[0],0,0,0,total,0,0,total,total/3600,0,0,0,1,1,"待核對","來源秒數嚴重不足"]);
+      qualitySheet.data.push(["2025-06-04","00:54",machine,"六態秒數嚴重不足",total]);
+    }
+    sheets[1].data[1][1]="00:54";sheets[1].data[1][2]="2025-06-04 00:51:00";sheets[1].data[1][3]="2025-06-04 00:54:00";
+    sheets[1].data[1][4]="B";sheets[1].data[1][5]=1;sheets[1].data[1][6]="濕度";
+    sheets[1].data[1][7]=null;sheets[1].data[1][8]=null;sheets[1].data[1][9]=null;sheets[1].data[1][10]=null;
+    sheets[5].data.find((row)=>row[0]==="機台三分鐘筆數")![1]=8;
+    const preview=parseWorkbookSheets(sheets,Buffer.from("severe-0054"));
+    expect(preview.canConfirm).toBe(true);
+    expect(preview.machineRows.map((row)=>row.greenSeconds)).toEqual(totals);
+    expect(preview.machineRows.every((row)=>row.greenHoursEligible===0&&row.sixStateShareEligible===0&&row.transitionEligible===0)).toBe(true);
+    expect(preview.machineRows.every((row)=>row.qualityRuleVersion===CURRENT_QUALITY_RULE_VERSION)).toBe(true);
+    expect(preview.issues.filter((issue)=>issue.ruleCode==="STATE_SEVERE_INCOMPLETE")).toHaveLength(8);
+    const summary=buildImportQualitySummary(preview);
+    expect(summary.arrival.machineRows).toBe(8);
+    expect(summary.eligibility.greenHours).toBe(0);
+    expect(summary.eligibility.environmentAverage).toBe(0);
+    expect(summary.groups.some((group)=>group.ruleCode==="STATE_SEVERE_INCOMPLETE"&&group.affectedRowCount===8)).toBe(true);
   });
 });
 

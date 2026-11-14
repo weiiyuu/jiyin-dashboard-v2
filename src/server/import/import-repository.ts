@@ -1,6 +1,7 @@
 import type { AppDatabase } from "@/server/db/connection";
 import { transaction } from "@/server/db/connection";
 import type { ImportPreview } from "./types";
+import { CURRENT_QUALITY_RULE_VERSION } from "./workbook-parser";
 
 export type ConfirmResult =
   | { outcome: "IMPORTED" | "REPLACED"; batchId: number; replacedBatchId: number | null }
@@ -56,7 +57,8 @@ export function confirmImport(
       preview.sourceDate, sanitizeFileName(preview.originalFileName), preview.fileSizeBytes, preview.fileSha256,
       preview.canonicalFingerprint, preview.contractVersion, preview.dictionaryVersion, preview.alarmSourceStatus,
       active?.batch_id ?? null, preview.machineRows.length, preview.environmentRows.length, preview.alarmRows.length,
-      preview.qualityIssueRows.length, 0, preview.issues.filter((issue) => issue.severity === "WARNING").length, nowMs, nowMs,
+      preview.qualityIssueRows.length, preview.issues.filter((issue)=>issue.severity==="ERROR").length,
+      preview.issues.filter((issue) => issue.severity !== "ERROR").length, nowMs, nowMs,
     );
     const batchId = Number(batchResult.lastInsertRowid);
     if (options.injectFailureAfter === "batch") throw new Error("INJECTED_IMPORT_FAILURE");
@@ -67,7 +69,7 @@ export function confirmImport(
     const insertIssue = db.prepare(`INSERT INTO validation_issues(
       batch_id,rule_code,quality_rule_version,severity,sheet_name,source_row_number,column_name,metric_scope,message_safe,created_at_ms
     ) VALUES(?,?,?,?,?,?,?,?,?,?)`);
-    for (const issue of preview.issues) insertIssue.run(batchId,issue.ruleCode,"jiyin-quality-v1",issue.severity,
+    for (const issue of preview.issues) insertIssue.run(batchId,issue.ruleCode,CURRENT_QUALITY_RULE_VERSION,issue.severity,
       issue.sheetName??null,issue.sourceRowNumber??null,issue.columnName??null,issue.metricScope??null,issue.messageSafe,nowMs);
     if (options.injectFailureAfter === "metadata") throw new Error("INJECTED_IMPORT_FAILURE");
 
@@ -145,7 +147,7 @@ export function activateImportBatch(db: AppDatabase, targetBatchId: number, expe
 
 export function listImportBatches(db: AppDatabase) {
   return db.prepare(`SELECT batch_id,source_date,original_file_name,status,alarm_source_status,
-    machine_row_count,environment_row_count,alarm_row_count,quality_issue_row_count,created_at_ms
+    machine_row_count,environment_row_count,alarm_row_count,quality_issue_row_count,error_count,warning_count,created_at_ms
     FROM import_batches ORDER BY source_date DESC,created_at_ms DESC`).all();
 }
 

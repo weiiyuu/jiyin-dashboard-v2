@@ -1,7 +1,8 @@
 # 資料契約與計算語意
 
-> 狀態：Stage 2 設計草案  
-> 契約代號：jiyin-v1-draft  
+> 狀態：Stage 2 核准契約；含 Stage 5.2 nullable／品質資格限縮修訂
+>
+> 契約代號：jiyin-v1-draft（品質規則 `jiyin-quality-v2`）
 > 時區：Asia/Taipei  
 > 本文件是 schema、匯入、統計、API response 與測試的共同依據。
 
@@ -162,7 +163,7 @@ Demo fixture 必須提供 dataDate、demoClockAt、timezone=Asia/Taipei、source
 | 17 | 未開機小時 | NUM | 是 | 上游 None/3600 |
 | 18 | 區間加工比例 | NUM | 是 | Green/四態合計；資格不足或分母 0 為空 |
 | 19 | 開機加工比例 | NUM | 是 | Green/(Red+Yellow+Green)；分母 0 為空 |
-| 20 | 品質狀態 | TEXT | 否 | 上游品質結論；不可丟棄 |
+| 20 | 品質狀態 | TEXT | 是 | 上游品質結論；缺值保留 NULL 並產生 `SOURCE_QUALITY_MISSING`，不可默認正常 |
 | 21 | 品質備註 | TEXT | 是 | NaN 轉 0 欄位、完成原值與警告 |
 
 NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token 存 source_exception_json，不能套「部分 NaN 轉 0」。負值同樣原值保留但該指標不合格。
@@ -184,7 +185,7 @@ NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token �
 | 11 | 最小 | NUM | 是 | 上游 MIN |
 | 12 | 參考門檻 | NUM | 是 | 26°C/40%RH 僅待確認參考 |
 | 13 | 最大值判斷 | TEXT | 是 | 上游依參考門檻產生的判斷 |
-| 14 | 品質狀態 | TEXT | 否 | 上游品質結論 |
+| 14 | 品質狀態 | TEXT | 是 | 上游品質結論；缺值保留 NULL，各環境指標均不因此偽裝合格 |
 | 15 | 備註 | TEXT | 是 | 門檻未正式確認等註記 |
 
 ### 3.3 alarm_events（11 欄）
@@ -192,12 +193,12 @@ NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token �
 | # | 真實欄名 | 契約型別 | 可空 | 來源與業務意義 |
 |---:|---|---|---|---|
 | 1 | 事件時間 | DT | 否 | 原始事件時間，不強制對齊三分鐘 |
-| 2 | 感測器 | TEXT | 否 | 原始顯示名 |
+| 2 | 感測器 | TEXT | 是 | 原始顯示名；缺值時以 Sensor ID 作 UI 代稱，不回寫來源名 |
 | 3 | 感測器ID | TEXT | 否 | 原始 Sensor ID |
-| 4 | 類型 | TEXT | 否 | 樣本為 analog |
+| 4 | 類型 | TEXT | 是 | 原始類型；缺值保留 NULL |
 | 5 | 群組 | TEXT | 是 | 原文保留，可能含分號 |
-| 6 | 規則名稱 | TEXT | 否 | 原始規則名 |
-| 7 | 規則條件 | TEXT | 否 | 原始規則條件 |
+| 6 | 規則名稱 | TEXT | 是 | 原始規則名；缺值保留 NULL，不以推導顯示名冒充來源 |
+| 7 | 規則條件 | TEXT | 是 | 原始規則條件；缺值保留 NULL，不推測門檻 |
 | 8 | 當前值 | NUM/TEXT | 是 | 保存原文及可選 numeric parse |
 | 9 | 持續時間原文 | TEXT | 是 | 不自行換算精確秒；樣本有 1 筆缺漏 |
 | 10 | 初步事件分類 | TEXT | 是 | 初步註記，不是真實故障根因 |
@@ -282,6 +283,8 @@ NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token �
 - transition_eligible：六態有效、區間時間有效、與相鄰列恰好連續三分鐘。
 - environment_stat_eligible：該統計值本身為有限數，且沒有針對該值的不可信品質錯誤。
 
+Stage 5.2 限縮：若來源 `品質備註` 或同批 `quality_issues` 以可追溯文字明確標示某機台／時段的六態或秒數「嚴重／極度／極少」不完整，該列仍保存原始秒數，但 `green_hours_eligible`、`six_state_share_eligible`、`transition_eligible` 一律為 0，issue code 為 `STATE_SEVERE_INCOMPLETE`。不以自行發明的通用數值閾值擴張此規則；一般 179–181 外的輕微超差仍依原規則保留有效 Green。
+
 六態占比的期間演算法：
 
 1. 只取 six_state_share_eligible rows。
@@ -300,6 +303,7 @@ NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token �
 | 未知字典版本但必要規則語意相容 | 允許＋警告 | 依列 | 依列 | 依列 | 依列 | 版本差異 |
 | 必要規則語意改變 | 阻止 confirm，待審核 | — | — | — | — | REVIEW_REQUIRED |
 | 單列 Green 有效但 180±1 超差 | 允許＋警告 | 納入 | 排除 | 排除 | 不影響 | 顯示超差數 |
+| 來源明確標示六態／秒數嚴重不完整 | 允許＋SEVERE 品質提示 | 排除但保存原值 | 排除 | 排除 | 不影響 | 與設備 Alarm 分開 |
 | Blue/White 非零且六態完整 179–181 | 允許＋警告 | 納入 | 納入六態 | 可依純態規則判斷 | 不影響 | 顯示非標準狀態 |
 | 某狀態缺值/Await/非數字 | 允許＋警告 | Green 有效則納入 | 排除 | 排除 | 不影響 | 保留 token |
 | 六態全缺 | 允許＋警告 | 排除 | 排除 | 排除 | 不影響 | 不補 0 |
@@ -314,7 +318,7 @@ NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token �
 
 ### 6.1 品質規則版本
 
-每個歷史 interval 的 eligibility 與 issue codes 都帶 quality_rule_version。查詢只接受等於 CURRENT_QUALITY_RULE_VERSION 的旗標；版本不符時排除該列並顯示 QUALITY_RULE_VERSION_MISMATCH，不沿用舊判定。未來升級規則時以來源欄位與 exception token 重新計算，按 import batch 交易式切換版本；來源值、來源品質文字與檔案指紋不改變。本版不需要重算 UI。
+每個歷史 interval 的 eligibility 與 issue codes 都帶 quality_rule_version。Stage 5.2 的 current version 是 `jiyin-quality-v2`。查詢只接受等於 CURRENT_QUALITY_RULE_VERSION 的旗標；版本不符時排除該列並顯示 QUALITY_RULE_VERSION_MISMATCH，不沿用舊判定。v1→v2 由 migration 以來源品質備註與 `quality_issues` 交易式重算，來源值、來源品質文字與檔案指紋不改變。
 
 ## 7. 完成與狀態區間
 
@@ -332,7 +336,7 @@ NUM 欄若出現 Await、空白或非數字：typed value 為 NULL，原 token �
 
 ## 8. Alarm 與環境門檻
 
-- Alarm 事件保留規則名、條件、當前值、時間、持續時間原文、分類與狀態。
+- Alarm 事件保留規則名、條件、當前值、時間、持續時間原文、分類與狀態；除事件時間與 Sensor ID 外的缺值可保存為 NULL。
 - 「列印完成」警報不等於故障；初步分類不是真實根因。
 - 26°C / 40%RH 是待企業確認參考門檻。UI 可說「超過參考值」，不可說「不合格」。
 - Alarm source status 為 PROVIDED_NONEMPTY、PROVIDED_EMPTY、MISSING 或 UNKNOWN；只有前兩者可判讀事件數。

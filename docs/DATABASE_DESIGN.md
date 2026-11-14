@@ -1,6 +1,6 @@
 # SQLite 實體設計
 
-> 狀態：Stage 2 DDL 草案，不執行 migration、不建立資料庫。  
+> 狀態：Stage 2 核准設計；Stage 5.2 已加入 schema migration v2。
 > 資料庫：單一 SQLite 檔案；history 與 live 分表。  
 > 詳細語意以 [DATA_CONTRACT.md](./DATA_CONTRACT.md) 為準。
 
@@ -299,7 +299,7 @@ CREATE TABLE validation_issues (
   rule_code TEXT NOT NULL,
   quality_rule_version TEXT NOT NULL,
   severity TEXT NOT NULL
-    CHECK (severity IN ('ERROR','WARNING','INFO')),
+    CHECK (severity IN ('ERROR','SEVERE','WARNING','INFO')),
   sheet_name TEXT,
   source_row_number INTEGER,
   column_name TEXT,
@@ -346,7 +346,7 @@ CREATE TABLE history_machine_intervals (
   source_none_hours REAL,                            -- 未開機小時
   source_interval_processing_ratio REAL,             -- 區間加工比例
   source_powered_processing_ratio REAL,              -- 開機加工比例
-  source_quality_status TEXT NOT NULL,               -- 品質狀態
+  source_quality_status TEXT,                        -- 品質狀態；來源缺失保留 NULL
   source_quality_note TEXT,                          -- 品質備註
 
   source_exception_json TEXT
@@ -397,7 +397,7 @@ CREATE TABLE history_environment_intervals (
   minimum_value REAL,                                -- 最小
   reference_threshold REAL,                          -- 參考門檻
   source_max_judgement TEXT,                         -- 最大值判斷
-  source_quality_status TEXT NOT NULL,               -- 品質狀態
+  source_quality_status TEXT,                        -- 品質狀態；來源缺失保留 NULL
   source_note TEXT,                                  -- 備註
 
   source_exception_json TEXT
@@ -433,12 +433,12 @@ CREATE TABLE history_alarm_events (
 
   event_time_text TEXT NOT NULL,                     -- 事件時間
   event_at_ms INTEGER NOT NULL,
-  sensor_name TEXT NOT NULL,                         -- 感測器
+  sensor_name TEXT,                                  -- 感測器；可 NULL
   sensor_id TEXT NOT NULL,                           -- 感測器ID
-  sensor_type TEXT NOT NULL,                         -- 類型
+  sensor_type TEXT,                                  -- 類型；可 NULL
   group_text TEXT,                                   -- 群組
-  rule_name TEXT NOT NULL,                           -- 規則名稱
-  rule_condition_text TEXT NOT NULL,                 -- 規則條件
+  rule_name TEXT,                                    -- 規則名稱；可 NULL
+  rule_condition_text TEXT,                          -- 規則條件；可 NULL
   current_value_text TEXT,                           -- 當前值（原文）
   current_value_numeric REAL,                        -- 當前值（可解析時）
   duration_original TEXT,                            -- 持續時間原文
@@ -617,6 +617,13 @@ Stage 3 要用 EXPLAIN QUERY PLAN 驗證：
 - 完全重複 0 新 rows；replacement 只改 active 指標；故意中途失敗時舊 active 不變。
 - rollback 不複製或刪除 rows，event audit 可重建版本切換順序。
 - Demo 操作不增加 poll、reading 或 history rows。
+
+### 10.1 Stage 5.2 migration v2
+
+- 在同一 SQLite transaction 內重建 `history_machine_intervals`、`history_environment_intervals`、`history_alarm_events` 與 `validation_issues`，放寬的只有已核准可空來源欄位與 `SEVERE` 品質層級。
+- 既有空字串來源品質／Alarm 描述轉為 SQL NULL；事件時間、Sensor ID、來源鍵、外鍵及唯一鍵不放寬。
+- 依來源品質備註或同批 `history_quality_issues` 的明確嚴重不完整訊號，把受影響列切到 `jiyin-quality-v2` 並限縮 Green／六態／transition eligibility；其餘列只升級規則版本，不改來源數值。
+- migration 保留 batch ID、ACTIVE/REPLACED、版本事件、row ID、索引與檔案指紋。非空 v1 fixture 必須通過 `foreign_key_check`、`integrity_check`，失敗時由 migration transaction 完整 rollback。
 
 ## 11. 相關文件
 

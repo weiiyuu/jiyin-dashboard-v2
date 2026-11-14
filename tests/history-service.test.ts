@@ -88,6 +88,15 @@ describe("active historical query integration",()=>{
     expect(result.pagination).toEqual({page:1,pageSize:50,total:1});
   });
 
+  it("keeps nullable Alarm descriptions nullable while retaining the event by sensor ID",()=>{
+    const db=setup(),sheets=standardizedWorkbook("2025-06-03");
+    sheets[2].data.push(["2025-06-03 00:43:23",null,"sensor-null",null,null,null,null,null,null,null,null]);
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
+    confirmImport(db,parseWorkbookSheets(sheets,Buffer.from("nullable-alarm-query")),{nowMs:1});
+    const result=getHistoryEvents(db,{startDate:"2025-06-03",endDate:"2025-06-03",machineIds:["A1"],page:1,pageSize:50});
+    expect(result.items[0]).toMatchObject({sensorId:"sensor-null",sensorName:null,sensorType:null,ruleName:null,ruleCondition:null,currentValue:null,durationOriginal:null});
+  });
+
   it("does not turn a missing Alarm source into a zero-event claim",()=>{
     const db=setup(),sheets=standardizedWorkbook("2025-06-03");
     sheets[5].data.find((row)=>row[0]==="Alarm來源狀態")![1]="未提供";

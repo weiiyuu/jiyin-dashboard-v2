@@ -4,6 +4,7 @@ import { apiError, ok, reportUnexpectedError, requestId } from "@/server/http/ap
 import { assertLocalMutation, IMPORT_UPLOAD_LIMITS, importErrorResponse, isKnownImportError, validateXlsxFile } from "@/server/http/local-mutation";
 import { inspectImportDecision } from "@/server/import/import-repository";
 import { previewWorkbook } from "@/server/import/workbook-parser";
+import { buildImportQualitySummary } from "@/server/import/quality-summary";
 
 export const runtime = "nodejs";
 
@@ -26,14 +27,16 @@ export async function POST(request: Request) {
           validateXlsxFile(file);
           const preview=await previewWorkbook(Buffer.from(await file.arrayBuffer()),file.name);
           const decision=preview.canConfirm?inspectImportDecision(db,preview):{decision:"INVALID",activeBatchId:null,duplicateBatchId:null};
+          const qualitySummary=buildImportQualitySummary(preview);
           results.push({clientFileId,fileName:preview.originalFileName,sha256:preview.fileSha256,canonicalFingerprint:preview.canonicalFingerprint,sourceDate:preview.sourceDate,...decision,
             counts:{machine:preview.machineRows.length,environment:preview.environmentRows.length,alarm:preview.alarmRows.length,qualityIssues:preview.qualityIssueRows.length},alarmSourceStatus:preview.alarmSourceStatus,
-            errors:preview.issues.filter((issue)=>issue.severity==="ERROR"),warnings:preview.issues.filter((issue)=>issue.severity==="WARNING")});
+            acceptance:qualitySummary.acceptance,qualitySummary,
+            errors:preview.issues.filter((issue)=>issue.severity==="ERROR"),warnings:preview.issues.filter((issue)=>issue.severity!=="ERROR")});
         }catch(error){
           if(!isKnownImportError(error))throw error;
           const safe=importErrorResponse(error),bytes=Buffer.from(await file.arrayBuffer());
           results.push({clientFileId,fileName:file.name,sha256:createHash("sha256").update(bytes).digest("hex"),canonicalFingerprint:"",sourceDate:"",decision:"INVALID",activeBatchId:null,duplicateBatchId:null,
-            counts:{machine:0,environment:0,alarm:0,qualityIssues:0},alarmSourceStatus:"UNKNOWN",errors:[{ruleCode:safe.code,severity:"ERROR",messageSafe:safe.message}],warnings:[]});
+            counts:{machine:0,environment:0,alarm:0,qualityIssues:0},alarmSourceStatus:"UNKNOWN",acceptance:"INVALID",qualitySummary:null,errors:[{ruleCode:safe.code,severity:"ERROR",messageSafe:safe.message}],warnings:[]});
         }
       }
       return ok({files:results},id);

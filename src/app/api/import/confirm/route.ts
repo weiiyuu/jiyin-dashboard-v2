@@ -3,6 +3,7 @@ import { apiError, ok, reportUnexpectedError, requestId } from "@/server/http/ap
 import { assertLocalMutation, importErrorResponse, validateXlsxFile } from "@/server/http/local-mutation";
 import { confirmImport } from "@/server/import/import-repository";
 import { previewWorkbook } from "@/server/import/workbook-parser";
+import { buildImportQualitySummary } from "@/server/import/quality-summary";
 
 export const runtime = "nodejs";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     try {
       const result = confirmImport(db, preview, { replace: action === "REPLACE", expectedActiveBatchId });
       const status = result.outcome === "CONFLICT" ? 409 : 200;
-      return ok({result:result.outcome,...result,sourceDate:preview.sourceDate,counts:{machine:preview.machineRows.length,environment:preview.environmentRows.length,alarm:preview.alarmRows.length,qualityIssues:preview.qualityIssueRows.length}}, id, { status });
+      return ok({result:result.outcome,...result,sourceDate:preview.sourceDate,counts:{machine:preview.machineRows.length,environment:preview.environmentRows.length,alarm:preview.alarmRows.length,qualityIssues:preview.qualityIssueRows.length},qualitySummary:buildImportQualitySummary(preview)}, id, { status });
     } finally { db.close(); }
   } catch (error) {
     const safe=importErrorResponse(error);if(safe.status===500)reportUnexpectedError(id,"import-confirm",error);return apiError(id,safe.status,safe.code,safe.message);
