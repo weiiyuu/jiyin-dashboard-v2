@@ -1,6 +1,6 @@
 import { XLSX_LIMITS } from "@/server/import/xlsx-preflight";
 
-export const IMPORT_UPLOAD_LIMITS={maxFilesPerPreview:10,maxTotalPreviewBytes:50*1024*1024,maxJsonBytes:4096} as const;
+export const IMPORT_UPLOAD_LIMITS={maxFilesPerPreview:8,maxTotalPreviewBytes:50*1024*1024,maxJsonBytes:4096} as const;
 
 const LOCAL_HOSTS=new Set(["localhost","127.0.0.1","[::1]"]);
 const INTERNAL_BIND_HOSTS=new Set([...LOCAL_HOSTS,"0.0.0.0"]);
@@ -36,6 +36,7 @@ const ERRORS:Record<string,SafeError>={
   XLSX_CELL_COUNT_LIMIT:{status:413,code:"XLSX_CELL_COUNT_LIMIT",message:"工作表儲存格數量超過限制"},
   XLSX_UNSAFE_CONTENT:{status:422,code:"XLSX_UNSAFE_CONTENT",message:"檔案含不允許的外部內容或巨集"},
   XLSX_FORMULA_NOT_ALLOWED:{status:422,code:"XLSX_FORMULA_NOT_ALLOWED",message:"標準化匯入檔不可包含公式"},
+  XLSX_PARSE_FAILED:{status:422,code:"XLSX_PARSE_FAILED",message:"無法讀取 Excel 工作簿結構"},
   IMPORT_VALIDATION_FAILED:{status:422,code:"IMPORT_VALIDATION_FAILED",message:"檔案未通過資料契約驗證"},
   ACTIVE_VERSION_CHANGED:{status:409,code:"ACTIVE_VERSION_CHANGED",message:"目前啟用版本已變更，請重新預覽"},
   ALARM_REPLACEMENT_REGRESSION:{status:409,code:"ALARM_REPLACEMENT_REGRESSION",message:"修正版缺少原版本已有的 Alarm 來源"},
@@ -46,4 +47,8 @@ const ERRORS:Record<string,SafeError>={
 export function importErrorResponse(error:unknown):SafeError{
   const code=error instanceof Error?error.message:"";
   return ERRORS[code]??{status:500,code:"IMPORT_INTERNAL_ERROR",message:"匯入處理失敗，請使用 request ID 查詢紀錄"};
+}
+
+export function isKnownImportError(error:unknown):boolean{
+  return error instanceof Error&&Object.hasOwn(ERRORS,error.message);
 }

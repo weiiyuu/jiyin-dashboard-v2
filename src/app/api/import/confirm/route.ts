@@ -1,5 +1,5 @@
 import { openAppDatabase } from "@/server/db/app-database";
-import { apiError, ok, requestId } from "@/server/http/api";
+import { apiError, ok, reportUnexpectedError, requestId } from "@/server/http/api";
 import { assertLocalMutation, importErrorResponse, validateXlsxFile } from "@/server/http/local-mutation";
 import { confirmImport } from "@/server/import/import-repository";
 import { previewWorkbook } from "@/server/import/workbook-parser";
@@ -28,6 +28,6 @@ export async function POST(request: Request) {
       return ok({result:result.outcome,...result,sourceDate:preview.sourceDate,counts:{machine:preview.machineRows.length,environment:preview.environmentRows.length,alarm:preview.alarmRows.length,qualityIssues:preview.qualityIssueRows.length}}, id, { status });
     } finally { db.close(); }
   } catch (error) {
-    const safe=importErrorResponse(error);return apiError(id,safe.status,safe.code,safe.message);
+    const safe=importErrorResponse(error);if(safe.status===500)reportUnexpectedError(id,"import-confirm",error);return apiError(id,safe.status,safe.code,safe.message);
   }
 }

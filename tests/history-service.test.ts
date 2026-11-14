@@ -43,8 +43,20 @@ describe("active historical query integration",()=>{
       expect.objectContaining({machineId:"A2",greenHours:null,availability:"MISSING_DATA"}),
     ]);
     expect(result.trend.at(-1)).toMatchObject({greenHours:0.025,availability:"AVAILABLE"});
+    expect(result.seriesByMachine).toEqual([
+      expect.objectContaining({machineId:"A1",points:expect.arrayContaining([expect.objectContaining({greenHours:0.025,availability:"AVAILABLE"})])}),
+      expect.objectContaining({machineId:"A2",points:expect.arrayContaining([expect.objectContaining({greenHours:null,availability:"MISSING_DATA"})])}),
+    ]);
+    expect(result.stateShareByMachine.map((item)=>item.machineId)).toEqual(["A1","A2"]);
     expect(result.stateShare.denominatorSeconds).toBe(0);
     expect(result.coverage).toMatchObject({requestedDays:1,daysWithActiveBatch:1,expectedIntervals:960,importedIntervals:1,greenEligibleIntervals:1,sixStateEligibleIntervals:0,excludedByRule:{VALUE_NON_NUMERIC:1}});
+  });
+
+  it("keeps per-machine all-zero trends available while six-state shares retain backend denominators",()=>{
+    const db=setup();importDay(db,"2025-06-06",0,"zero-a1");
+    const result=getProcessingRange(db,{startDate:"2025-06-06",endDate:"2025-06-06",bucketMinutes:60,machineIds:["A1"]});
+    expect(result.seriesByMachine[0].points.at(-1)).toMatchObject({greenHours:0,availability:"AVAILABLE"});
+    expect(result.stateShareByMachine[0]).toMatchObject({machineId:"A1",share:{denominatorSeconds:0,availability:"MISSING_DATA"}});
   });
 
   it("aligns independent month periods and marks impossible dates NOT_APPLICABLE",()=>{
@@ -72,7 +84,7 @@ describe("active historical query integration",()=>{
       {sourceDate:"2025-06-01",sourceStatus:"PROVIDED_EMPTY",rowCount:0},
       {sourceDate:"2025-06-02",sourceStatus:"PROVIDED_NONEMPTY",rowCount:1},
     ]);
-    expect(result.items[0]).toMatchObject({kind:"ENVIRONMENT_ALARM",sensorId:"sensor-1",currentValue:41,durationOriginal:null});
+    expect(result.items[0]).toMatchObject({kind:"ENVIRONMENT_ALARM",alarmEventId:expect.any(Number),sourceRowNumber:2,sensorId:"sensor-1",currentValue:41,durationOriginal:null});
     expect(result.pagination).toEqual({page:1,pageSize:50,total:1});
   });
 

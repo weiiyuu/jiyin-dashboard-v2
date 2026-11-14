@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CoverageStrip, StateShareChart, buildLineSegments } from "@/components/history-widgets";
+import { CoverageStrip, StateShareChart, TrendChart, buildLineSegments } from "@/components/history-widgets";
 import { alarmSourceLabel, formatHours } from "@/features/history/history-ui-model";
 import { confirmPlan, removeSelectedUpload } from "@/features/imports/import-ui-model";
 
@@ -32,5 +32,13 @@ describe("Stage 5 UI truth-preserving view models",()=>{
     expect(coverage).toContain("960");expect(coverage).toContain("1 / 1");
     const share=renderToStaticMarkup(<StateShareChart value={{denominatorSeconds:180,availability:"AVAILABLE",seconds:{green:90,red:90},percent:{none:0,red:.5,yellow:0,green:.5,blue:0,white:0}}}/>);
     expect(share).toContain("50.0%");
+  });
+
+  it("renders formal chart axes, machine legend and valid all-zero tooltips",()=>{
+    const chart=renderToStaticMarkup(<TrendChart labels={["00:00-01:00","01:00-02:00"]} series={[{key:"A1",label:"A1",color:"#62d49a",values:[0,0]},{key:"B2",label:"B2",color:"#ef777b",values:[null,1]}]}/>);
+    expect(chart).toContain("Green 工時（小時）");
+    expect(chart).toContain("時間");
+    expect(chart).toContain("A1");
+    expect(chart).toContain("00:00-01:00：0.000 小時");
   });
 });

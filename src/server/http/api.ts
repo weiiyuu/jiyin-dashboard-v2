@@ -12,3 +12,8 @@ export function apiError(id: string, status: number, code: string, message: stri
   const body: ApiErrorResponse = { error: { code, message, requestId: id } };
   return NextResponse.json(body, { status });
 }
+
+export function reportUnexpectedError(id:string,scope:string,error:unknown):void{
+  const detail=error instanceof Error?{name:error.name,message:error.message,stack:error.stack}:String(error);
+  console.error(`[${scope}] request failed`,{requestId:id,detail});
+}
