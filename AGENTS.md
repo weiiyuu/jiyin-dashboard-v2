@@ -2,6 +2,9 @@
 
 - This repository root is the only writable product workspace. Never modify the legacy project, `test_api`, or `_reference_inputs`.
 - The design truth is `docs/DATA_CONTRACT.md`, `docs/DATABASE_DESIGN.md`, `docs/ARCHITECTURE.md`, `docs/FEATURE_SPEC.md`, then `docs/IMPLEMENTATION_PLAN.md`.
+- Before changing UI layout, tables, charts, or shared visual components, read `docs/UI_LAYOUT_AND_ACCEPTANCE_GUIDELINES.md`.
+- An approved page-specific design and acceptance criteria take priority over the shared UI guidelines; apply the shared rules only where they fit.
+- UI guideline work does not authorize backend contract changes or broad refactors of existing pages.
 - Never commit enterprise Excel/JSON, credentials, environment files, databases, logs, or private replay data.
 - Do not call enterprise APIs in tests. Use synthetic fixtures and temporary databases.
 - Before a local commit run the relevant tests plus `npm run typecheck`, `npm run lint`, and `npm run build`.
