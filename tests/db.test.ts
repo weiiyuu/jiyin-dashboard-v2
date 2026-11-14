@@ -116,6 +116,21 @@ describe("SQLite schema and migrations", () => {
 });
 
 describe("repository concurrency rules", () => {
+  it("never persists readings in DEMO mode", () => {
+    const db = setup();
+    const pollRunId=createPollRun(db,{batchTimeText:"demo",batchTimeMs:1,sampleSlotMs:1,scheduledForMs:1,startedAtMs:1,providerMode:"DEMO",modeRevision:0,withinServiceWindow:true,triggerType:"SCHEDULED"});
+    expect(persistSuccessfulValues(db,{pollRunId,providerModeAtStart:"DEMO",modeRevisionAtStart:0,finishedAtMs:2,readings:[{sensorId:"s1",sensorUpdateAtMs:1,fetchedAtMs:1,rawValues:{value:"1"}}]})).toBe("DISCARDED_MODE_CHANGED");
+    expect(db.prepare("SELECT COUNT(*) count FROM live_sensor_readings").get()).toEqual({count:0});
+  });
+
+  it("does not declare collection success when no reading was saved", () => {
+    const db=setup();
+    switchProviderMode(db,"LIVE",0,1);
+    const pollRunId=createPollRun(db,{batchTimeText:"live",batchTimeMs:1,sampleSlotMs:1,scheduledForMs:1,startedAtMs:1,providerMode:"LIVE",modeRevision:1,withinServiceWindow:true,triggerType:"SCHEDULED"});
+    expect(persistSuccessfulValues(db,{pollRunId,providerModeAtStart:"LIVE",modeRevisionAtStart:1,finishedAtMs:2,readings:[]})).toBe("FAILED_NO_READINGS");
+    expect(db.prepare("SELECT status,persisted_reading_count FROM api_poll_runs WHERE poll_run_id=?").get(pollRunId)).toEqual({status:"FAILED",persisted_reading_count:0});
+  });
+
   it("uses compare-before-write to discard a collection after mode revision changes", () => {
     const db = setup();
     const start = getSettings(db);

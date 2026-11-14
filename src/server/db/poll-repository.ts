@@ -36,12 +36,13 @@ export interface ReadingInput {
 export function persistSuccessfulValues(
   db: AppDatabase,
   input: { pollRunId: number; providerModeAtStart: "LIVE" | "DEMO"; modeRevisionAtStart: number; finishedAtMs: number; readings: ReadingInput[] },
-): "SUCCESS" | "DISCARDED_MODE_CHANGED" {
+): "SUCCESS" | "DISCARDED_MODE_CHANGED" | "FAILED_NO_READINGS" {
   return transaction(db, () => {
     const settings = db.prepare("SELECT provider_mode, mode_revision FROM app_settings WHERE singleton_id=1").get() as {
       provider_mode: string; mode_revision: number;
     };
-    if (settings.provider_mode !== input.providerModeAtStart || settings.mode_revision !== input.modeRevisionAtStart) {
+    if (input.providerModeAtStart !== "LIVE" || settings.provider_mode !== "LIVE"
+      || settings.provider_mode !== input.providerModeAtStart || settings.mode_revision !== input.modeRevisionAtStart) {
       db.prepare(`UPDATE api_poll_runs SET status='DISCARDED_MODE_CHANGED', finished_at_ms=?, persisted_reading_count=0
         WHERE poll_run_id=? AND status='RUNNING'`).run(input.finishedAtMs, input.pollRunId);
       return "DISCARDED_MODE_CHANGED";
@@ -49,6 +50,11 @@ export function persistSuccessfulValues(
     const poll = db.prepare("SELECT trigger_type FROM api_poll_runs WHERE poll_run_id=? AND status='RUNNING'").get(input.pollRunId) as { trigger_type: string } | undefined;
     if (!poll) throw new Error("Poll is not running");
     if (poll.trigger_type === "MANUAL_TEST") throw new Error("MANUAL_TEST cannot persist readings");
+    if (input.readings.length === 0) {
+      db.prepare(`UPDATE api_poll_runs SET status='FAILED', finished_at_ms=?, persisted_reading_count=0,
+        error_summary='NO_READINGS_PERSISTED' WHERE poll_run_id=?`).run(input.finishedAtMs, input.pollRunId);
+      return "FAILED_NO_READINGS";
+    }
     const insertReading = db.prepare(`INSERT INTO live_sensor_readings(
       poll_run_id,sensor_id,sensor_update_at_ms,fetched_at_ms,raw_values_json,numeric_value,parse_status,mapping_status
     ) VALUES(?,?,?,?,?,?,?,?)`);

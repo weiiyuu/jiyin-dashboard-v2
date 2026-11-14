@@ -17,6 +17,7 @@ export interface StatisticInterval {
   sixStateShareEligible: boolean;
   transitionEligible: boolean;
   qualityRuleVersion: string;
+  issueCodes?: string[];
 }
 
 export interface MetricCoverage {
@@ -55,7 +56,7 @@ export function buildCoverage(
 export function calculateStateHours(rows: StatisticInterval[], state: "red" | "yellow", currentRuleVersion: string) {
   let seconds=0; let eligibleIntervals=0;
   for(const row of rows){const value=row[`${state}Seconds`];if(isCurrent(row,currentRuleVersion)&&value!==null&&value>=0){seconds+=value;eligibleIntervals+=1;}}
-  return {seconds,hours:seconds/3600,eligibleIntervals};
+  return {seconds:eligibleIntervals?seconds:null,hours:eligibleIntervals?seconds/3600:null,eligibleIntervals,availability:eligibleIntervals?"AVAILABLE" as const:"MISSING_DATA" as const};
 }
 
 function isCurrent(row: StatisticInterval, currentRuleVersion: string) {
@@ -70,15 +71,17 @@ export function calculateGreenHours(rows: StatisticInterval[], currentRuleVersio
     if (!isCurrent(row, currentRuleVersion)) {
       excludedByReason.QUALITY_RULE_VERSION_MISMATCH = (excludedByReason.QUALITY_RULE_VERSION_MISMATCH ?? 0) + 1;
     } else if (!row.greenHoursEligible || row.greenSeconds === null || row.greenSeconds < 0) {
-      excludedByReason.GREEN_INELIGIBLE = (excludedByReason.GREEN_INELIGIBLE ?? 0) + 1;
+      const reasons=(row.issueCodes??[]).filter((code)=>["VALUE_NON_NUMERIC","VALUE_NEGATIVE","QUALITY_STATUS_UNKNOWN"].includes(code));
+      for(const code of reasons.length?reasons:["GREEN_INELIGIBLE"])excludedByReason[code]=(excludedByReason[code]??0)+1;
     } else {
       seconds += row.greenSeconds;
       eligible += 1;
     }
   }
   return {
-    seconds,
-    hours: seconds / 3600,
+    seconds: eligible ? seconds : null,
+    hours: eligible ? seconds / 3600 : null,
+    availability: eligible ? "AVAILABLE" as const : "MISSING_DATA" as const,
     coverage: { expectedIntervals: expected, importedIntervals: rows.length, metricEligibleIntervals: eligible, excludedByReason } satisfies MetricCoverage,
   };
 }
@@ -94,7 +97,8 @@ export function calculateSixStateShare(rows: StatisticInterval[], currentRuleVer
     }
     const values = HISTORICAL_STATES.map((state) => row[`${state}Seconds` as keyof StatisticInterval] as number | null);
     if (!row.sixStateShareEligible || values.some((value) => value === null || value < 0)) {
-      excludedByReason.SIX_STATE_INELIGIBLE = (excludedByReason.SIX_STATE_INELIGIBLE ?? 0) + 1;
+      const reasons=(row.issueCodes??[]).filter((code)=>["VALUE_NON_NUMERIC","VALUE_NEGATIVE","STATE_ALL_MISSING","STATE_TOTAL_OUT_OF_TOLERANCE","QUALITY_STATUS_UNKNOWN"].includes(code));
+      for(const code of reasons.length?reasons:["SIX_STATE_INELIGIBLE"])excludedByReason[code]=(excludedByReason[code]??0)+1;
       continue;
     }
     HISTORICAL_STATES.forEach((state, index) => { seconds[state] += values[index]!; });
@@ -132,7 +136,14 @@ export function bucketGreenSeconds(rows: StatisticInterval[], grain: 30 | 60 | "
     }
     buckets.set(key,bucket);
   }
-  return [...buckets.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([key,value])=>({key,...value,greenHours:value.greenSeconds/3600}));
+  return [...buckets.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([key,value])=>({
+    key,
+    greenSeconds:value.eligibleIntervals?value.greenSeconds:null,
+    greenHours:value.eligibleIntervals?value.greenSeconds/3600:null,
+    importedIntervals:value.importedIntervals,
+    eligibleIntervals:value.eligibleIntervals,
+    availability:value.eligibleIntervals?"AVAILABLE" as const:"MISSING_DATA" as const,
+  }));
 }
 
 export type Availability = "AVAILABLE" | "MISSING_DATA" | "NOT_APPLICABLE";

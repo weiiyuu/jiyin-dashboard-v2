@@ -34,7 +34,8 @@ describe("historical aggregate truth",()=>{
 
   it("excludes stale quality-rule flags with an explicit reason",()=>{
     const result=calculateGreenHours([row({qualityRuleVersion:"old"})],RULE,1);
-    expect(result.hours).toBe(0);
+    expect(result.hours).toBeNull();
+    expect(result.availability).toBe("MISSING_DATA");
     expect(result.coverage.excludedByReason).toEqual({QUALITY_RULE_VERSION_MISMATCH:1});
   });
 
@@ -50,6 +51,13 @@ describe("buckets, coverage, and comparison alignment",()=>{
     expect(bucketGreenSeconds(rows,30,RULE).map((b)=>b.key)).toEqual(["2025-06-01 10:00","2025-06-01 10:30"]);
     expect(bucketGreenSeconds(rows,60,RULE)).toMatchObject([{key:"2025-06-01 10:00",greenSeconds:270}]);
     expect(bucketGreenSeconds(rows,"DAY",RULE)).toMatchObject([{key:"2025-06-01",greenSeconds:270}]);
+  });
+
+  it("returns missing rather than zero when a bucket has no eligible Green value",()=>{
+    const missing=bucketGreenSeconds([row({greenSeconds:null,greenHoursEligible:false})],30,RULE);
+    expect(missing).toMatchObject([{greenSeconds:null,greenHours:null,availability:"MISSING_DATA",importedIntervals:1,eligibleIntervals:0}]);
+    const trueZero=bucketGreenSeconds([row({greenSeconds:0,greenHoursEligible:true})],30,RULE);
+    expect(trueZero).toMatchObject([{greenSeconds:0,greenHours:0,availability:"AVAILABLE",eligibleIntervals:1}]);
   });
 
   it("uses selected machine count for monthly expected intervals",()=>{
