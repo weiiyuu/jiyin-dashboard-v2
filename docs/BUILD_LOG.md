@@ -46,3 +46,12 @@
 - Commit: ab51351
 - Open issues: No full historical HTTP query routes or visualization pages were added; those belong to the next authorized UI/API slice.
 - Next: Review Stage 3 results, then authorize historical route handlers and the Stage 5 UI vertical slice if desired
+
+## Stage 3.1 — Corrective implementation and formal acceptance
+
+- Status: Complete
+- Main changes: Strengthened standardized Excel date/time/identity/dictionary/formula/quality validation while preserving source values; added preview duplicate/conflict/active-batch decisions and confirm/activate compare-and-swap checks; expanded replacement fault injection across every write/activation stage; enforced LIVE-only reading persistence and failed empty collections; made unavailable statistics nullable; added active-batch processing/event services and canonical history/import routes; added localhost same-origin checks, upload limits, fingerprint revalidation, and safe import error mapping.
+- Tests: Added regression tests before fixes, then passed `npm test` (55 tests across 9 files), including synthetic content mapping, 24:00, NULL/0/Await/negative values, semantic dictionary checks, all replacement transaction stages, active-version changes, LIVE/DEMO protection, active-only ranking/trend/state share/coverage, day/week/month comparison, Alarm source coverage and replaced-row exclusion. The optional local private workbook test also passed at 3840/3840/11/0 and now verifies a persisted source row plus an independently calculated active A1 Green total, not row counts alone. `npm run typecheck`, `npm run lint`, and `npm run build` passed.
+- Commit: 49cd0a7
+- Open issues: Enterprise Collector transport/schema behavior, complete Live Sensor integration, and production Docker deployment/operational validation remain intentionally assigned to Stages 6–8. They do not block Stage 5 historical/import UI work.
+- Next: Begin Stage 5 UI only after the user reviews `docs/STAGE3_1_ACCEPTANCE.md`.
