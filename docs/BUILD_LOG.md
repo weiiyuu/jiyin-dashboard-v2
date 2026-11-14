@@ -65,3 +65,15 @@
 - Commit: 4e2bfd9
 - Open issues: No blocking Stage 5 data or contract issue. A short human check of range/day/week/month chart presentation, conflict copy, rollback prompt, and Alarm-source messages is recommended on the target laptop. Stage 6 Collector, Stage 7 live pages, and later production deployment remain intentionally deferred.
 - Next: Stop for final Stage 5 review; do not begin Stage 6 without authorization.
+
+## Stage 5.1 — Concentrated corrections and formal acceptance
+
+- Status: Complete for repository/synthetic scope; original private 2025-06-03 workbook remains an explicit human recheck because it was not present locally.
+- Main changes: Converted missing required Excel values from uncaught exceptions into blocking per-file validation issues; isolated mixed multi-file Preview failures; documented/enforced 8-file, 25 MiB/file, 50 MiB/request, 100 MiB expanded, and 250,000-cell limits; added grouped import warnings, version overview/filter/pagination, formal per-machine SVG charts, per-machine/aggregate six-state views, comparison deltas, Chinese event modes/table/detail, unified lamp runs, legacy-style no-Sidebar home, and 20–24 px responsive spacing.
+- API compatibility: `/api/history/processing` retains aggregate `trend`/`stateShare` and adds `seriesByMachine`/`stateShareByMachine`. Alarm rows add source event/row identifiers for expandable detail. No statistical formula, denominator, quality meaning, schema, or write transaction was changed.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test -- --reporter=dot` (69 tests across 11 files), and `npm run build` with Webpack passed. Added failing-first HTTP 500 regression, mixed valid/invalid Preview, 1/2/4/8 Preview+Confirm, per-machine/all-zero history, formal-axis/Tooltip component checks, and Alarm detail fields. Existing migration, rollback, version consistency, 24:00, NULL/0, quality, and statistics tests remain green.
+- Browser: Real localhost production-build checks used only `/private/tmp` synthetic XLSX/SQLite. Passed 8/2/1-machine, valid zero, 30-minute/cross-day, day/week/month comparison, per-machine/aggregate six-state, alert source distinctions, zero-result pagination, lamp filters, 4-select/remove/3-preview/confirm, duplicate/invalid/conflict, replacement/rollback, 0/1/4/8 file-list layout, and 1280/1366/1440 no-overflow checks. Browser console showed no final warnings/errors.
+- Legacy UI migration: Continued selective use of Brand/Icon structure and burgundy/glass visual language. Home lobby composition was adapted from the read-only legacy landing page. No legacy API, SQLite, Excel, fake-data, or 3D code was copied.
+- Commit: `9c63234` (implementation); acceptance documentation follows in the local history.
+- Open issues: Re-run the unavailable original private 2025-06-03 workbook on the target laptop; optional typography taste check. Stage 6 Collector, Stage 7 live pages, enterprise API, deployment, and push remain out of scope.
+- Next: Stop after Stage 5.1 review. Do not begin Stage 6/7 without explicit authorization.
