@@ -89,3 +89,14 @@
 - Commit: `dca36b7` (implementation); acceptance documentation follows in local history.
 - Open issues: Exact original private five-day workbook verification remains unclaimed; row-level quarantine is intentionally unsupported and critical unidentifiable rows block their file; RSS samples are cumulative-process observations rather than isolated-process deltas; team-owned history/event visual design remains outside this stage.
 - Next: Stop after Stage 5.2 review. Do not start Stage 6/7 or push without explicit authorization.
+
+## Stage 5.2 — Excel import UI final correction
+
+- Status: Complete for repository, production build, public synthetic-data, and real-browser scopes.
+- Main changes: Replaced the two-column selection/rules cards with one full-width operation card and collapsed rules disclosure; converted Preview into a fixed batch summary plus one-row-per-file expandable list; bounded selected/Preview/detail scrolling; preserved all existing import, quality, replacement, and transaction semantics.
+- Version history: Added backward-compatible SQLite-side source-date/import-time sorting, date/filename filters, 10/20/50 pagination, total/page metadata, deterministic same-day version labels, and active-batch IDs for rollback. Removed global Batch ID from the primary table and retained it in expanded details.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test -- --reporter=dot` (79 passed, 1 opt-in performance test skipped), and `npm run build` with Webpack passed. New tests cover 21-row complete-result sorting/filtering/pagination and the paginated HTTP contract.
+- Browser: Production localhost QA used a disposable 21-version SQLite database and synthetic Excel only. 1366px no-Preview, five-file Preview, and post-Confirm screenshots were captured. All required adjacent section gaps measured exactly 24px. Eight-file mixed Preview used 360px selected-list and 460px result-list internal scrolling. Source-date/import-time sorting, date/filename queries, page 2, and 10/20/50 page sizes were operated successfully. 1280/1366/1440 had no page-level horizontal overflow.
+- Commit: `8bf40f5` (implementation); acceptance documentation follows in local history.
+- Safety: No enterprise file, database, credential, API call, push, deployment, Stage 6/7 work, or destructive operation occurred. User-reported real 2025-06-01–06-05 import success was not reproduced with private binaries in this run.
+- Next: Stop for final Excel UI review. Do not start another stage without explicit authorization.
