@@ -4,6 +4,8 @@ Date: 2026-11-14
 
 Branch: `dev`
 
+Implementation commit: `4e2bfd9`
+
 Scope: Stage 5 only; Stage 6 Collector and Stage 7 live monitoring remain deferred.
 
 ## Decision
