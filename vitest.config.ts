@@ -4,8 +4,11 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
     coverage: { reporter: ["text", "html"] },
   },
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  resolve: { alias: {
+    "@": fileURLToPath(new URL("./src", import.meta.url)),
+    "server-only": fileURLToPath(new URL("./tests/helpers/server-only.ts", import.meta.url)),
+  } },
 });

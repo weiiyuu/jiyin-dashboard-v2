@@ -1,0 +1,6 @@
+import type { ReactNode } from "react";
+export function Panel({title,subtitle,actions,children,className=""}:{title:string;subtitle?:string;actions?:ReactNode;children:ReactNode;className?:string}){return <section className={`panel ${className}`}><header className="panel-head"><div><h2 className="panel-title">{title}</h2>{subtitle&&<p className="panel-subtitle">{subtitle}</p>}</div>{actions}</header>{children}</section>;}
+export function EmptyState({icon="◇",title,description}:{icon?:string;title:string;description:string}){return <div className="empty-state"><div><div className="empty-icon" aria-hidden>{icon}</div><strong>{title}</strong><p>{description}</p></div></div>;}
+export function LoadingState({label="正在讀取本機資料…"}:{label?:string}){return <div className="loading" role="status"><div><div className="spinner"/><span>{label}</span></div></div>;}
+export function ErrorNotice({message,onRetry}:{message:string;onRetry?:()=>void}){return <div className="notice error" role="alert"><span>!</span><div><strong>資料讀取失敗</strong><div>{message}</div>{onRetry&&<button className="button ghost" onClick={onRetry}>重新嘗試</button>}</div></div>;}
+export function StatusChip({tone="info",children}:{tone?:"success"|"warning"|"error"|"info";children:ReactNode}){return <span className={`status-chip ${tone}`}>{children}</span>;}

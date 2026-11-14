@@ -3,9 +3,13 @@ import { XLSX_LIMITS } from "@/server/import/xlsx-preflight";
 export const IMPORT_UPLOAD_LIMITS={maxFilesPerPreview:10,maxTotalPreviewBytes:50*1024*1024,maxJsonBytes:4096} as const;
 
 const LOCAL_HOSTS=new Set(["localhost","127.0.0.1","[::1]"]);
+const INTERNAL_BIND_HOSTS=new Set([...LOCAL_HOSTS,"0.0.0.0"]);
 
 export function assertLocalMutation(request:Request):void{
-  const target=new URL(request.url);
+  const internalTarget=new URL(request.url),host=request.headers.get("host")??internalTarget.host;
+  if(!INTERNAL_BIND_HOSTS.has(internalTarget.hostname))throw new Error("LOCALHOST_REQUIRED");
+  if(!/^(?:\[[0-9a-fA-F:]+\]|[A-Za-z0-9.-]+)(?::\d{1,5})?$/.test(host))throw new Error("LOCALHOST_REQUIRED");
+  let target:URL;try{target=new URL(`${internalTarget.protocol}//${host}`);}catch{throw new Error("LOCALHOST_REQUIRED");}
   if(!LOCAL_HOSTS.has(target.hostname))throw new Error("LOCALHOST_REQUIRED");
   const origin=request.headers.get("origin");
   if(!origin)throw new Error("ORIGIN_REQUIRED");

@@ -5,8 +5,11 @@ describe("local write request boundary",()=>{
   it("accepts only same-origin localhost mutations",()=>{
     expect(()=>assertLocalMutation(new Request("http://localhost:3000/api/imports/preview",{method:"POST",headers:{origin:"http://localhost:3000","sec-fetch-site":"same-origin"}}))).not.toThrow();
     expect(()=>assertLocalMutation(new Request("http://127.0.0.1:3000/api/imports/preview",{method:"POST",headers:{origin:"http://127.0.0.1:3000"}}))).not.toThrow();
+    expect(()=>assertLocalMutation(new Request("http://0.0.0.0:3000/api/imports/preview",{method:"POST",headers:{host:"localhost:3000",origin:"http://localhost:3000","sec-fetch-site":"same-origin"}}))).not.toThrow();
     expect(()=>assertLocalMutation(new Request("http://localhost:3000/api/imports/preview",{method:"POST"}))).toThrow("ORIGIN_REQUIRED");
     expect(()=>assertLocalMutation(new Request("http://localhost:3000/api/imports/preview",{method:"POST",headers:{origin:"https://evil.example"}}))).toThrow("ORIGIN_NOT_ALLOWED");
+    expect(()=>assertLocalMutation(new Request("http://0.0.0.0:3000/api/imports/preview",{method:"POST",headers:{host:"dashboard.internal",origin:"http://dashboard.internal"}}))).toThrow("LOCALHOST_REQUIRED");
+    expect(()=>assertLocalMutation(new Request("http://dashboard.internal/api/imports/preview",{method:"POST",headers:{host:"localhost",origin:"http://localhost"}}))).toThrow("LOCALHOST_REQUIRED");
     expect(()=>assertLocalMutation(new Request("http://dashboard.internal/api/imports/preview",{method:"POST",headers:{origin:"http://dashboard.internal"}}))).toThrow("LOCALHOST_REQUIRED");
   });
 

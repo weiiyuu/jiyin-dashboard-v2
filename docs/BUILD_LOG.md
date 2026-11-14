@@ -55,3 +55,13 @@
 - Commit: 49cd0a7
 - Open issues: Enterprise Collector transport/schema behavior, complete Live Sensor integration, and production Docker deployment/operational validation remain intentionally assigned to Stages 6–8. They do not block Stage 5 historical/import UI work.
 - Next: Begin Stage 5 UI only after the user reviews `docs/STAGE3_1_ACCEPTANCE.md`.
+
+## Stage 5 — Historical analysis and Excel import UI
+
+- Status: Complete
+- Main changes: Added the operational Excel import, historical processing, and event-analysis pages on the existing import/history APIs; added shared responsive navigation, filters, cards, charts, tables, and loading/error/empty states; added explicit Stage 6/7 deferred pages with no fake data. Fixed the localhost mutation boundary discovered by browser testing so Next.js internal `0.0.0.0` URLs validate the actual loopback Host while still requiring an exact same-origin Origin.
+- Legacy UI migration: Directly reused the legacy Brand structure and SVG Icon pattern. Selectively adapted the shell/sidebar/topbar/breadcrumb/footer and mobile-toggle structure. Reimplemented navigation, cards, charts, page states, and all business/data UI against v2 contracts. Used the burgundy/glass treatment only as a visual reference. No legacy API, SQLite, Excel, fake-data, or 3D code was copied.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test` (61 tests across 11 files), and `npm run build` with Webpack passed. Browser validation with public synthetic XLSX passed two-file selection, removal, Preview, Confirm, Active Batch display, and post-import local history queries. Route tests passed Preview zero-write, replacement, rollback activation, active-history refresh, and Alarm missing-versus-empty semantics. Native date-field automation did not reliably trigger React events, so full chart click-through remains a documented manual smoke check rather than a claimed browser pass.
+- Commit: Pending local Stage 5 implementation commit
+- Open issues: No blocking Stage 5 data or contract issue. A short human check of range/day/week/month chart presentation, conflict copy, rollback prompt, and Alarm-source messages is recommended on the target laptop. Stage 6 Collector, Stage 7 live pages, and later production deployment remain intentionally deferred.
+- Next: Stop for final Stage 5 review; do not begin Stage 6 without authorization.

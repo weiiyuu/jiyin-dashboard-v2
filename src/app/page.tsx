@@ -1,11 +1,5 @@
-export default function Home() {
-  return (
-    <main className="mx-auto max-w-4xl px-6 py-16">
-      <p className="text-sm font-semibold tracking-[0.2em] text-emerald-700">JIYIN DASHBOARD V2</p>
-      <h1 className="mt-3 text-4xl font-semibold">Stage 3 基礎服務已就緒</h1>
-      <p className="mt-4 max-w-2xl text-slate-600">
-        目前提供共用資料契約、SQLite 儲存層與離線測試骨架；企業 API 尚未啟用。
-      </p>
-    </main>
-  );
-}
+import Link from "next/link";
+import { PageHeader } from "@/components/page-header";
+import { Panel } from "@/components/ui-states";
+export default function Home(){return <main className="page"><PageHeader eyebrow="智慧設備監控平台" title="極印 Dashboard" description="單機離線優先的 Excel 歷史資料匯入與分析工作台。Stage 5 已連接本機 SQLite；即時資料功能依後續階段啟用。" tag="LOCAL · SQLITE"/><div className="grid-3"><HomeCard href="/imports" number="01" title="Excel 資料匯入" text="預覽、驗證、同日版本替換與安全回復。"/><HomeCard href="/history/processing" number="02" title="歷史加工分析" text="Green 工時排行、趨勢、六態占比與同期比較。"/><HomeCard href="/history/events" number="03" title="異常事件分析" text="Red / Yellow 狀態區間與來源 Alarm 事件。"/></div><Panel title="系統範圍" subtitle="目前完成與後續階段"><div className="panel-body grid-2"><div className="notice success"><span>✓</span><div><strong>Stage 5 可用</strong><div>歷史三頁只呈現本機資料庫與既有後端統計結果。</div></div></div><div className="notice"><span>i</span><div><strong>Stage 6–7 尚未啟用</strong><div>Collector、機台即時監控與環境即時趨勢不顯示模擬數字。</div></div></div></div></Panel></main>}
+function HomeCard({href,number,title,text}:{href:string;number:string;title:string;text:string}){return <Link href={href} className="metric-card" style={{display:"block"}}><div className="eyebrow">{number}</div><div className="metric-value" style={{fontSize:18,marginTop:14}}>{title}</div><p className="metric-note">{text}</p><span className="button ghost" style={{marginTop:12}}>開啟頁面 →</span></Link>}
