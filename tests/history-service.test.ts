@@ -116,10 +116,22 @@ describe("active historical query integration",()=>{
     expect(result.seriesByMachine.find((series)=>series.machineId==="A2")!.points.at(-1)).toMatchObject({greenHours:null,availability:"MISSING_DATA"});
   });
 
+  it("uses real calendar dates for multi-day range points and leaves a missing day null",()=>{
+    const db=setup();importDay(db,"2025-06-01",180,"multi-first");importDay(db,"2025-06-03",90,"multi-third");
+    const result=getProcessingRange(db,{startDate:"2025-06-01",endDate:"2025-06-03",bucketMinutes:30,machineIds:["A1"]});
+    expect(result.seriesByMachine[0].points).toEqual([
+      expect.objectContaining({position:"2025-06-01",greenHours:.05,availability:"AVAILABLE"}),
+      expect.objectContaining({position:"2025-06-02",greenHours:null,availability:"MISSING_DATA"}),
+      expect.objectContaining({position:"2025-06-03",greenHours:.025,availability:"AVAILABLE"}),
+    ]);
+  });
+
   it("keeps comparison relative growth unavailable when A is zero and exposes the absolute difference",()=>{
     const db=setup();importThreeStateDay(db,"2025-06-09",{green:0,yellow:180,red:0},"zero-a");importThreeStateDay(db,"2025-06-10",{green:180,yellow:0,red:0},"positive-b");
     const result=getProcessingComparison(db,{compareKind:"day",periodA:"2025-06-09",periodB:"2025-06-10",machineIds:["A1"]});
     expect(result.ranking[0]).toMatchObject({difference:.05,relativeChange:null,periods:{A:{greenHours:0},B:{greenHours:.05}}});
+    expect(result.trend.at(-1)?.periods.A).toMatchObject({greenHours:0,availability:"AVAILABLE"});
+    expect(result.threeStateShare.periods.A).toMatchObject({denominatorSeconds:180,percent:{green:0,yellow:1,red:0},availability:"AVAILABLE"});
   });
 
   it("marks an unfinished month without changing the full-calendar-day average denominator",()=>{

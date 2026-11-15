@@ -100,3 +100,15 @@
 - Commit: `8bf40f5` (implementation); acceptance documentation follows in local history.
 - Safety: No enterprise file, database, credential, API call, push, deployment, Stage 6/7 work, or destructive operation occurred. User-reported real 2025-06-01–06-05 import success was not reproduced with private binaries in this run.
 - Next: Stop for final Excel UI review. Do not start another stage without explicit authorization.
+
+## Stage 5.3 — Machine Operation Analysis V1.1
+
+- Status: Complete for implementation, public synthetic-data statistics, automated regression, and real desktop-browser scopes. Enterprise/private-data validation was intentionally not performed.
+- Main changes: Renamed the page to 機台運轉分析; made machine selection explicit and empty by default; added range and day/week/month comparison modes; implemented full-width ranking, per-machine/period trend, and Green/Yellow/Red share charts in the approved order; added local highlight, legend, aggregate/single-machine, and per-machine/aggregate controls without mutating global filters.
+- Statistics/API: Added independent three-state eligibility and denominator rules, point-level COMPLETE/PARTIAL/MISSING coverage, fixed 24-hour day comparison, arbitrary seven-day weeks, 31-position month alignment, full-calendar-day monthly averages, partial-month metadata, backend differences/relative rates, and percentage-point deltas. Legacy six-state fields and Active Batch queries remain available and unchanged.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test -- --run` (91 passed; one opt-in private-workbook suite skipped), and `npm run build` with Webpack passed. H01–H20 evidence covers empty selection, 30/60 invariance, missing dates, local interactions, mode reset, day/week/month alignment, partial months, valid zero, NULL/severe quality exclusion, partial machine coverage, zero baseline, and Active Batch replacement/rollback.
+- Browser: Chrome production-build acceptance used a disposable 16-date/61,440-row public synthetic SQLite database. 1366px screenshots capture empty, eight-machine range, and eight-machine comparison states. DOM measurements at 1280/1366/1440 found viewport width equal to scroll width and no chart overflow. Eight-machine comparison rendered 16 A/B share bars. Evidence is under `docs/evidence/stage5_3/`.
+- Commit: `e759409` (implementation); acceptance documentation follows in local history.
+- Safety: `_reference_inputs/` remained ignored/read-only; no enterprise API/file, environment file, database, credential, push, deployment, Stage 6/7 work, destructive Git operation, or data/volume deletion occurred.
+- Open issues: Real enterprise-data validation remains unclaimed by design. The existing standalone-output warning belongs to later production deployment validation, not this UI/statistics acceptance.
+- Next: Stop for Stage 5.3 review. Do not begin Stage 6/7 or push without explicit authorization.
