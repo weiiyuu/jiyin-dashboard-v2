@@ -36,19 +36,20 @@ describe("Stage 5 UI truth-preserving view models",()=>{
 
   it("renders formal chart axes, machine legend and valid all-zero tooltips",()=>{
     const chart=renderToStaticMarkup(<TrendChart labels={["00:00-01:00","01:00-02:00"]} series={[{key:"A1",label:"A1",color:"#62d49a",values:[0,0]},{key:"B2",label:"B2",color:"#ef777b",values:[null,1]}]}/>);
-    expect(chart).toContain("Green 工時（小時）");
+    expect(chart).toContain("加工時間");
     expect(chart).toContain("時間");
     expect(chart).toContain("A1");
-    expect(chart).toContain("00:00-01:00：0.000 小時");
+    expect(chart).toContain("A1 0 分");
   });
 
   it("renders backend three-state shares and comparison deltas without deriving business values",()=>{
-    const share=renderToStaticMarkup(<OperationShareChart label="A1" value={{denominatorSeconds:180,availability:"AVAILABLE",seconds:{green:90,yellow:60,red:30},percent:{green:.5,yellow:1/3,red:1/6}}} deltas={{green:12.5,yellow:-10,red:-2.5}}/>);
+    const share=renderToStaticMarkup(<OperationShareChart dateLabel="2025/06/01" rows={[{id:"A1",label:"A1",value:{denominatorSeconds:180,availability:"AVAILABLE",seconds:{green:90,yellow:60,red:30},percent:{green:.5,yellow:1/3,red:1/6}},deltaPercentagePoints:{green:12.5,yellow:-10,red:-2.5}}]} comparisonSummary={{label:"A1",greenDelta:12.5}}/>);
     expect(share).toContain("50.0%");
-    expect(share).toContain("+12.5 pp");
+    expect(share).toContain("+12.5 百分點");
     expect(share).toContain("有效分母 180 秒");
-    const ranking=renderToStaticMarkup(<ComparisonRanking rows={[{machineId:"A1",periods:{A:{greenHours:0,availability:"AVAILABLE"},B:{greenHours:2,availability:"AVAILABLE"}},difference:2,relativeChange:null}]}/>);
-    expect(ranking).toContain("Δ +2.000");
-    expect(ranking).toContain("基期 0／缺資料");
+    const ranking=renderToStaticMarkup(<ComparisonRanking periodLabels={{A:"2025/06/01",B:"2025/06/02"}} rows={[{machineId:"A1",periods:{A:{greenHours:0,availability:"AVAILABLE"},B:{greenHours:2,availability:"AVAILABLE"}},difference:2,relativeChange:null}]}/>);
+    expect(ranking).toContain("0 分");
+    expect(ranking).toContain("2 小時");
+    expect(ranking).not.toContain("Infinity");
   });
 });

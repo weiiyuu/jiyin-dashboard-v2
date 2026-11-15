@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   ComparisonRanking,
-  CoverageStrip,
+  CoverageStatus,
   OperationShareChart,
   RankingChart,
   TrendChart,
@@ -11,28 +11,20 @@ import {
   type Coverage,
   type LineSeries,
   type OperationShare,
+  type OperationShareRow,
   type RankRow,
 } from "@/components/history-widgets";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorNotice, LoadingState, Panel } from "@/components/ui-states";
+import { formatDateDisplay, type TrendAxisMode } from "@/features/history/chart-ui-model";
 import type { Availability } from "@/features/history/history-ui-model";
 import { fetchApi } from "@/lib/api-client";
 
 const ALL = ["A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"];
 const COLORS = ["#62d49a", "#e8898b", "#e2bd5b", "#69a9de", "#c79be8", "#f1a85b", "#8ed5d0", "#d7d0c9"];
 
-interface PointCoverage {
-  completeness: "COMPLETE" | "PARTIAL" | "MISSING";
-}
-
-interface TrendPoint {
-  position: string;
-  sourceLabel: string;
-  greenHours: number | null;
-  availability: Availability;
-  coverage: PointCoverage;
-}
-
+interface PointCoverage { completeness: "COMPLETE" | "PARTIAL" | "MISSING" }
+interface TrendPoint { position: string; sourceLabel: string; greenHours: number | null; availability: Availability; coverage: PointCoverage }
 interface RangeResult {
   mode: "range";
   period: { startDate: string; endDate: string; days: number; grain: string };
@@ -43,7 +35,6 @@ interface RangeResult {
   threeStateShareByMachine: Array<{ machineId: string; share: OperationShare }>;
   coverage: Coverage;
 }
-
 interface ComparisonTrendPoint {
   position: string | number;
   periods: {
@@ -51,31 +42,33 @@ interface ComparisonTrendPoint {
     B: { sourceDate: string | null; greenHours: number | null; availability: Availability; coverage: PointCoverage };
   };
 }
-
+interface ComparePeriod { label: string; startDate: string; endDate: string; partial: boolean; elapsedCalendarDays: number; days: number }
 interface CompareResult {
   mode: "compare";
   compareKind: "day" | "week" | "month";
-  periods: {
-    A: { label: string; partial: boolean; elapsedCalendarDays: number; days: number };
-    B: { label: string; partial: boolean; elapsedCalendarDays: number; days: number };
-  };
+  periods: { A: ComparePeriod; B: ComparePeriod };
   ranking: CompareRankRow[];
   trend: ComparisonTrendPoint[];
   seriesByMachine: Array<{ machineId: string; trend: ComparisonTrendPoint[] }>;
-  threeStateShare: {
-    periods: { A: OperationShare; B: OperationShare };
-    deltaPercentagePoints: Record<"green" | "yellow" | "red", number | null>;
-  };
-  threeStateShareByMachine: Array<{
-    machineId: string;
-    periods: { A: OperationShare; B: OperationShare };
-    deltaPercentagePoints: Record<"green" | "yellow" | "red", number | null>;
-  }>;
+  threeStateShare: { periods: { A: OperationShare; B: OperationShare }; deltaPercentagePoints: Record<"green" | "yellow" | "red", number | null> };
+  threeStateShareByMachine: Array<{ machineId: string; periods: { A: OperationShare; B: OperationShare }; deltaPercentagePoints: Record<"green" | "yellow" | "red", number | null> }>;
   coverage: { A: Coverage; B: Coverage };
 }
-
 interface Batch { source_date: string; status: string }
 type Result = RangeResult | CompareResult;
+
+function dateRange(start: string, end: string) {
+  return start === end ? formatDateDisplay(start) : `${formatDateDisplay(start)} – ${formatDateDisplay(end)}`;
+}
+function machinesLabel(rows: string[]) { return rows.join("、"); }
+function compareKindLabel(kind: CompareResult["compareKind"]) { return kind === "day" ? "日對日" : kind === "week" ? "週對週" : "月對月"; }
+function periodLabel(period: ComparePeriod) { return dateRange(period.startDate, period.endDate); }
+function sourceTimeLabel(point: TrendPoint) { return `${formatDateDisplay(point.sourceLabel.replace(" ", " · ").replace(/-(?=\d{2}:\d{2}$)/, "–"))}`; }
+function comparisonTimeLabel(kind: CompareResult["compareKind"], sourceDate: string | null, position: string | number) {
+  if (!sourceDate) return kind === "month" ? `第 ${position} 日（不適用）` : `第 ${position} 日（無資料）`;
+  if (kind === "day") return `${formatDateDisplay(sourceDate)} · ${String(position).replace("-", "–")}`;
+  return `${formatDateDisplay(sourceDate)} · 第 ${position} 日`;
+}
 
 export default function ProcessingPage() {
   const [mode, setMode] = useState<"range" | "compare">("range");
@@ -94,83 +87,41 @@ export default function ProcessingPage() {
   const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
   const [rangeShareMode, setRangeShareMode] = useState<"machine" | "total">("machine");
   const [compareTrendMode, setCompareTrendMode] = useState<"overall" | "single">("overall");
-  const [compareTrendMachine, setCompareTrendMachine] = useState<string>("");
+  const [compareTrendMachine, setCompareTrendMachine] = useState("");
   const [compareShareMode, setCompareShareMode] = useState<"overall" | "machine">("overall");
 
   useEffect(() => {
     let active = true;
-    fetchApi<Batch[]>("/api/imports").then((rows) => {
-      if (active) setRecentDate(rows.find((row) => row.status === "ACTIVE")?.source_date ?? null);
-    }).catch(() => {});
+    fetchApi<Batch[]>("/api/imports").then((rows) => { if (active) setRecentDate(rows.find((row) => row.status === "ACTIVE")?.source_date ?? null); }).catch(() => {});
     return () => { active = false; };
   }, []);
 
   const crossDay = Boolean(startDate && endDate && startDate !== endDate);
   const canQuery = machines.length > 0 && (mode === "range" ? Boolean(startDate && endDate) : Boolean(periodA && periodB));
-
-  function invalidate() {
-    setResult(null);
-    setError(null);
-    setHighlightedMachine(null);
-    setHiddenSeries([]);
-  }
-
+  function invalidate() { setResult(null); setError(null); setHighlightedMachine(null); setHiddenSeries([]); }
   function switchMode(next: "range" | "compare") {
     if (next === mode) return;
-    setMode(next);
-    setMachines([]);
-    setCompareTrendMachine("");
-    setCompareTrendMode("overall");
-    setRangeShareMode("machine");
-    setCompareShareMode("overall");
-    invalidate();
+    setMode(next); setMachines([]); setCompareTrendMachine(""); setCompareTrendMode("overall"); setRangeShareMode("machine"); setCompareShareMode("overall"); invalidate();
   }
-
-  function toggleMachine(machine: string) {
-    setMachines((current) => current.includes(machine) ? current.filter((item) => item !== machine) : [...current, machine]);
-    invalidate();
-  }
-
-  function useRecent() {
-    if (!recentDate) return;
-    setStartDate(recentDate);
-    setEndDate(recentDate);
-    if (mode !== "range") switchMode("range");
-    else invalidate();
-  }
-
+  function toggleMachine(machine: string) { setMachines((current) => current.includes(machine) ? current.filter((item) => item !== machine) : [...current, machine]); invalidate(); }
+  function useRecent() { if (!recentDate) return; setStartDate(recentDate); setEndDate(recentDate); if (mode !== "range") switchMode("range"); else invalidate(); }
   async function query() {
     if (!canQuery) return;
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const params = new URLSearchParams({ mode, machineIds: machines.join(",") });
-      if (mode === "range") {
-        params.set("bucket", bucket);
-        params.set("startDate", startDate);
-        params.set("endDate", endDate);
-      } else {
-        params.set("compareKind", kind);
-        params.set("periodA", periodA);
-        params.set("periodB", periodB);
-      }
+      if (mode === "range") { params.set("bucket", bucket); params.set("startDate", startDate); params.set("endDate", endDate); }
+      else { params.set("compareKind", kind); params.set("periodA", periodA); params.set("periodB", periodB); }
       const next = await fetchApi<Result>(`/api/history/processing?${params}`);
       setResult(next);
       if (next.mode === "compare") setCompareTrendMachine(next.seriesByMachine[0]?.machineId ?? "");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "歷史資料查詢失敗");
-      setResult(null);
-    } finally {
-      setLoading(false);
-    }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "歷史資料查詢失敗"); setResult(null); }
+    finally { setLoading(false); }
   }
-
-  const empty = result && (result.mode === "range"
-    ? result.coverage.importedIntervals === 0
-    : result.coverage.A.importedIntervals + result.coverage.B.importedIntervals === 0);
+  const empty = result && (result.mode === "range" ? result.coverage.importedIntervals === 0 : result.coverage.A.importedIntervals + result.coverage.B.importedIntervals === 0);
 
   return <main className="page operation-analysis-page">
-    <PageHeader eyebrow="歷史分析 / 機台狀態" title="機台運轉分析" description="以啟用版本計算加工工時、逐機台趨勢與 Green／Yellow／Red 三態占比；缺資料不補成零。" tag="ACTIVE HISTORY"/>
+    <PageHeader eyebrow="歷史分析 / 機台狀態" title="機台運轉分析" description="以啟用版本計算加工時數、逐機台趨勢與 Green／Yellow／Red 三態占比；缺資料不補成零。" tag="ACTIVE HISTORY"/>
     <div className="operation-analysis-sections">
       <Panel title="分析條件" subtitle="區間分析支援同日 30／60 分鐘；同期比較依日、週、月固定對齊" actions={<div className="segmented"><button className={`segment ${mode === "range" ? "active" : ""}`} onClick={() => switchMode("range")}>區間分析</button><button className={`segment ${mode === "compare" ? "active" : ""}`} onClick={() => switchMode("compare")}>同期比較</button></div>}>
         <div className="panel-body stack">
@@ -189,96 +140,81 @@ export default function ProcessingPage() {
           {crossDay && <div className="notice"><span>i</span><div>跨日查詢固定使用每日分桶；未匯入日期維持缺資料。</div></div>}
         </div>
       </Panel>
-
       {loading ? <Panel title="正在建立機台運轉分析"><LoadingState label="正在讀取啟用版本並計算統計…"/></Panel>
         : error ? <Panel title="查詢失敗"><div className="panel-body"><ErrorNotice message={error} onRetry={query}/></div></Panel>
-        : empty ? <EmptyChartSet title="所選期間沒有已匯入資料" description="請確認日期是否已有啟用版本；無資料不會被繪製成 0 工時。"/>
+        : empty ? <EmptyChartSet title="所選期間沒有已匯入資料" description="請確認日期是否已有啟用版本；無資料不會被繪製成 0 工時。" mode={mode}/>
         : result?.mode === "range" ? <RangeView value={result} highlightedMachine={highlightedMachine} onHighlight={(machine) => setHighlightedMachine((current) => current === machine ? null : machine)} hiddenSeries={hiddenSeries} onToggleSeries={(key) => setHiddenSeries((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])} shareMode={rangeShareMode} onShareMode={setRangeShareMode}/>
         : result?.mode === "compare" ? <CompareView value={result} highlightedMachine={highlightedMachine} onHighlight={(machine) => setHighlightedMachine((current) => current === machine ? null : machine)} trendMode={compareTrendMode} onTrendMode={setCompareTrendMode} trendMachine={compareTrendMachine} onTrendMachine={setCompareTrendMachine} shareMode={compareShareMode} onShareMode={setCompareShareMode}/>
-        : <EmptyChartSet title="請先選擇分析條件" description="選擇日期與至少一台機台後執行查詢；前端不會產生預設假資料。"/>}
+        : <EmptyChartSet title="請先選擇分析條件" description="選擇日期與至少一台機台後執行查詢；前端不會產生預設假資料。" mode={mode}/>
+      }
     </div>
   </main>;
 }
 
-function EmptyChartSet({ title, description }: { title: string; description: string }) {
-  return <>
-    <Panel title="1. 累積加工時數排行"><EmptyState icon="▤" title={title} description={description}/></Panel>
-    <Panel title="2. 機台運轉趨勢圖"><EmptyState icon="⌁" title={title} description={description}/></Panel>
-    <Panel title="3. 燈號時間占比"><EmptyState icon="◫" title={title} description={description}/></Panel>
-  </>;
+function EmptyChartSet({ title, description, mode }: { title: string; description: string; mode: "range" | "compare" }) {
+  const titles = mode === "range" ? ["累積加工時數排行", "機台運轉趨勢圖", "各機台燈號時間占比"] : ["同期加工時數比較", "機台運轉趨勢比較", "燈號時間占比比較"];
+  return <>{titles.map((panelTitle, index) => <Panel key={panelTitle} title={panelTitle}><EmptyState icon={["▤", "⌁", "◫"][index]} title={title} description={description}/></Panel>)}</>;
 }
 
-function QualityWarnings({ coverage }: { coverage: Coverage }) {
-  const reasons = Object.entries(coverage.excludedByRule ?? {});
-  return reasons.length ? <div className="notice warning"><span>!</span><div><strong>品質排除不會補零</strong><div>{reasons.map(([key, count]) => `${key} ${count}`).join("、")}</div></div></div> : null;
-}
+function modeChip(label: string) { return <span className="chart-mode-chip">{label}</span>; }
 
 function RangeView({ value, highlightedMachine, onHighlight, hiddenSeries, onToggleSeries, shareMode, onShareMode }: {
-  value: RangeResult;
-  highlightedMachine: string | null;
-  onHighlight: (machine: string) => void;
-  hiddenSeries: string[];
-  onToggleSeries: (key: string) => void;
-  shareMode: "machine" | "total";
-  onShareMode: (mode: "machine" | "total") => void;
+  value: RangeResult; highlightedMachine: string | null; onHighlight: (machine: string) => void; hiddenSeries: string[]; onToggleSeries: (key: string) => void; shareMode: "machine" | "total"; onShareMode: (mode: "machine" | "total") => void;
 }) {
+  const dateText = dateRange(value.period.startDate, value.period.endDate);
+  const machineText = machinesLabel(value.ranking.map((row) => row.machineId));
   const labels = value.seriesByMachine[0]?.points.map((item) => item.sourceLabel) ?? value.trend.map((item) => item.sourceLabel);
+  const axisMode: TrendAxisMode = value.period.days > 1 ? "RANGE_MULTI" : value.period.grain === "30_MINUTES" ? "RANGE_DAY_30" : "RANGE_DAY_60";
   const series: LineSeries[] = value.seriesByMachine.map((item, index) => ({
-    key: item.machineId,
-    label: item.machineId,
-    color: COLORS[index % COLORS.length],
-    values: item.points.map((point) => point.greenHours),
-    partial: item.points.map((point) => point.coverage.completeness === "PARTIAL"),
+    key: item.machineId, label: item.machineId, color: COLORS[index % COLORS.length], values: item.points.map((point) => point.greenHours), partial: item.points.map((point) => point.coverage.completeness === "PARTIAL"),
+    details: item.points.map((point) => ({ timeLabel: sourceTimeLabel(point), availability: point.availability, completeness: point.coverage.completeness })),
   }));
+  const machineRows: OperationShareRow[] = [...value.threeStateShareByMachine]
+    .sort((left, right) => (right.share.percent.green ?? -1) - (left.share.percent.green ?? -1) || left.machineId.localeCompare(right.machineId))
+    .map((item) => ({ id: item.machineId, label: item.machineId, value: item.share }));
+  const shareRows: OperationShareRow[] = shareMode === "total" ? [{ id: "total", label: "所選機台合計", value: value.threeStateShare }] : machineRows;
   return <>
-    <Panel title="1. 累積加工時數排行" subtitle="依 Green 有效秒數累積；點選機台只高亮此圖，不改變全頁篩選。">
-      <div className="panel-body stack"><CoverageStrip coverage={value.coverage}/><QualityWarnings coverage={value.coverage}/><RankingChart rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight}/></div>
-    </Panel>
-    <Panel title="2. 機台運轉趨勢圖" subtitle={`${value.period.days === 1 ? value.period.grain.replace("_MINUTES", " 分鐘") : "每日"}分桶；點圖例可局部顯示或隱藏機台。`}>
-      <TrendChart labels={labels} series={series} hiddenKeys={hiddenSeries} onToggleSeries={onToggleSeries} ariaLabel="逐機台 Green 加工工時趨勢"/>
-    </Panel>
-    <Panel title="3. 燈號時間占比" subtitle="只使用符合品質條件的 Green／Yellow／Red 秒數；None／Blue／White 不進入分母。" actions={<div className="segmented"><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>分機台</button><button className={`segment ${shareMode === "total" ? "active" : ""}`} onClick={() => onShareMode("total")}>合計</button></div>}>
-      <div className="panel-body operation-share-grid">{shareMode === "total" ? <OperationShareChart value={value.threeStateShare} label="所選機台合計"/> : value.threeStateShareByMachine.map((item) => <OperationShareChart key={item.machineId} value={item.share} label={item.machineId}/>)}</div>
-    </Panel>
+    <Panel title="累積加工時數排行" subtitle={`${dateText} · ${machineText}`} actions={modeChip("區間分析")}><div className="panel-body stack"><CoverageStatus coverage={value.coverage}/><RankingChart dateLabel={dateText} rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight}/></div></Panel>
+    <Panel title="機台運轉趨勢圖" subtitle={`${dateText} · ${value.period.days === 1 ? value.period.grain.replace("_MINUTES", " 分鐘粒度") : "每日粒度"} · ${machineText}`} actions={modeChip("區間分析")}><TrendChart labels={labels} series={series} hiddenKeys={hiddenSeries} onToggleSeries={onToggleSeries} axisMode={axisMode} ariaLabel="逐機台加工時間趨勢"/></Panel>
+    <Panel title={shareMode === "machine" ? "各機台燈號時間占比" : "整體燈號時間占比"} subtitle={`${dateText} · 只納入品質合格的 Green／Yellow／Red 秒數`} actions={<div className="chart-header-actions">{modeChip("區間分析")}<div className="segmented"><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>各機台占比</button><button className={`segment ${shareMode === "total" ? "active" : ""}`} onClick={() => onShareMode("total")}>整體占比</button></div></div>}><div className="panel-body"><OperationShareChart rows={shareRows} dateLabel={dateText}/></div></Panel>
   </>;
 }
 
-function comparisonSeries(points: ComparisonTrendPoint[], labels: { A: string; B: string }): LineSeries[] {
-  return [
-    { key: "A", label: `期間 A · ${labels.A}`, color: "#62d49a", values: points.map((item) => item.periods.A.greenHours), partial: points.map((item) => item.periods.A.coverage.completeness === "PARTIAL") },
-    { key: "B", label: `期間 B · ${labels.B}`, color: "#dc8b88", values: points.map((item) => item.periods.B.greenHours), partial: points.map((item) => item.periods.B.coverage.completeness === "PARTIAL") },
-  ];
+function comparisonSeries(points: ComparisonTrendPoint[], periods: CompareResult["periods"], kind: CompareResult["compareKind"]): LineSeries[] {
+  return (["A", "B"] as const).map((key, index) => ({
+    key, label: `期間 ${key} · ${periodLabel(periods[key])}`, color: index === 0 ? "#62d49a" : "#dc8b88",
+    values: points.map((item) => item.periods[key].greenHours), partial: points.map((item) => item.periods[key].coverage.completeness === "PARTIAL"),
+    details: points.map((item) => ({ timeLabel: comparisonTimeLabel(kind, item.periods[key].sourceDate, item.position), availability: item.periods[key].availability, completeness: item.periods[key].coverage.completeness })),
+  }));
 }
 
 function CompareView({ value, highlightedMachine, onHighlight, trendMode, onTrendMode, trendMachine, onTrendMachine, shareMode, onShareMode }: {
-  value: CompareResult;
-  highlightedMachine: string | null;
-  onHighlight: (machine: string) => void;
-  trendMode: "overall" | "single";
-  onTrendMode: (mode: "overall" | "single") => void;
-  trendMachine: string;
-  onTrendMachine: (machine: string) => void;
-  shareMode: "overall" | "machine";
-  onShareMode: (mode: "overall" | "machine") => void;
+  value: CompareResult; highlightedMachine: string | null; onHighlight: (machine: string) => void; trendMode: "overall" | "single"; onTrendMode: (mode: "overall" | "single") => void; trendMachine: string; onTrendMachine: (machine: string) => void; shareMode: "overall" | "machine"; onShareMode: (mode: "overall" | "machine") => void;
 }) {
+  const periodLabels = { A: periodLabel(value.periods.A), B: periodLabel(value.periods.B) };
+  const subtitle = `${compareKindLabel(value.compareKind)} · A ${periodLabels.A} · B ${periodLabels.B}`;
   const machineSeries = value.seriesByMachine.find((item) => item.machineId === trendMachine);
   const trend = trendMode === "single" && machineSeries ? machineSeries.trend : value.trend;
   const labels = trend.map((item) => String(item.position));
-  const periodLabels = { A: value.periods.A.label, B: value.periods.B.label };
+  const axisMode: TrendAxisMode = value.compareKind === "day" ? "COMPARE_DAY" : value.compareKind === "week" ? "COMPARE_WEEK" : "COMPARE_MONTH";
   const partial = value.compareKind === "month" && (value.periods.A.partial || value.periods.B.partial);
+  const shareRows: OperationShareRow[] = shareMode === "overall" ? [
+    { id: "overall-a", label: "期間 A", value: value.threeStateShare.periods.A, deltaPercentagePoints: value.threeStateShare.deltaPercentagePoints },
+    { id: "overall-b", label: "期間 B", value: value.threeStateShare.periods.B, deltaPercentagePoints: value.threeStateShare.deltaPercentagePoints },
+  ] : value.threeStateShareByMachine.flatMap((item) => ([
+    { id: `${item.machineId}-a`, groupLabel: item.machineId, label: "期間 A", value: item.periods.A, deltaPercentagePoints: item.deltaPercentagePoints },
+    { id: `${item.machineId}-b`, groupLabel: item.machineId, label: "期間 B", value: item.periods.B, deltaPercentagePoints: item.deltaPercentagePoints },
+  ]));
   return <>
-    <Panel title="1. 累積加工時數排行" subtitle={value.compareKind === "month" ? "月比較採完整曆日平均每日 Green 小時，依期間 B 排序。" : "A／B 並列，依期間 B 排序；點選只高亮本圖。"}>
-      <div className="panel-body stack">
-        {partial && <div className="notice warning"><span>!</span><div><strong>包含尚未完整結束的月份</strong><div>平均值仍除以完整曆日；A 已經過 {value.periods.A.elapsedCalendarDays}/{value.periods.A.days} 日，B 已經過 {value.periods.B.elapsedCalendarDays}/{value.periods.B.days} 日。</div></div></div>}
-        <div className="coverage-pair"><div className="coverage-period"><strong>期間 A · {value.periods.A.label}</strong><CoverageStrip coverage={value.coverage.A}/></div><div className="coverage-period"><strong>期間 B · {value.periods.B.label}</strong><CoverageStrip coverage={value.coverage.B}/></div></div>
-        <ComparisonRanking rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight}/>
-      </div>
-    </Panel>
-    <Panel title="2. 機台運轉趨勢圖" subtitle="日比較固定 24 小時；週比較 7 個曆日；月比較對齊第 1–31 日。" actions={<div className="chart-actions"><div className="segmented"><button className={`segment ${trendMode === "overall" ? "active" : ""}`} onClick={() => onTrendMode("overall")}>合計</button><button className={`segment ${trendMode === "single" ? "active" : ""}`} onClick={() => onTrendMode("single")}>單一機台</button></div>{trendMode === "single" && <select aria-label="趨勢機台" className="control compact" value={trendMachine} onChange={(event) => onTrendMachine(event.target.value)}>{value.seriesByMachine.map((item) => <option key={item.machineId} value={item.machineId}>{item.machineId}</option>)}</select>}</div>}>
-      <TrendChart labels={labels} series={comparisonSeries(trend, periodLabels)} ariaLabel={`${trendMode === "single" ? trendMachine : "所選機台合計"} A／B Green 工時趨勢`}/>
-    </Panel>
-    <Panel title="3. 燈號時間占比" subtitle="A／B 各自先加總有效三態秒數再計算占比；Δ 使用百分點（pp）。" actions={<div className="segmented"><button className={`segment ${shareMode === "overall" ? "active" : ""}`} onClick={() => onShareMode("overall")}>合計比較</button><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>分機台</button></div>}>
-      <div className="panel-body operation-share-compare">{shareMode === "overall" ? <div className="share-comparison-pair"><OperationShareChart value={value.threeStateShare.periods.A} label={`期間 A · ${value.periods.A.label}`} deltas={value.threeStateShare.deltaPercentagePoints}/><OperationShareChart value={value.threeStateShare.periods.B} label={`期間 B · ${value.periods.B.label}`} deltas={value.threeStateShare.deltaPercentagePoints}/></div> : value.threeStateShareByMachine.map((item) => <div className="machine-share-comparison" key={item.machineId}><h3>{item.machineId}</h3><div className="share-comparison-pair"><OperationShareChart value={item.periods.A} label="期間 A" deltas={item.deltaPercentagePoints}/><OperationShareChart value={item.periods.B} label="期間 B" deltas={item.deltaPercentagePoints}/></div></div>)}</div>
-    </Panel>
+    <Panel title="同期加工時數比較" subtitle={subtitle} actions={modeChip("同期比較")}><div className="panel-body stack">
+      {partial && <div className="notice warning"><span>!</span><div><strong>包含尚未完整結束的月份</strong><div>平均值仍除以完整曆日；A 已經過 {value.periods.A.elapsedCalendarDays}/{value.periods.A.days} 日，B 已經過 {value.periods.B.elapsedCalendarDays}/{value.periods.B.days} 日。</div></div></div>}
+      <div className="coverage-status-pair"><CoverageStatus coverage={value.coverage.A} label="期間 A 覆蓋"/><CoverageStatus coverage={value.coverage.B} label="期間 B 覆蓋"/></div>
+      <ComparisonRanking rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight} periodLabels={periodLabels}/>
+    </div></Panel>
+    <Panel title="機台運轉趨勢比較" subtitle={`${subtitle} · ${trendMode === "single" ? `${trendMachine} 單機` : "所選機台合計"}`} actions={modeChip("同期比較")}><div className="panel-body stack">
+      <div className="comparison-local-toolbar"><div className="segmented"><button className={`segment ${trendMode === "overall" ? "active" : ""}`} onClick={() => onTrendMode("overall")}>整體趨勢</button><button className={`segment ${trendMode === "single" ? "active" : ""}`} onClick={() => onTrendMode("single")}>單機趨勢</button></div>{trendMode === "single" && <label><span>檢視機台</span><select aria-label="檢視機台" className="control compact" value={trendMachine} onChange={(event) => onTrendMachine(event.target.value)}>{value.seriesByMachine.map((item) => <option key={item.machineId} value={item.machineId}>{item.machineId}</option>)}</select></label>}</div>
+      <TrendChart labels={labels} series={comparisonSeries(trend, value.periods, value.compareKind)} axisMode={axisMode} ariaLabel={`${trendMode === "single" ? trendMachine : "所選機台合計"} A／B 加工時間趨勢`}/>
+    </div></Panel>
+    <Panel title="燈號時間占比比較" subtitle={`${subtitle} · A／B 各自使用有效三態秒數為分母`} actions={<div className="chart-header-actions">{modeChip("同期比較")}<div className="segmented"><button className={`segment ${shareMode === "overall" ? "active" : ""}`} onClick={() => onShareMode("overall")}>整體占比</button><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>各機台占比</button></div></div>}><div className="panel-body"><OperationShareChart rows={shareRows} dateLabel={`A ${periodLabels.A} · B ${periodLabels.B}`} comparisonSummary={{ label: shareMode === "overall" ? "所選機台整體" : "各機台依列顯示 A／B", greenDelta: value.threeStateShare.deltaPercentagePoints.green }}/></div></Panel>
   </>;
 }

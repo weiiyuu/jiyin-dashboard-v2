@@ -27,14 +27,19 @@ function workbook(date: string) {
   const sheets = standardizedWorkbook(date);
   const rows: typeof sheets[0]["data"] = [];
   for (const [machineIndex, machineId] of machineIds.entries()) {
+    // Public UAT shapes: one missing machine/day, two overlapping zero-Green
+    // series, and one full-day Green series. These values are synthetic only.
+    if (date === "2025-06-02" && machineId === "A3") continue;
     for (let slot = 0; slot < 480; slot += 1) {
       const startMinute = slot * 3;
       const endMinute = startMinute + 3;
       const severe = date === "2025-06-04" && machineId === "A1" && endMinute === 54;
-      const green = severe ? 10 : 60 + machineIndex * 9 + (slot % 5) * 4;
-      const yellow = severe ? 5 : 20 + (slot % 3) * 4;
-      const red = severe ? 5 : slot % 17 === 0 ? 8 : 0;
-      const none = severe ? 0 : 180 - green - yellow - red;
+      const overlapZero = date === "2025-06-01" && (machineId === "A1" || machineId === "A4");
+      const fullGreen = date === "2025-06-01" && machineId === "A2";
+      const green = severe ? 10 : overlapZero ? 0 : fullGreen ? 180 : 60 + machineIndex * 9 + (slot % 5) * 4;
+      const yellow = severe ? 5 : overlapZero ? 180 : fullGreen ? 0 : 20 + (slot % 3) * 4;
+      const red = severe ? 5 : overlapZero || fullGreen ? 0 : slot % 17 === 0 ? 8 : 0;
+      const none = severe || overlapZero || fullGreen ? 0 : 180 - green - yellow - red;
       const total = none + red + yellow + green;
       rows.push([
         date,
