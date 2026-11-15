@@ -35,3 +35,13 @@ export function switchProviderMode(db: AppDatabase, mode: ProviderMode, expected
     return getSettings(db);
   });
 }
+
+export function switchProviderModeCas(db:AppDatabase,mode:ProviderMode,expectedMode:ProviderMode,expectedRevision:number,nowMs=Date.now()):AppSettings{
+  if(expectedRevision<0||!Number.isInteger(expectedRevision))throw new Error("Invalid expected revision");
+  return transaction(db,()=>{
+    const result=db.prepare(`UPDATE app_settings SET provider_mode=?,mode_revision=mode_revision+1,updated_at_ms=?
+      WHERE singleton_id=1 AND provider_mode=? AND mode_revision=?`).run(mode,nowMs,expectedMode,expectedRevision);
+    if(result.changes!==1)throw new Error("MODE_REVISION_CONFLICT");
+    return getSettings(db);
+  });
+}

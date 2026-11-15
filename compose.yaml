@@ -23,13 +23,16 @@ services:
     build:
       context: .
       target: development
-    command: npm run collector:idle
+    command: npm run collector:start
+    depends_on:
+      web:
+        condition: service_healthy
     environment:
-      DATA_DIRECTORY: /app/data
+      DATABASE_PATH: /app/data/jiyin-dashboard.sqlite
     volumes:
       - app_data:/app/data
     healthcheck:
-      test: ["CMD", "node", "-e", "require('fs').accessSync('/app/data',6)"]
+      test: ["CMD", "node", "-e", "require('fs').accessSync('/app/data/jiyin-dashboard.sqlite',6)"]
       interval: 5s
       timeout: 3s
       retries: 5

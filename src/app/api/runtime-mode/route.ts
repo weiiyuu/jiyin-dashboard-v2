@@ -1,0 +1,7 @@
+import { openAppDatabase } from "@/server/db/app-database";
+import { getSettings,switchProviderModeCas } from "@/server/db/settings-repository";
+import { apiError,ok,requestId } from "@/server/http/api";
+import { assertLocalMutation } from "@/server/http/local-mutation";
+export const runtime="nodejs";export const dynamic="force-dynamic";
+export function GET(){const id=requestId(),db=openAppDatabase();try{return ok(getSettings(db),id);}finally{db.close();}}
+export async function PUT(request:Request){const id=requestId();try{assertLocalMutation(request);const body=await request.json() as {mode?:unknown;expectedMode?:unknown;expectedRevision?:unknown};if((body.mode!=="LIVE"&&body.mode!=="DEMO")||(body.expectedMode!=="LIVE"&&body.expectedMode!=="DEMO")||!Number.isInteger(body.expectedRevision))return apiError(id,400,"RUNTIME_MODE_INVALID","模式切換參數無效");const db=openAppDatabase();try{return ok(switchProviderModeCas(db,body.mode,body.expectedMode,body.expectedRevision as number),id);}catch(error){if(error instanceof Error&&error.message==="MODE_REVISION_CONFLICT")return apiError(id,409,"MODE_REVISION_CONFLICT","目前模式已變更，請重新載入");throw error;}finally{db.close();}}catch(error){const code=error instanceof Error?error.message:"";if(["LOCALHOST_REQUIRED","ORIGIN_REQUIRED","ORIGIN_NOT_ALLOWED","FETCH_SITE_NOT_ALLOWED"].includes(code))return apiError(id,403,code,"只允許本機同源操作");return apiError(id,500,"RUNTIME_MODE_FAILED","無法切換本機資料模式");}}

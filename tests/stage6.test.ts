@@ -1,0 +1,75 @@
+import { afterEach,describe,expect,it } from "vitest";
+import { mkdtempSync,rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { openDatabase,type AppDatabase } from "@/server/db/connection";
+import { applyMigrations } from "@/server/db/migrations";
+import { getSettings,switchProviderMode } from "@/server/db/settings-repository";
+import { cleanupLiveRetention,latestCollectionSuccessMs } from "@/server/db/poll-repository";
+import { collectOnce,recordSkippedOverlap,runManualConnectionTest,type EnterpriseGetter } from "@/server/collector/service";
+import { floorSampleSlot,isInsideServiceWindow,nextScheduledAt,scheduledSampleSlot } from "@/server/collector/schedule";
+import { EnterpriseClientError,type EndpointSuccess,type EnterpriseEndpoint } from "@/server/enterprise/types";
+import { assertResponseSize,classifyTransportError,validateEnvelope,validateHttpStatus } from "@/server/enterprise/client";
+import { loadEnterpriseClientConfig,tlsAgentOptions } from "@/server/enterprise/config";
+import { buildCatalog,parseValues } from "@/server/enterprise/mapping";
+import { getEnvironmentMonitoring,getMachineMonitoring } from "@/server/live/provider";
+import { queryLiveEnvironment } from "@/server/live/live-query";
+import { queryConnectionStatus } from "@/server/live/connection-status";
+import { endpointSuccess,stage6Payloads,syntheticSensorIds } from "./fixtures/stage6-enterprise";
+
+const roots:string[]=[],dbs:AppDatabase[]=[];
+function setup(){const root=mkdtempSync(join(tmpdir(),"jiyin-stage6-"));roots.push(root);const db=openDatabase(join(root,"test.sqlite"));dbs.push(db);applyMigrations(db);return db;}
+afterEach(()=>{while(dbs.length)dbs.pop()!.close();while(roots.length)rmSync(roots.pop()!,{recursive:true,force:true});});
+
+class MockClient implements EnterpriseGetter{
+  calls:EnterpriseEndpoint[]=[];constructor(private readonly handler:(endpoint:EnterpriseEndpoint,attempt:number)=>Promise<EndpointSuccess>){ }
+  get(endpoint:EnterpriseEndpoint,attempt=1){this.calls.push(endpoint);return this.handler(endpoint,attempt);}
+}
+const passClient=()=>new MockClient(async(endpoint)=>endpointSuccess(endpoint));
+const at=(local:string)=>Date.parse(`2026-11-15T${local}:00+08:00`);
+
+describe("Stage 6 enterprise client safety and contracts",()=>{
+  it("accepts only an exact allowlisted HTTPS origin and keeps TLS exceptions scoped",()=>{
+    const config=loadEnterpriseClientConfig({ENTERPRISE_API_ORIGIN:"https://192.0.2.10",ENTERPRISE_API_ALLOWED_ORIGINS:"https://192.0.2.10",ENTERPRISE_TLS_MODE:"allowlisted_self_signed",ENTERPRISE_API_AUTH_MODE:"none"});
+    expect(config).toMatchObject({origin:"https://192.0.2.10",authMode:"none",timeoutMs:10000,maxResponseBytes:2097152});
+    expect(tlsAgentOptions(config)).toEqual({rejectUnauthorized:false});
+    expect(process.env.NODE_TLS_REJECT_UNAUTHORIZED).toBeUndefined();
+    expect(()=>loadEnterpriseClientConfig({ENTERPRISE_API_ORIGIN:"https://192.0.2.11",ENTERPRISE_API_ALLOWED_ORIGINS:"https://192.0.2.10"})).toThrow(/允許清單/);
+    expect(()=>loadEnterpriseClientConfig({ENTERPRISE_API_ORIGIN:"https://user@192.0.2.10",ENTERPRISE_API_ALLOWED_ORIGINS:"https://user@192.0.2.10"})).toThrow(/HTTPS origin/);
+  });
+  it("separates redirect, HTTP, size, timeout, API and schema failures",()=>{
+    expect(()=>validateHttpStatus(302)).toThrowError(expect.objectContaining({code:"REDIRECT"}));
+    expect(()=>validateHttpStatus(503)).toThrowError(expect.objectContaining({code:"HTTP_STATUS",retryable:true}));
+    expect(()=>assertResponseSize(101,100)).toThrowError(expect.objectContaining({code:"RESPONSE_TOO_LARGE"}));
+    expect(classifyTransportError(Object.assign(new Error("secret host"),{code:"ETIMEDOUT"}))).toMatchObject({code:"TIMEOUT",retryable:true,message:"企業 API 請求逾時"});
+    expect(()=>validateEnvelope("values",{...stage6Payloads().values,responseCode:"99"})).toThrowError(expect.objectContaining({code:"API_RESPONSE"}));
+    expect(()=>validateEnvelope("groups",{...stage6Payloads().groups,data:{}})).toThrowError(expect.objectContaining({code:"SCHEMA"}));
+    expect(()=>validateEnvelope("values",{...stage6Payloads().values,data:{bad:{id:"other",updateTime:"x",values:{}}}})).toThrowError(expect.objectContaining({code:"SCHEMA"}));
+  });
+  it("maps all 48 synthetic sensors without guessing the ungrouped sensor",()=>{
+    const configs=endpointSuccess("configs"),groups=endpointSuccess("groups"),catalog=buildCatalog(configs,groups,at("10:01"));
+    expect(catalog).toHaveLength(48);expect(catalog.filter((item)=>item.mappingStatus==="MAPPED")).toHaveLength(24);
+    expect(catalog.find((item)=>item.sensorId===syntheticSensorIds.at(-1))).toMatchObject({groupId:null,mappingStatus:"OUT_OF_SCOPE"});
+    const lookup=new Map(catalog.map((item)=>[item.sensorId,{sensorType:item.sensorType,unit:item.unit,mappingStatus:item.mappingStatus==="MAPPED"?"MAPPED" as const:"UNMAPPED" as const}]));
+    const readings=parseValues(stage6Payloads().values,at("10:01"),lookup);expect(readings).toHaveLength(48);expect(readings.find((item)=>item.sensorId==="curf")).toMatchObject({numericValue:21.6,mappingStatus:"MAPPED"});
+  });
+});
+
+describe("Stage 6 schedule and collector transactions",()=>{
+  it("uses the approved Taipei service window and slots",()=>{expect(isInsideServiceWindow(at("08:59"))).toBe(false);expect(isInsideServiceWindow(at("09:00"))).toBe(true);expect(isInsideServiceWindow(at("17:00"))).toBe(false);expect(floorSampleSlot(at("10:01"))).toBe(at("10:00"));expect(scheduledSampleSlot(Date.parse("2026-11-15T10:03:15+08:00"))).toBe(at("10:03"));expect(nextScheduledAt(Date.parse("2026-11-15T10:01:00+08:00"))).toBe(Date.parse("2026-11-15T10:03:15+08:00"));expect(nextScheduledAt(Date.parse("2026-11-15T16:57:15+08:00"))).toBe(Date.parse("2026-11-16T09:00:15+08:00"));});
+  it("persists a startup run, metadata and 48 independent readings",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);const client=passClient(),result=await collectOnce(db,client,{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});expect(result).toMatchObject({status:"SUCCESS",readingCount:48});expect(client.calls).toEqual(["values","configs","groups"]);expect(db.prepare("SELECT sample_slot_ms,status,persisted_reading_count FROM api_poll_runs").get()).toEqual({sample_slot_ms:at("10:00"),status:"SUCCESS",persisted_reading_count:48});expect(db.prepare("SELECT COUNT(*) count FROM sensor_catalog").get()).toEqual({count:48});expect(db.prepare("SELECT COUNT(*) count FROM sensor_metadata_snapshots").get()).toEqual({count:2});});
+  it("deduplicates unchanged metadata snapshots and floors MODE_RESUME to the current slot",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);await collectOnce(db,passClient(),{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});await collectOnce(db,passClient(),{trigger:"MODE_RESUME",nowMs:at("11:02"),sleep:async()=>{}});expect(db.prepare("SELECT COUNT(*) count FROM sensor_metadata_snapshots").get()).toEqual({count:2});expect(db.prepare("SELECT sample_slot_ms,trigger_type FROM api_poll_runs ORDER BY poll_run_id DESC LIMIT 1").get()).toEqual({sample_slot_ms:at("11:00"),trigger_type:"MODE_RESUME"});});
+  it("keeps values when metadata partially fails and marks mapping stale/unmapped",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);const client=new MockClient(async(endpoint)=>{if(endpoint==="groups")throw new EnterpriseClientError("NETWORK","網路失敗",null,false);return endpointSuccess(endpoint);});const result=await collectOnce(db,client,{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});expect(result).toMatchObject({status:"PARTIAL",readingCount:48});expect(db.prepare("SELECT COUNT(*) count FROM sensor_catalog").get()).toEqual({count:0});expect(db.prepare("SELECT DISTINCT mapping_status FROM live_sensor_readings").all()).toEqual([{mapping_status:"UNMAPPED"}]);});
+  it("retries only retryable failures once within the same poll",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);let valuesAttempts=0,sleeps=0;const client=new MockClient(async(endpoint,attempt)=>{if(endpoint==="values"&&++valuesAttempts===1)throw new EnterpriseClientError("TIMEOUT","逾時",null,true);return {...endpointSuccess(endpoint),attemptCount:attempt};});const result=await collectOnce(db,client,{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{sleeps++;}});expect(result.status).toBe("SUCCESS");expect(valuesAttempts).toBe(2);expect(sleeps).toBe(1);expect(db.prepare("SELECT attempt_count FROM api_endpoint_runs WHERE endpoint='values'").get()).toEqual({attempt_count:2});});
+  it("discards an in-flight run when mode revision changes",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);let changed=false;const client=new MockClient(async(endpoint)=>{if(!changed){changed=true;switchProviderMode(db,"DEMO",1);}return endpointSuccess(endpoint);});const result=await collectOnce(db,client,{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});expect(result).toMatchObject({status:"DISCARDED_MODE_CHANGED",readingCount:0});expect(db.prepare("SELECT COUNT(*) count FROM live_sensor_readings").get()).toEqual({count:0});expect(db.prepare("SELECT COUNT(*) count FROM api_endpoint_runs").get()).toEqual({count:0});});
+  it("does not call the API outside the service window",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);const client=passClient(),result=await collectOnce(db,client,{trigger:"STARTUP",nowMs:at("17:01")});expect(result.status).toBe("SKIPPED_OUTSIDE_WINDOW");expect(client.calls).toEqual([]);});
+  it("keeps manual tests out of readings and collection success",async()=>{const db=setup();const result=await runManualConnectionTest(db,passClient(),{nowMs:at("10:01"),sleep:async()=>{}});expect(result.status).toBe("SUCCESS");expect(db.prepare("SELECT COUNT(*) count FROM live_sensor_readings").get()).toEqual({count:0});expect(latestCollectionSuccessMs(db)).toBeNull();});
+  it("records overlap and retention deletes only live audit/readings",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);await collectOnce(db,passClient(),{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});recordSkippedOverlap(db,{trigger:"SCHEDULED",scheduledForMs:Date.parse("2026-11-15T10:03:15+08:00"),nowMs:Date.parse("2026-11-15T10:03:15+08:00")});db.prepare(`INSERT INTO import_batches(source_date,original_file_name,file_size_bytes,file_sha256,canonical_fingerprint,contract_version,alarm_source_status,status,created_at_ms) VALUES('2025-01-01','synthetic.xlsx',1,'sha','fp','test','PROVIDED_EMPTY','ACTIVE',1)`).run();expect(db.prepare("SELECT status FROM api_poll_runs ORDER BY poll_run_id DESC LIMIT 1").get()).toEqual({status:"SKIPPED_OVERLAP"});cleanupLiveRetention(db,Date.parse("2026-11-16T00:00:00+08:00"));expect(db.prepare("SELECT COUNT(*) count FROM api_poll_runs").get()).toEqual({count:0});expect(db.prepare("SELECT COUNT(*) count FROM import_batches").get()).toEqual({count:1});});
+});
+
+describe("Stage 6 providers and Stage 7 query interfaces",()=>{
+  it("serves a deterministic Demo fixture without any database writes",()=>{const db=setup(),before=db.prepare("SELECT COUNT(*) count FROM api_poll_runs").get();const machines=getMachineMonitoring(db,Date.parse("2030-01-01T00:00:00Z")),environment=getEnvironmentMonitoring(db,{area:"A",metric:"temperature",nowMs:Date.parse("2030-01-01T00:00:00Z")});expect(machines.providerMode).toBe("DEMO");if(machines.providerMode!=="DEMO")throw new Error("expected Demo provider");expect(machines.timeContext.dataDate).toBe("2026-01-15");const allMachines=machines.data.areas.flatMap((area)=>area.machines),summary=machines.data.userSummary;expect(allMachines).toHaveLength(8);expect(allMachines.every((machine)=>machine.completionDetector.meaning==="UNCONFIRMED_COMPLETION_SIGNAL")).toBe(true);expect(summary.processing+summary.standbyOrComplete+summary.redAbnormal+summary.otherLamp+summary.unavailable).toBe(8);expect(environment.data.latest).toHaveLength(2);expect(environment.data.series[0].samples[0]).toMatchObject({observed:true,freshness:"STALE"});expect(db.prepare("SELECT COUNT(*) count FROM api_poll_runs").get()).toEqual(before);});
+  it("returns fixed 09–17 gaps and does not repeat an unchanged updateTime",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);await collectOnce(db,passClient(),{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});await collectOnce(db,passClient(),{trigger:"SCHEDULED",scheduledForMs:Date.parse("2026-11-15T10:03:15+08:00"),nowMs:Date.parse("2026-11-15T10:03:15+08:00"),sleep:async()=>{}});const data=queryLiveEnvironment(db,{area:"A",metric:"temperature",nowMs:at("10:04"),staleAfterSeconds:420});expect(data.axis).toEqual({date:"2026-11-15",start:"09:00",end:"17:00",stepMinutes:3});expect(data.series[0].samples).toHaveLength(160);expect(data.series[0].samples.find((sample)=>sample.time==="10:00")).toMatchObject({observed:true});expect(data.series[0].samples.find((sample)=>sample.time==="10:03")).toMatchObject({observed:false,gapReason:"SENSOR_NOT_UPDATED"});});
+  it("does not auto-switch to Demo after a Live failure",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);const client=new MockClient(async(endpoint)=>{throw new EnterpriseClientError("NETWORK",`fail ${endpoint}`,null,false);});const result=await collectOnce(db,client,{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});expect(result.status).toBe("FAILED_NO_READINGS");expect(getSettings(db).providerMode).toBe("LIVE");});
+  it("separates collector, manual test, endpoint and latest-data health",async()=>{const db=setup();switchProviderMode(db,"LIVE",0);await collectOnce(db,passClient(),{trigger:"STARTUP",nowMs:at("10:01"),sleep:async()=>{}});await runManualConnectionTest(db,passClient(),{nowMs:at("10:02"),sleep:async()=>{}});const status=queryConnectionStatus(db,{nowMs:at("10:03"),configured:true,tlsMode:"strict",authMode:"none"});expect(status.collector).toMatchObject({lastResult:"SUCCESS"});expect(status.manualTest).toMatchObject({result:"SUCCESS"});expect(status.endpoints).toHaveLength(3);expect(status.collector.latestSensorDataAt).not.toBeNull();});
+});
