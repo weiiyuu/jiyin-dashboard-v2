@@ -124,3 +124,14 @@
 - Safety: No statistics formula, data-quality eligibility, SQLite schema, Excel/event page, enterprise API/file, real database, deployment, push, Stage 6/7, or destructive operation was used or changed.
 - Open issues: Human visual confirmation against the user's private 2025/06/01 values and subjective typography/color density remains required. `next start` continues to print the pre-existing standalone-output warning; formal production container validation remains later scope.
 - Next: Stop for user review of `STAGE5_3_UAT_ROUND1_VISUAL_ACCEPTANCE.md`; do not begin another stage.
+
+## Stage 5.3 — Human UAT final UI/UX corrections
+
+- Status: Implementation, automated regression, public-synthetic browser operation, and 1280/1366/1440px visual/DOM acceptance complete; subjective user sign-off remains pending.
+- Main changes: Made all range/comparison trend lines solid while retaining Tooltip and legend focus/hide; enlarged light-state percentages to high-contrast 16px/900 labels; restricted 30/60-minute grain to single-day ranges and exposed a disabled daily control for multi-day ranges; clarified day/week/month comparison copy and showed calculated seven-day/full-month ranges; completed a purpose-based typography and layout pass across the shared shell, home, Excel import, operation analysis, event analysis, deferred live pages, and API settings.
+- Typography evidence: At 1366px, visible direct-text nodes below 14px changed from 31/228/49/52/25/25/25 across home/import/operation/event/machine/environment/settings to zero on every route. The same zero-below-14 result held at 1280 and 1440px. All measured pages had zero page overflow and zero unhandled clipped nodes. Primary navigation, body, tables, forms, and actions are now generally 16px or larger; secondary metadata/chart text is 14–15px by purpose.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test -- --run` (98 passed, 1 opt-in private-workbook test skipped), and `npm run build` with Webpack passed. Component regressions verify solid SVG lines and comparison-period helpers.
+- Browser: Chrome production-build flows passed 30/60-minute range, missing/valid-zero data, multi-day daily lock, day/week/month comparisons, Tooltip, legend focus/hide, per-machine/aggregate shares, percentage style assertions, and complete week-range preview. At 1280/1366/1440px the page and charts had no horizontal overflow. Before/after and functional evidence is under `docs/evidence/stage5_3_uat_ux/`.
+- Commit: `0f329bf` (implementation and browser evidence); acceptance documentation follows in the next local commit.
+- Safety: No enterprise API/file, private database, credential, Excel/statistics/quality contract, schema, deployment, push, Stage 6/7, destructive Git operation, or data/volume deletion was used or changed.
+- Next: Stop for user review of `STAGE5_3_UAT_FINAL_UI_UX_ACCEPTANCE.md`; do not begin another stage.
