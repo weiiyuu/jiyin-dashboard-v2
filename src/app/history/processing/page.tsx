@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   ComparisonRanking,
-  CoverageStatus,
   OperationShareChart,
   RankingChart,
   TrendChart,
@@ -71,6 +70,11 @@ function comparisonFieldLabel(kind: ComparisonKind, period: "A" | "B") {
   return kind === "week" ? `期間 ${period} 起始日` : kind === "month" ? `期間 ${period} 月份` : `期間 ${period} 日期`;
 }
 function periodLabel(period: ComparePeriod) { return dateRange(period.startDate, period.endDate); }
+function coverageNeedsAttention(coverage: Coverage) {
+  return coverage.importedIntervals < coverage.expectedIntervals
+    || coverage.greenEligibleIntervals < coverage.importedIntervals
+    || (coverage.threeStateEligibleIntervals ?? 0) < coverage.importedIntervals;
+}
 function sourceTimeLabel(point: TrendPoint) { return `${formatDateDisplay(point.sourceLabel.replace(" ", " · ").replace(/-(?=\d{2}:\d{2}$)/, "–"))}`; }
 function comparisonTimeLabel(kind: CompareResult["compareKind"], sourceDate: string | null, position: string | number) {
   if (!sourceDate) return kind === "month" ? `第 ${position} 日（不適用）` : `第 ${position} 日（無資料）`;
@@ -185,16 +189,17 @@ function RangeView({ value, highlightedMachine, onHighlight, hiddenSeries, onTog
     .sort((left, right) => (right.share.percent.green ?? -1) - (left.share.percent.green ?? -1) || left.machineId.localeCompare(right.machineId))
     .map((item) => ({ id: item.machineId, label: item.machineId, value: item.share }));
   const shareRows: OperationShareRow[] = shareMode === "total" ? [{ id: "total", label: "所選機台合計", value: value.threeStateShare }] : machineRows;
+  const coverageNote = coverageNeedsAttention(value.coverage) ? " · 部分資料缺漏或不符合品質條件，未補 0" : "";
   return <>
-    <Panel title="累積加工時數排行" subtitle={`${dateText} · ${machineText}`} actions={modeChip("區間分析")}><div className="panel-body stack"><CoverageStatus coverage={value.coverage}/><RankingChart dateLabel={dateText} rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight}/></div></Panel>
-    <Panel title="機台運轉趨勢圖" subtitle={`${dateText} · ${value.period.days === 1 ? value.period.grain.replace("_MINUTES", " 分鐘粒度") : "每日粒度"} · ${machineText}`} actions={modeChip("區間分析")}><TrendChart labels={labels} series={series} hiddenKeys={hiddenSeries} onToggleSeries={onToggleSeries} axisMode={axisMode} ariaLabel="逐機台加工時間趨勢"/></Panel>
-    <Panel title={shareMode === "machine" ? "各機台燈號時間占比" : "整體燈號時間占比"} subtitle={`${dateText} · 只納入品質合格的 Green／Yellow／Red 秒數`} actions={<div className="chart-header-actions">{modeChip("區間分析")}<div className="segmented"><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>各機台占比</button><button className={`segment ${shareMode === "total" ? "active" : ""}`} onClick={() => onShareMode("total")}>整體占比</button></div></div>}><div className="panel-body"><OperationShareChart rows={shareRows} dateLabel={dateText}/></div></Panel>
+    <Panel title="累積加工時數排行" subtitle={`${dateText} · ${machineText}${coverageNote}`} actions={modeChip("區間分析")}><div className="panel-body"><RankingChart dateLabel={dateText} rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight}/></div></Panel>
+    <Panel title="機台運轉趨勢圖" subtitle={`${dateText} · ${value.period.days === 1 ? value.period.grain.replace("_MINUTES", " 分鐘粒度") : "每日粒度"} · ${machineText}${coverageNote}`} actions={modeChip("區間分析")}><TrendChart labels={labels} series={series} hiddenKeys={hiddenSeries} onToggleSeries={onToggleSeries} axisMode={axisMode} ariaLabel="逐機台加工時間趨勢"/></Panel>
+    <Panel title={shareMode === "machine" ? "各機台燈號時間占比" : "整體燈號時間占比"} subtitle={`${dateText} · 只納入品質合格的三態時間${coverageNote}`} actions={<div className="chart-header-actions">{modeChip("區間分析")}<div className="segmented"><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>各機台占比</button><button className={`segment ${shareMode === "total" ? "active" : ""}`} onClick={() => onShareMode("total")}>整體占比</button></div></div>}><div className="panel-body"><OperationShareChart rows={shareRows} dateLabel={dateText}/></div></Panel>
   </>;
 }
 
 function comparisonSeries(points: ComparisonTrendPoint[], periods: CompareResult["periods"], kind: CompareResult["compareKind"]): LineSeries[] {
   return (["A", "B"] as const).map((key, index) => ({
-    key, label: `期間 ${key} · ${periodLabel(periods[key])}`, color: index === 0 ? "#62d49a" : "#dc8b88",
+    key, label: periodLabel(periods[key]), color: index === 0 ? "#62d49a" : "#dc8b88",
     values: points.map((item) => item.periods[key].greenHours), partial: points.map((item) => item.periods[key].coverage.completeness === "PARTIAL"),
     details: points.map((item) => ({ timeLabel: comparisonTimeLabel(kind, item.periods[key].sourceDate, item.position), availability: item.periods[key].availability, completeness: item.periods[key].coverage.completeness })),
   }));
@@ -204,29 +209,29 @@ function CompareView({ value, highlightedMachine, onHighlight, trendMode, onTren
   value: CompareResult; highlightedMachine: string | null; onHighlight: (machine: string) => void; trendMode: "overall" | "single"; onTrendMode: (mode: "overall" | "single") => void; trendMachine: string; onTrendMachine: (machine: string) => void; shareMode: "overall" | "machine"; onShareMode: (mode: "overall" | "machine") => void;
 }) {
   const periodLabels = { A: periodLabel(value.periods.A), B: periodLabel(value.periods.B) };
-  const subtitle = `${compareKindLabel(value.compareKind)} · A ${periodLabels.A} · B ${periodLabels.B}`;
+  const subtitle = `${compareKindLabel(value.compareKind)}：${periodLabels.A} v.s. ${periodLabels.B}`;
   const machineSeries = value.seriesByMachine.find((item) => item.machineId === trendMachine);
   const trend = trendMode === "single" && machineSeries ? machineSeries.trend : value.trend;
   const labels = trend.map((item) => String(item.position));
   const axisMode: TrendAxisMode = value.compareKind === "day" ? "COMPARE_DAY" : value.compareKind === "week" ? "COMPARE_WEEK" : "COMPARE_MONTH";
   const partial = value.compareKind === "month" && (value.periods.A.partial || value.periods.B.partial);
+  const coverageNote = coverageNeedsAttention(value.coverage.A) || coverageNeedsAttention(value.coverage.B) ? " · 部分資料缺漏或不符合品質條件，未補 0" : "";
   const shareRows: OperationShareRow[] = shareMode === "overall" ? [
-    { id: "overall-a", label: "期間 A", value: value.threeStateShare.periods.A, deltaPercentagePoints: value.threeStateShare.deltaPercentagePoints },
-    { id: "overall-b", label: "期間 B", value: value.threeStateShare.periods.B, deltaPercentagePoints: value.threeStateShare.deltaPercentagePoints },
+    { id: "overall-a", label: periodLabels.A, value: value.threeStateShare.periods.A, deltaPercentagePoints: value.threeStateShare.deltaPercentagePoints },
+    { id: "overall-b", label: periodLabels.B, value: value.threeStateShare.periods.B, deltaPercentagePoints: value.threeStateShare.deltaPercentagePoints },
   ] : value.threeStateShareByMachine.flatMap((item) => ([
-    { id: `${item.machineId}-a`, groupLabel: item.machineId, label: "期間 A", value: item.periods.A, deltaPercentagePoints: item.deltaPercentagePoints },
-    { id: `${item.machineId}-b`, groupLabel: item.machineId, label: "期間 B", value: item.periods.B, deltaPercentagePoints: item.deltaPercentagePoints },
+    { id: `${item.machineId}-a`, groupLabel: item.machineId, label: periodLabels.A, value: item.periods.A, deltaPercentagePoints: item.deltaPercentagePoints },
+    { id: `${item.machineId}-b`, groupLabel: item.machineId, label: periodLabels.B, value: item.periods.B, deltaPercentagePoints: item.deltaPercentagePoints },
   ]));
   return <>
-    <Panel title="同期加工時數比較" subtitle={subtitle} actions={modeChip("同期比較")}><div className="panel-body stack">
-      {partial && <div className="notice warning"><span>!</span><div><strong>包含尚未完整結束的月份</strong><div>平均值仍除以完整曆日；A 已經過 {value.periods.A.elapsedCalendarDays}/{value.periods.A.days} 日，B 已經過 {value.periods.B.elapsedCalendarDays}/{value.periods.B.days} 日。</div></div></div>}
-      <div className="coverage-status-pair"><CoverageStatus coverage={value.coverage.A} label="期間 A 覆蓋"/><CoverageStatus coverage={value.coverage.B} label="期間 B 覆蓋"/></div>
+    <Panel title="同期加工時數比較" subtitle={`${subtitle}${coverageNote}`} actions={modeChip("同期比較")}><div className="panel-body stack">
+      {partial && <div className="notice warning"><span>!</span><div><strong>包含尚未完整結束的月份</strong><div>平均值仍除以完整曆日；{periodLabels.A} 已經過 {value.periods.A.elapsedCalendarDays}/{value.periods.A.days} 日，{periodLabels.B} 已經過 {value.periods.B.elapsedCalendarDays}/{value.periods.B.days} 日。</div></div></div>}
       <ComparisonRanking rows={value.ranking} highlightedMachine={highlightedMachine} onHighlight={onHighlight} periodLabels={periodLabels}/>
     </div></Panel>
-    <Panel title="機台運轉趨勢比較" subtitle={`${subtitle} · ${trendMode === "single" ? `${trendMachine} 單機` : "所選機台合計"}`} actions={modeChip("同期比較")}><div className="panel-body stack">
+    <Panel title="機台運轉趨勢比較" subtitle={`${subtitle} · ${trendMode === "single" ? `${trendMachine} 單機` : "所選機台合計"}${coverageNote}`} actions={modeChip("同期比較")}><div className="panel-body stack">
       <div className="comparison-local-toolbar"><div className="segmented"><button className={`segment ${trendMode === "overall" ? "active" : ""}`} onClick={() => onTrendMode("overall")}>整體趨勢</button><button className={`segment ${trendMode === "single" ? "active" : ""}`} onClick={() => onTrendMode("single")}>單機趨勢</button></div>{trendMode === "single" && <label><span>檢視機台</span><select aria-label="檢視機台" className="control compact" value={trendMachine} onChange={(event) => onTrendMachine(event.target.value)}>{value.seriesByMachine.map((item) => <option key={item.machineId} value={item.machineId}>{item.machineId}</option>)}</select></label>}</div>
-      <TrendChart labels={labels} series={comparisonSeries(trend, value.periods, value.compareKind)} axisMode={axisMode} ariaLabel={`${trendMode === "single" ? trendMachine : "所選機台合計"} A／B 加工時間趨勢`}/>
+      <TrendChart labels={labels} series={comparisonSeries(trend, value.periods, value.compareKind)} axisMode={axisMode} ariaLabel={`${trendMode === "single" ? trendMachine : "所選機台合計"} ${periodLabels.A} 與 ${periodLabels.B} 加工時間趨勢`}/>
     </div></Panel>
-    <Panel title="燈號時間占比比較" subtitle={`${subtitle} · A／B 各自使用有效三態秒數為分母`} actions={<div className="chart-header-actions">{modeChip("同期比較")}<div className="segmented"><button className={`segment ${shareMode === "overall" ? "active" : ""}`} onClick={() => onShareMode("overall")}>整體占比</button><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>各機台占比</button></div></div>}><div className="panel-body"><OperationShareChart rows={shareRows} dateLabel={`A ${periodLabels.A} · B ${periodLabels.B}`} comparisonSummary={{ label: shareMode === "overall" ? "所選機台整體" : "各機台依列顯示 A／B", greenDelta: value.threeStateShare.deltaPercentagePoints.green }}/></div></Panel>
+    <Panel title="燈號時間占比比較" subtitle={`${subtitle} · 兩個期間各自使用品質合格的三態時間${coverageNote}`} actions={<div className="chart-header-actions">{modeChip("同期比較")}<div className="segmented"><button className={`segment ${shareMode === "overall" ? "active" : ""}`} onClick={() => onShareMode("overall")}>整體占比</button><button className={`segment ${shareMode === "machine" ? "active" : ""}`} onClick={() => onShareMode("machine")}>各機台占比</button></div></div>}><div className="panel-body"><OperationShareChart rows={shareRows} dateLabel={`${periodLabels.A} v.s. ${periodLabels.B}`} comparisonSummary={{ label: shareMode === "overall" ? "所選機台整體" : "各機台逐列比較兩個日期", greenDelta: value.threeStateShare.deltaPercentagePoints.green }}/></div></Panel>
   </>;
 }

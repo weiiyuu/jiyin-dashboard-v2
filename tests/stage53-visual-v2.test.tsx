@@ -10,6 +10,7 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(formatDurationHours(.75)).toBe("45 分");
     expect(formatDurationHours(0)).toBe("0 分");
     expect(formatDurationHours(10/3600)).toBe("不足 1 分");
+    expect(formatDurationHours(59/3600)).toBe("不足 1 分");
     expect(formatDurationHours(1.5,"HOURS_PER_DAY")).toBe("1 小時 30 分／日");
   });
 

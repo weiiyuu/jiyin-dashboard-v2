@@ -145,3 +145,11 @@
 - Commit: `56a8782` (implementation, tests, runner, and synthetic browser evidence); acceptance/log documentation follows in the next local commit.
 - Safety: No statistic, comparison, data-quality, SQLite, Excel, event-page, enterprise API/file, real database, push, deployment, Stage 6/7, destructive Git operation, or data/volume deletion was used or changed. `_reference_inputs/` remained ignored/read-only.
 - Next: Stop for user review of `STAGE5_3_UAT_ROUND2_ACCEPTANCE.md`; do not begin another stage.
+
+## Stage 5.3 — Human UAT Round 3 interface cleanup
+
+- Status: Six user-facing cleanup items complete; Level 1 synthetic-browser smoke passed and user UAT remains pending.
+- Main changes: Reduced the Excel version table to the approved six columns and moved Batch ID, full filename, import time, Alarm source, same-day version, status, and rollback action into an expandable detail row. Added consistent shared Select arrow spacing; removed raw-second duplication from duration displays; removed range/comparison coverage summary strips while retaining plain-language incomplete-data warnings; replaced result-side A/B aliases with actual dates or date ranges across comparison subtitles, legends, bars, Tooltips, share rows, and sorting copy.
+- Checks: Related Vitest files passed 14 tests; `npm run typecheck`, `npm run lint`, `npm run build` with Webpack, and `git diff --check` passed. A production-build Chrome smoke at 1366px used a new `/private/tmp` public synthetic SQLite database and verified the six import columns/detail expansion, 0px toolbar control alignment delta, 48px Select right padding, range/comparison cleanup, date-based labels, readable duration Tooltips, shared event-page Select styling, and no page-level horizontal overflow.
+- Safety: Statistics, coverage calculations, quality eligibility, comparison rules, SQLite schema, Excel parsing/transactions, enterprise API/data, real databases, push, deployment, and Stage 6/7 were not changed or used.
+- Next: Stop for user UAT at the existing localhost pages; do not begin another stage.

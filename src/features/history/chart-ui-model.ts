@@ -18,7 +18,7 @@ function rounded(value: number) {
 export function formatDurationHours(hours: number, unit: "HOURS" | "HOURS_PER_DAY" = "HOURS") {
   const suffix = unit === "HOURS_PER_DAY" ? "／日" : "";
   if (hours === 0) return `0 分${suffix}`;
-  if (hours > 0 && hours * 3600 < 30) return `不足 1 分${suffix}`;
+  if (hours > 0 && hours * 3600 < 60) return `不足 1 分${suffix}`;
   const totalMinutes = Math.round(hours * 60);
   const wholeHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

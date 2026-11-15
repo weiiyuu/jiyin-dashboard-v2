@@ -115,7 +115,7 @@ export function ComparisonRanking({ rows, highlightedMachine, onHighlight, perio
   const unit = rows[0]?.periods.A.unit ?? "HOURS";
   const scale = niceHourScale(maxValue);
   return <div className="chart-box comparison-ranking-v2" data-chart="comparison-ranking">
-    <div className="chart-legend comparison-legend"><span><i className="legend-dot period-a-dot"/>期間 A</span><span><i className="legend-dot period-b-dot"/>期間 B</span><span>依期間 B 排序</span></div>
+    <div className="chart-legend comparison-legend"><span><i className="legend-dot period-a-dot"/>{periodLabels.A}</span><span><i className="legend-dot period-b-dot"/>{periodLabels.B}</span><span>依 {periodLabels.B} 排序</span></div>
     <ScaleAxis maxValue={maxValue} unit={unit} title={unit === "HOURS_PER_DAY" ? "平均每日加工時數" : "累積時數"}/>
     <div className="comparison-v2-list">{rows.map((row) => {
       const a = row.periods.A.greenHours;
@@ -134,9 +134,9 @@ export function ComparisonRanking({ rows, highlightedMachine, onHighlight, perio
         aria-describedby={hovered === row.machineId ? tooltipId : undefined}
       >
         <strong className="comparison-machine">{row.machineId}</strong>
-        <span className="comparison-bars-v2"><span className="comparison-bar-line"><b>A</b><span className="comparison-bar-plot"><GridLines maxValue={maxValue}/>{a !== null && a > 0 && <span className="comparison-solid-bar period-a" style={{ width: `${a / scale.max * 100}%` }}/>} {a === 0 && <span className="ranking-zero-mark"/>}</span></span><span className="comparison-bar-line"><b>B</b><span className="comparison-bar-plot"><GridLines maxValue={maxValue}/>{b !== null && b > 0 && <span className="comparison-solid-bar period-b" style={{ width: `${b / scale.max * 100}%` }}/>} {b === 0 && <span className="ranking-zero-mark"/>}</span></span></span>
+        <span className="comparison-bars-v2"><span className="comparison-bar-line"><b>{periodLabels.A}</b><span className="comparison-bar-plot"><GridLines maxValue={maxValue}/>{a !== null && a > 0 && <span className="comparison-solid-bar period-a" style={{ width: `${a / scale.max * 100}%` }}/>} {a === 0 && <span className="ranking-zero-mark"/>}</span></span><span className="comparison-bar-line"><b>{periodLabels.B}</b><span className="comparison-bar-plot"><GridLines maxValue={maxValue}/>{b !== null && b > 0 && <span className="comparison-solid-bar period-b" style={{ width: `${b / scale.max * 100}%` }}/>} {b === 0 && <span className="ranking-zero-mark"/>}</span></span></span>
         <span className="comparison-duration">{a === null ? "資料不足" : formatDurationHours(a, unit)}<b aria-hidden="true">→</b>{b === null ? "資料不足" : formatDurationHours(b, unit)}</span>
-        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId}</strong><span>A · {periodLabels.A}：{a === null ? "資料不足" : formatDurationHours(a, unit)}</span><span>B · {periodLabels.B}：{b === null ? "資料不足" : formatDurationHours(b, unit)}</span><span>差異：{formatSignedDurationHours(row.difference ?? null, unit)}</span><span>相對變化：{row.relativeChange === null || row.relativeChange === undefined ? "不適用" : `${row.relativeChange >= 0 ? "+" : ""}${(row.relativeChange * 100).toFixed(1)}%`}</span></span>}
+        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId}</strong><span>{periodLabels.A}：{a === null ? "資料不足" : formatDurationHours(a, unit)}</span><span>{periodLabels.B}：{b === null ? "資料不足" : formatDurationHours(b, unit)}</span><span>差異：{formatSignedDurationHours(row.difference ?? null, unit)}</span><span>相對變化：{row.relativeChange === null || row.relativeChange === undefined ? "不適用" : `${row.relativeChange >= 0 ? "+" : ""}${(row.relativeChange * 100).toFixed(1)}%`}</span></span>}
       </button>;
     })}</div>
   </div>;
@@ -156,7 +156,7 @@ export interface StateShare {
 
 export function StateShareChart({ value, label }: { value: StateShare; label?: string }) {
   if (!value.denominatorSeconds) return <div className="empty-state"><div><div className="empty-icon">◫</div><strong>{label ? `${label} 無可用六態資料` : "無可用六態資料"}</strong><p>沒有符合六態品質條件的區間，因此不顯示假比例。</p></div></div>;
-  return <div className="chart-box">{label && <div className="chart-legend"><strong>{label}</strong><span>有效分母 {value.denominatorSeconds.toLocaleString()} 秒</span></div>}<div className="share-bar" aria-label={`${label ?? "期間"}六態時間占比`}>{sixStateConfig.map(([key, name, color]) => <div key={key} className="share-part" title={`${name} ${((value.percent[key] ?? 0) * 100).toFixed(1)}% · ${(value.seconds[key] ?? 0).toLocaleString()} 秒`} style={{ width: `${(value.percent[key] ?? 0) * 100}%`, background: color }}/>)}</div><div className="share-values">{sixStateConfig.map(([key, name, color]) => <div className="share-value" key={key}><span><i className="legend-dot" style={{ background: color }}/>{name}</span><strong>{((value.percent[key] ?? 0) * 100).toFixed(1)}%</strong></div>)}</div></div>;
+  return <div className="chart-box">{label && <div className="chart-legend"><strong>{label}</strong><span>有效分母 {formatDurationHours(value.denominatorSeconds / 3600)}</span></div>}<div className="share-bar" aria-label={`${label ?? "期間"}六態時間占比`}>{sixStateConfig.map(([key, name, color]) => <div key={key} className="share-part" title={`${name} ${((value.percent[key] ?? 0) * 100).toFixed(1)}% · ${formatDurationHours((value.seconds[key] ?? 0) / 3600)}`} style={{ width: `${(value.percent[key] ?? 0) * 100}%`, background: color }}/>)}</div><div className="share-values">{sixStateConfig.map(([key, name, color]) => <div className="share-value" key={key}><span><i className="legend-dot" style={{ background: color }}/>{name}</span><strong>{((value.percent[key] ?? 0) * 100).toFixed(1)}%</strong></div>)}</div></div>;
 }
 
 const operationStateConfig = [
@@ -186,9 +186,9 @@ function shareTooltipText(row: OperationShareRow, dateLabel: string) {
   const parts = operationStateConfig.map(([key, name]) => {
     const percent = row.value.percent[key];
     const hours = row.value.seconds[key] / 3600;
-    return `${name}：${percent === null ? "不可計算" : `${(percent * 100).toFixed(1)}%`}（${formatDurationHours(hours)}，${row.value.seconds[key].toLocaleString()} 秒）`;
+    return `${name}：${percent === null ? "不可計算" : `${(percent * 100).toFixed(1)}%`}（${formatDurationHours(hours)}）`;
   });
-  return `${row.groupLabel ? `${row.groupLabel} ` : ""}${row.label}；${dateLabel}；${parts.join("；")}；有效分母 ${row.value.denominatorSeconds.toLocaleString()} 秒`;
+  return `${row.groupLabel ? `${row.groupLabel} ` : ""}${row.label}；${dateLabel}；${parts.join("；")}；有效分母 ${formatDurationHours(row.value.denominatorSeconds / 3600)}`;
 }
 
 function FloatingTooltip({ anchorRef, className, id, children }: {
@@ -253,9 +253,9 @@ function OperationShareRowView({ row, showGroup, dateLabel }: { row: OperationSh
       <span className="share-tooltip-states">{operationStateConfig.map(([key, name, color]) => <span className="share-tooltip-state" key={key}>
         <span className="share-tooltip-state-name"><i className="legend-dot" style={{ background: color }}/><b>{name}</b></span>
         <strong>{row.value.percent[key] === null ? "不可計算" : `${(row.value.percent[key]! * 100).toFixed(1)}%`}</strong>
-        <span>{formatDurationHours(row.value.seconds[key] / 3600)} · {row.value.seconds[key].toLocaleString()} 秒</span>
+        <span>{formatDurationHours(row.value.seconds[key] / 3600)}</span>
       </span>)}</span>
-      <span className="share-tooltip-denominator"><span>有效分母</span><strong>{formatDurationHours(row.value.denominatorSeconds / 3600)} · {row.value.denominatorSeconds.toLocaleString()} 秒</strong></span>
+      <span className="share-tooltip-denominator"><span>有效分母</span><strong>{formatDurationHours(row.value.denominatorSeconds / 3600)}</strong></span>
     </FloatingTooltip>}
   </button></div>;
 }

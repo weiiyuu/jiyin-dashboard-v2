@@ -46,10 +46,14 @@ describe("Stage 5 UI truth-preserving view models",()=>{
     const share=renderToStaticMarkup(<OperationShareChart dateLabel="2025/06/01" rows={[{id:"A1",label:"A1",value:{denominatorSeconds:180,availability:"AVAILABLE",seconds:{green:90,yellow:60,red:30},percent:{green:.5,yellow:1/3,red:1/6}},deltaPercentagePoints:{green:12.5,yellow:-10,red:-2.5}}]} comparisonSummary={{label:"A1",greenDelta:12.5}}/>);
     expect(share).toContain("50.0%");
     expect(share).toContain("+12.5 百分點");
-    expect(share).toContain("有效分母 180 秒");
+    expect(share).toContain("有效分母 3 分");
+    expect(share).not.toContain("180 秒");
     const ranking=renderToStaticMarkup(<ComparisonRanking periodLabels={{A:"2025/06/01",B:"2025/06/02"}} rows={[{machineId:"A1",periods:{A:{greenHours:0,availability:"AVAILABLE"},B:{greenHours:2,availability:"AVAILABLE"}},difference:2,relativeChange:null}]}/>);
     expect(ranking).toContain("0 分");
     expect(ranking).toContain("2 小時");
+    expect(ranking).toContain("依 2025/06/02 排序");
+    expect(ranking).not.toContain("期間 A");
+    expect(ranking).not.toContain("期間 B");
     expect(ranking).not.toContain("Infinity");
   });
 });
