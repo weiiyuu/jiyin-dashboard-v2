@@ -135,3 +135,13 @@
 - Commit: `0f329bf` (implementation and browser evidence); acceptance documentation follows in the next local commit.
 - Safety: No enterprise API/file, private database, credential, Excel/statistics/quality contract, schema, deployment, push, Stage 6/7, destructive Git operation, or data/volume deletion was used or changed.
 - Next: Stop for user review of `STAGE5_3_UAT_FINAL_UI_UX_ACCEPTANCE.md`; do not begin another stage.
+
+## Stage 5.3 — Human UAT visual corrections Round 2
+
+- Status: Six targeted UI/chart corrections, automated regression, and public-synthetic real-browser validation complete; subjective user UAT remains pending.
+- Main changes: Aligned the four range-filter label/control/help rows; separated the trend Y-axis title from dynamic ticks; reduced machine-label-to-share-bar spacing to a responsive 16px; normalized partial/end trend points; rebuilt comparison trend Tooltip rows; and added viewport-aware structured overall/per-machine share Tooltips. All existing Tooltip, focus, legend hide/focus, and local chart interactions remain.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test -- --run` (98 passed; one opt-in private-workbook suite skipped), `npm run build` with Webpack, and `git diff --check` passed. Component regression verifies the updated SVG geometry and uniform partial-point marker.
+- Browser: Production Chrome at 100% used only an isolated `/private/tmp` synthetic SQLite database. Filter top/bottom/height spreads were 0px; six trend modes had no Y-title/tick overlap and at least 23.1px separation; share labels used a 16px gap; normal/focused endpoints remained circular; day/week/month trend and overall/per-machine share Tooltips stayed inside 1280/1366/1440px viewports. Range/comparison pages had no horizontal overflow. Evidence is under `docs/evidence/stage5_3_uat_round2/`.
+- Commit: `56a8782` (implementation, tests, runner, and synthetic browser evidence); acceptance/log documentation follows in the next local commit.
+- Safety: No statistic, comparison, data-quality, SQLite, Excel, event-page, enterprise API/file, real database, push, deployment, Stage 6/7, destructive Git operation, or data/volume deletion was used or changed. `_reference_inputs/` remained ignored/read-only.
+- Next: Stop for user review of `STAGE5_3_UAT_ROUND2_ACCEPTANCE.md`; do not begin another stage.
