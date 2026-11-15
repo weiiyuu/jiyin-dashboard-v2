@@ -1,0 +1,448 @@
+{
+  "phase": "after",
+  "browser": "Google Chrome headless",
+  "zoom": "100%",
+  "results": {
+    "1280": {
+      "home": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 39,
+        "below14": 0,
+        "below16": 18,
+        "fontSizes": {
+          "14": 18,
+          "16": 13,
+          "18": 2,
+          "25": 5,
+          "48": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "imports": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 0,
+        "below16": 36,
+        "fontSizes": {
+          "14": 21,
+          "15": 15,
+          "16": 12,
+          "18": 1,
+          "20": 7,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "operation": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 61,
+        "below14": 0,
+        "below16": 30,
+        "fontSizes": {
+          "14": 16,
+          "15": 14,
+          "16": 18,
+          "18": 3,
+          "20": 7,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "events": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 0,
+        "below16": 29,
+        "fontSizes": {
+          "14": 14,
+          "15": 15,
+          "16": 23,
+          "18": 1,
+          "20": 3,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "machines": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "environment": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "settings": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      }
+    },
+    "1366": {
+      "home": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 39,
+        "below14": 0,
+        "below16": 18,
+        "fontSizes": {
+          "14": 18,
+          "16": 13,
+          "18": 2,
+          "25": 5,
+          "48": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "imports": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 240,
+        "below14": 0,
+        "below16": 47,
+        "fontSizes": {
+          "14": 31,
+          "15": 16,
+          "16": 182,
+          "18": 1,
+          "20": 7,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "operation": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 61,
+        "below14": 0,
+        "below16": 30,
+        "fontSizes": {
+          "14": 16,
+          "15": 14,
+          "16": 18,
+          "18": 3,
+          "20": 7,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "events": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 0,
+        "below16": 29,
+        "fontSizes": {
+          "14": 14,
+          "15": 15,
+          "16": 23,
+          "18": 1,
+          "20": 3,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "machines": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "environment": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "settings": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      }
+    },
+    "1440": {
+      "home": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 39,
+        "below14": 0,
+        "below16": 18,
+        "fontSizes": {
+          "14": 18,
+          "16": 13,
+          "18": 2,
+          "25": 5,
+          "48": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "imports": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 240,
+        "below14": 0,
+        "below16": 47,
+        "fontSizes": {
+          "14": 31,
+          "15": 16,
+          "16": 182,
+          "18": 1,
+          "20": 7,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "operation": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 61,
+        "below14": 0,
+        "below16": 30,
+        "fontSizes": {
+          "14": 16,
+          "15": 14,
+          "16": 18,
+          "18": 3,
+          "20": 7,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "events": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 0,
+        "below16": 29,
+        "fontSizes": {
+          "14": 14,
+          "15": 15,
+          "16": 23,
+          "18": 1,
+          "20": 3,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "machines": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "environment": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      },
+      "settings": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 0,
+        "below16": 16,
+        "fontSizes": {
+          "14": 14,
+          "15": 2,
+          "16": 9,
+          "18": 1,
+          "20": 2,
+          "25": 2,
+          "36": 1
+        },
+        "smallSamples": [],
+        "clipped": []
+      }
+    }
+  }
+}

@@ -81,3 +81,29 @@ export function formatAxisHours(value: number, step: number, unit: "HOURS" | "HO
 export function formatDateDisplay(value: string) {
   return value.replace(/-/g, "/");
 }
+
+export type ComparisonKind = "day" | "week" | "month";
+
+function addUtcDays(value: string, days: number) {
+  const epoch = Date.parse(`${value}T00:00:00Z`);
+  if (!Number.isFinite(epoch)) return null;
+  return new Date(epoch + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+export function comparisonInputRange(kind: ComparisonKind, value: string) {
+  if (kind === "month") {
+    if (!/^\d{4}-\d{2}$/.test(value)) return null;
+    const [year, month] = value.split("-").map(Number);
+    if (month < 1 || month > 12) return null;
+    const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    return `${formatDateDisplay(`${value}-01`)} – ${formatDateDisplay(`${value}-${String(days).padStart(2, "0")}`)}`;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const end = kind === "week" ? addUtcDays(value, 6) : value;
+  return end ? `${formatDateDisplay(value)}${end === value ? "" : ` – ${formatDateDisplay(end)}`}` : null;
+}
+
+export function rangeGrainControl(startDate: string, endDate: string, bucket: "30m" | "60m") {
+  const daily = Boolean(startDate && endDate && startDate !== endDate);
+  return { value: daily ? "daily" as const : bucket, disabled: daily, label: daily ? "每日（跨日固定）" : bucket === "30m" ? "30 分鐘" : "60 分鐘" };
+}

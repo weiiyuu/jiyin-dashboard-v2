@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { OperationShareChart, RankingChart, TrendChart } from "@/components/history-widgets";
-import { buildTrendAxisLabels, formatDurationHours, niceHourScale } from "@/features/history/chart-ui-model";
+import { buildTrendAxisLabels, comparisonInputRange, formatDurationHours, niceHourScale, rangeGrainControl } from "@/features/history/chart-ui-model";
 
 describe("Stage 5.3 UAT visual V2 models",()=>{
   it("formats display durations to minutes without changing source precision",()=>{
@@ -70,5 +70,14 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(html).toContain("A1 0 分");
     expect(html).toContain("A4 0 分");
     expect(html).not.toContain("Green 工時");
+    expect(html).not.toContain("stroke-dasharray");
+  });
+
+  it("explains adaptive range grain and complete comparison periods",()=>{
+    expect(rangeGrainControl("2025-06-01","2025-06-01","30m")).toEqual({value:"30m",disabled:false,label:"30 分鐘"});
+    expect(rangeGrainControl("2025-06-01","2025-06-05","60m")).toEqual({value:"daily",disabled:true,label:"每日（跨日固定）"});
+    expect(comparisonInputRange("day","2025-06-01")).toBe("2025/06/01");
+    expect(comparisonInputRange("week","2025-06-01")).toBe("2025/06/01 – 2025/06/07");
+    expect(comparisonInputRange("month","2025-02")).toBe("2025/02/01 – 2025/02/28");
   });
 });

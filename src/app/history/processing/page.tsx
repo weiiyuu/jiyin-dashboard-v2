@@ -16,7 +16,7 @@ import {
 } from "@/components/history-widgets";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorNotice, LoadingState, Panel } from "@/components/ui-states";
-import { formatDateDisplay, type TrendAxisMode } from "@/features/history/chart-ui-model";
+import { comparisonInputRange, formatDateDisplay, rangeGrainControl, type ComparisonKind, type TrendAxisMode } from "@/features/history/chart-ui-model";
 import type { Availability } from "@/features/history/history-ui-model";
 import { fetchApi } from "@/lib/api-client";
 
@@ -62,6 +62,14 @@ function dateRange(start: string, end: string) {
 }
 function machinesLabel(rows: string[]) { return rows.join("、"); }
 function compareKindLabel(kind: CompareResult["compareKind"]) { return kind === "day" ? "日對日" : kind === "week" ? "週對週" : "月對月"; }
+function comparisonHelp(kind: ComparisonKind) {
+  if (kind === "day") return "選擇兩個日期，系統以各日 00:00–24:00 的 24 個小時位置對齊比較。";
+  if (kind === "week") return "期間 A 與 B 都選擇起始日期；系統會自動納入起始日及後續 6 天，形成連續 7 天。";
+  return "選擇兩個曆月，排行使用完整曆日的平均每日加工時數，趨勢依月日對齊。";
+}
+function comparisonFieldLabel(kind: ComparisonKind, period: "A" | "B") {
+  return kind === "week" ? `期間 ${period} 起始日` : kind === "month" ? `期間 ${period} 月份` : `期間 ${period} 日期`;
+}
 function periodLabel(period: ComparePeriod) { return dateRange(period.startDate, period.endDate); }
 function sourceTimeLabel(point: TrendPoint) { return `${formatDateDisplay(point.sourceLabel.replace(" ", " · ").replace(/-(?=\d{2}:\d{2}$)/, "–"))}`; }
 function comparisonTimeLabel(kind: CompareResult["compareKind"], sourceDate: string | null, position: string | number) {
@@ -97,6 +105,9 @@ export default function ProcessingPage() {
   }, []);
 
   const crossDay = Boolean(startDate && endDate && startDate !== endDate);
+  const grainControl = rangeGrainControl(startDate, endDate, bucket);
+  const previewA = comparisonInputRange(kind, periodA);
+  const previewB = comparisonInputRange(kind, periodB);
   const canQuery = machines.length > 0 && (mode === "range" ? Boolean(startDate && endDate) : Boolean(periodA && periodB));
   function invalidate() { setResult(null); setError(null); setHighlightedMachine(null); setHiddenSeries([]); }
   function switchMode(next: "range" | "compare") {
@@ -123,21 +134,22 @@ export default function ProcessingPage() {
   return <main className="page operation-analysis-page">
     <PageHeader eyebrow="歷史分析 / 機台狀態" title="機台運轉分析" description="以啟用版本計算加工時數、逐機台趨勢與 Green／Yellow／Red 三態占比；缺資料不補成零。" tag="ACTIVE HISTORY"/>
     <div className="operation-analysis-sections">
-      <Panel title="分析條件" subtitle="區間分析支援同日 30／60 分鐘；同期比較依日、週、月固定對齊" actions={<div className="segmented"><button className={`segment ${mode === "range" ? "active" : ""}`} onClick={() => switchMode("range")}>區間分析</button><button className={`segment ${mode === "compare" ? "active" : ""}`} onClick={() => switchMode("compare")}>同期比較</button></div>}>
+      <Panel title="分析條件" subtitle="單日可選 30／60 分鐘；跨日區間固定使用每日粒度。同期比較依日、連續七日或完整曆月對齊。" actions={<div className="segmented"><button className={`segment ${mode === "range" ? "active" : ""}`} onClick={() => switchMode("range")}>區間分析</button><button className={`segment ${mode === "compare" ? "active" : ""}`} onClick={() => switchMode("compare")}>同期比較</button></div>}>
         <div className="panel-body stack">
           {mode === "range" ? <div className="filters">
             <div className="field"><label>開始日期</label><input aria-label="開始日期" className="control" type="date" value={startDate} onChange={(event) => { setStartDate(event.target.value); invalidate(); }}/></div>
             <div className="field"><label>結束日期</label><input aria-label="結束日期" className="control" type="date" min={startDate} value={endDate} onChange={(event) => { setEndDate(event.target.value); invalidate(); }}/></div>
-            <div className="field"><label>同日資料粒度</label><select aria-label="同日資料粒度" className="control" value={bucket} disabled={crossDay} onChange={(event) => { setBucket(event.target.value as "30m" | "60m"); invalidate(); }}><option value="30m">30 分鐘</option><option value="60m">60 分鐘</option></select></div>
+            <div className="field"><label>資料粒度</label><select aria-label="資料粒度" className="control" value={grainControl.value} disabled={grainControl.disabled} onChange={(event) => { setBucket(event.target.value as "30m" | "60m"); invalidate(); }}>{crossDay && <option value="daily">每日（跨日固定）</option>}<option value="30m">30 分鐘</option><option value="60m">60 分鐘</option></select><span className="field-help">{crossDay ? "跨日查詢一律每日一點。" : "單日可切換 30 或 60 分鐘。"}</span></div>
             <div className="field"><label>快速日期</label><button className="button" disabled={!recentDate} onClick={useRecent}>{recentDate ? `最近匯入 ${recentDate}` : "尚無匯入日期"}</button></div>
           </div> : <div className="filters compare-filters">
-            <div className="field"><label>比較類型</label><select aria-label="比較類型" className="control" value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setPeriodA(""); setPeriodB(""); invalidate(); }}><option value="day">日對日（每小時）</option><option value="week">週對週（7 個曆日）</option><option value="month">月對月（完整曆日平均）</option></select></div>
-            <div className="field"><label>期間 A</label><input aria-label="期間 A" className="control" type={kind === "month" ? "month" : "date"} value={periodA} onChange={(event) => { setPeriodA(event.target.value); invalidate(); }}/></div>
-            <div className="field"><label>期間 B</label><input aria-label="期間 B" className="control" type={kind === "month" ? "month" : "date"} value={periodB} onChange={(event) => { setPeriodB(event.target.value); invalidate(); }}/></div>
+            <div className="field"><label>比較類型</label><select aria-label="比較類型" className="control" value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setPeriodA(""); setPeriodB(""); invalidate(); }}><option value="day">日對日｜依小時對齊</option><option value="week">週對週｜各起始日起連續 7 天</option><option value="month">月對月｜完整曆月平均</option></select></div>
+            <div className="field"><label>{comparisonFieldLabel(kind, "A")}</label><input aria-label="期間 A" className="control" type={kind === "month" ? "month" : "date"} value={periodA} onChange={(event) => { setPeriodA(event.target.value); invalidate(); }}/></div>
+            <div className="field"><label>{comparisonFieldLabel(kind, "B")}</label><input aria-label="期間 B" className="control" type={kind === "month" ? "month" : "date"} value={periodB} onChange={(event) => { setPeriodB(event.target.value); invalidate(); }}/></div>
           </div>}
+          {mode === "compare" && <div className="comparison-guidance"><div><strong>{compareKindLabel(kind)}如何比較</strong><p>{comparisonHelp(kind)}</p></div><div className="comparison-range-preview"><span><b>期間 A</b>{previewA ?? "尚未選擇"}</span><span><b>期間 B</b>{previewB ?? "尚未選擇"}</span></div></div>}
           <div className="machine-filter"><div className="machine-filter-head"><span className="field-label">機台篩選（已選 {machines.length} 台）</span><div className="filter-actions"><button className="button ghost" onClick={() => { setMachines(ALL); invalidate(); }}>全選</button><button className="button ghost" onClick={() => { setMachines([]); invalidate(); }}>清除</button></div></div><div className="machine-pills">{ALL.map((machine) => <label className="check-pill" key={machine}><input type="checkbox" checked={machines.includes(machine)} onChange={() => toggleMachine(machine)}/><span>{machine}</span></label>)}</div></div>
           <div className="filter-actions"><button className="button primary" disabled={!canQuery || loading} onClick={query}>{mode === "range" ? "套用分析條件" : "比較兩個期間"}</button>{machines.length === 0 && <span className="metric-note">請至少選擇一台機台；不會自動查詢全部機台。</span>}</div>
-          {crossDay && <div className="notice"><span>i</span><div>跨日查詢固定使用每日分桶；未匯入日期維持缺資料。</div></div>}
+          {crossDay && <div className="notice"><span>i</span><div><strong>已切換為每日粒度</strong><div>跨日區間每天只顯示一個趨勢點；未匯入日期維持缺資料，不補 0。</div></div></div>}
         </div>
       </Panel>
       {loading ? <Panel title="正在建立機台運轉分析"><LoadingState label="正在讀取啟用版本並計算統計…"/></Panel>

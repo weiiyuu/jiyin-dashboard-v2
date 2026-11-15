@@ -253,8 +253,6 @@ export interface LineSeries {
   details?: LinePointDetail[];
 }
 
-const dashPatterns = [undefined, "7 4", "2 4", "10 3 2 3", "4 3", "1 3", "12 5", "6 2 1 2"];
-
 export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ariaLabel = "機台運轉趨勢", axisMode = "RANGE_MULTI" }: {
   labels: string[];
   series: LineSeries[];
@@ -294,10 +292,10 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
         {axis.ticks.map((tick) => <g key={`x-${tick.index}`}><line className="chart-tick" x1={x(tick.index)} x2={x(tick.index)} y1={height - bottom} y2={height - bottom + 5}/><text className="chart-axis-label" x={x(tick.index)} y={height - 31} textAnchor="middle">{tick.label}</text></g>)}
         {axis.endLabel && <text className="chart-axis-label" x={width - right} y={height - 31} textAnchor="end">{axis.endLabel}</text>}
         <text className="chart-axis-title" x={left + usableW / 2} y={height - 7} textAnchor="middle">時間</text>
-        {visibleSeries.map((item, seriesIndex) => {
+        {visibleSeries.map((item) => {
           const parts = segments(item.values);
           const dimmed = focusedSeries && focusedSeries !== item.key;
-          return <g key={item.key} className={dimmed ? "trend-series is-dimmed" : "trend-series"}>{parts.map((part, index) => <polyline key={index} fill="none" stroke={item.color} strokeWidth="2.5" strokeDasharray={dashPatterns[seriesIndex % dashPatterns.length]} points={part.map((point) => `${point.x},${point.y}`).join(" ")}/>)}{parts.flat().map((point) => <circle key={point.index} className={item.partial?.[point.index] ? "partial-point" : ""} cx={point.x} cy={point.y} r={item.partial?.[point.index] ? 4.8 : 3.6} fill={item.color} stroke="var(--bg)" strokeWidth="1.5"/>)}</g>;
+          return <g key={item.key} className={dimmed ? "trend-series is-dimmed" : "trend-series"}>{parts.map((part, index) => <polyline key={index} fill="none" stroke={item.color} strokeWidth="2.5" points={part.map((point) => `${point.x},${point.y}`).join(" ")}/>)}{parts.flat().map((point) => <circle key={point.index} className={item.partial?.[point.index] ? "partial-point" : ""} cx={point.x} cy={point.y} r={item.partial?.[point.index] ? 4.8 : 3.6} fill={item.color} stroke="var(--bg)" strokeWidth="1.5"/>)}</g>;
         })}
         {activeIndex !== null && <line className="trend-crosshair" x1={x(activeIndex)} x2={x(activeIndex)} y1={top} y2={height - bottom}/>}
         {labels.map((_, index) => {
@@ -307,6 +305,6 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
       </svg>
       {activeIndex !== null && <div className={`chart-tooltip trend-tooltip ${activeIndex > labels.length / 2 ? "align-right" : ""}`} id={tooltipId} role="tooltip" style={{ left: `${x(activeIndex) / width * 100}%` }}><strong>{visibleSeries[0]?.details?.[activeIndex]?.timeLabel ?? labels[activeIndex]}</strong>{visibleSeries.map((item) => <span key={item.key}><i className="legend-dot" style={{ background: item.color }}/><b>{item.label}</b>{item.details?.[activeIndex]?.timeLabel && item.details[activeIndex].timeLabel !== visibleSeries[0]?.details?.[activeIndex]?.timeLabel ? <small>{item.details[activeIndex].timeLabel}</small> : null}<em>{item.values[activeIndex] === null ? status(item.details?.[activeIndex], null) : `${formatDurationHours(item.values[activeIndex]!)} · ${status(item.details?.[activeIndex], item.values[activeIndex])}`}</em></span>)}</div>}
     </div>}
-    <div className="chart-legend interactive-legend trend-legend">{series.map((item, index) => <button type="button" key={item.key} className={hiddenKeys.includes(item.key) ? "is-muted" : ""} aria-pressed={!hiddenKeys.includes(item.key)} onClick={() => onToggleSeries?.(item.key)} onMouseEnter={() => setFocusedSeries(item.key)} onMouseLeave={() => setFocusedSeries(null)} onFocus={() => setFocusedSeries(item.key)} onBlur={() => setFocusedSeries(null)}><i className="legend-line" style={{ borderColor: item.color, borderTopStyle: dashPatterns[index % dashPatterns.length] ? "dashed" : "solid" }}/>{item.label}</button>)}<span>斷線＝缺資料／不適用；描邊點＝部分覆蓋</span></div>
+    <div className="chart-legend interactive-legend trend-legend">{series.map((item) => <button type="button" key={item.key} className={hiddenKeys.includes(item.key) ? "is-muted" : ""} aria-pressed={!hiddenKeys.includes(item.key)} onClick={() => onToggleSeries?.(item.key)} onMouseEnter={() => setFocusedSeries(item.key)} onMouseLeave={() => setFocusedSeries(null)} onFocus={() => setFocusedSeries(item.key)} onBlur={() => setFocusedSeries(null)}><i className="legend-line" style={{ borderColor: item.color }}/>{item.label}</button>)}<span>斷線＝缺資料／不適用；描邊點＝部分覆蓋</span></div>
   </div>;
 }

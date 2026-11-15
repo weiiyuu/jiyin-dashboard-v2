@@ -1,0 +1,3164 @@
+{
+  "phase": "before",
+  "browser": "Google Chrome headless",
+  "zoom": "100%",
+  "results": {
+    "1280": {
+      "home": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 39,
+        "below14": 31,
+        "below16": 32,
+        "fontSizes": {
+          "9": 13,
+          "10": 2,
+          "11": 15,
+          "12": 1,
+          "14": 1,
+          "16": 1,
+          "22": 5,
+          "48": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-partner",
+            "text": "谷林運算 × 極印快速成型",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "×",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-eyebrow",
+            "text": "INDUSTRIAL MONITORING PLATFORM",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-guide",
+            "text": "請選擇工作區，開始探索本機設備資料。",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "h2",
+            "className": "landing-section-title",
+            "text": "選擇工作區",
+            "fontSize": 12,
+            "lineHeight": "18px"
+          },
+          {
+            "tag": "span",
+            "className": "workspace-card-index",
+            "text": "01",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-english",
+            "text": "REAL-TIME MONITORING",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-description",
+            "text": "查看 A1～B4 機台監控工作區。即時資料將在後續 Collector 階段接通。",
+            "fontSize": 11,
+            "lineHeight": "19.25px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "狀態資訊",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "進入工作區",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "↗",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "workspace-card-index",
+            "text": "02",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-english",
+            "text": "HISTORICAL ANALYTICS",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-description",
+            "text": "使用本機匯入資料，檢視機台運轉、三態占比與異常事件。",
+            "fontSize": 11,
+            "lineHeight": "19.25px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "運轉分析",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "imports": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 47,
+        "below16": 54,
+        "fontSizes": {
+          "9": 11,
+          "10": 12,
+          "11": 15,
+          "12": 1,
+          "13": 8,
+          "14": 3,
+          "15": 4,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "資料管理",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "Excel 匯入 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "資料管理 / 歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "operation": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 60,
+        "below14": 49,
+        "below16": 53,
+        "fontSizes": {
+          "9": 3,
+          "10": 9,
+          "11": 26,
+          "13": 11,
+          "14": 4,
+          "16": 1,
+          "20": 3,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "歷史分析",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "機台運轉分析 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "歷史分析 / 機台狀態",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "events": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 52,
+        "below16": 54,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 32,
+          "13": 9,
+          "14": 2,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "歷史分析",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "異常事件分析 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "歷史分析 / 燈號與警示",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "machines": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "機台監控 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "environment": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "環境監測 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "settings": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollWidth": 1280,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "資料管理",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "API 連線設定 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      }
+    },
+    "1366": {
+      "home": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 39,
+        "below14": 31,
+        "below16": 32,
+        "fontSizes": {
+          "9": 13,
+          "10": 2,
+          "11": 15,
+          "12": 1,
+          "14": 1,
+          "16": 1,
+          "22": 5,
+          "48": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-partner",
+            "text": "谷林運算 × 極印快速成型",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "×",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-eyebrow",
+            "text": "INDUSTRIAL MONITORING PLATFORM",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-guide",
+            "text": "請選擇工作區，開始探索本機設備資料。",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "h2",
+            "className": "landing-section-title",
+            "text": "選擇工作區",
+            "fontSize": 12,
+            "lineHeight": "18px"
+          },
+          {
+            "tag": "span",
+            "className": "workspace-card-index",
+            "text": "01",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-english",
+            "text": "REAL-TIME MONITORING",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-description",
+            "text": "查看 A1～B4 機台監控工作區。即時資料將在後續 Collector 階段接通。",
+            "fontSize": 11,
+            "lineHeight": "19.25px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "狀態資訊",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "進入工作區",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "↗",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "workspace-card-index",
+            "text": "02",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-english",
+            "text": "HISTORICAL ANALYTICS",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-description",
+            "text": "使用本機匯入資料，檢視機台運轉、三態占比與異常事件。",
+            "fontSize": 11,
+            "lineHeight": "19.25px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "運轉分析",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "imports": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 240,
+        "below14": 228,
+        "below16": 235,
+        "fontSizes": {
+          "9": 21,
+          "10": 13,
+          "11": 186,
+          "13": 8,
+          "14": 3,
+          "15": 4,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "資料管理",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "Excel 匯入 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "資料管理 / 歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "operation": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 60,
+        "below14": 49,
+        "below16": 53,
+        "fontSizes": {
+          "9": 3,
+          "10": 9,
+          "11": 26,
+          "13": 11,
+          "14": 4,
+          "16": 1,
+          "20": 3,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "歷史分析",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "機台運轉分析 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "歷史分析 / 機台狀態",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "events": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 52,
+        "below16": 54,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 32,
+          "13": 9,
+          "14": 2,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "歷史分析",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "異常事件分析 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "歷史分析 / 燈號與警示",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "machines": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "機台監控 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "environment": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "環境監測 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "settings": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1366,
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "資料管理",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "API 連線設定 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      }
+    },
+    "1440": {
+      "home": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 39,
+        "below14": 31,
+        "below16": 32,
+        "fontSizes": {
+          "9": 13,
+          "10": 2,
+          "11": 15,
+          "12": 1,
+          "14": 1,
+          "16": 1,
+          "22": 5,
+          "48": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-partner",
+            "text": "谷林運算 × 極印快速成型",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "×",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-eyebrow",
+            "text": "INDUSTRIAL MONITORING PLATFORM",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "p",
+            "className": "landing-guide",
+            "text": "請選擇工作區，開始探索本機設備資料。",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "h2",
+            "className": "landing-section-title",
+            "text": "選擇工作區",
+            "fontSize": 12,
+            "lineHeight": "18px"
+          },
+          {
+            "tag": "span",
+            "className": "workspace-card-index",
+            "text": "01",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-english",
+            "text": "REAL-TIME MONITORING",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-description",
+            "text": "查看 A1～B4 機台監控工作區。即時資料將在後續 Collector 階段接通。",
+            "fontSize": 11,
+            "lineHeight": "19.25px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "狀態資訊",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "進入工作區",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "↗",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "workspace-card-index",
+            "text": "02",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-english",
+            "text": "HISTORICAL ANALYTICS",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "p",
+            "className": "workspace-card-description",
+            "text": "使用本機匯入資料，檢視機台運轉、三態占比與異常事件。",
+            "fontSize": 11,
+            "lineHeight": "19.25px"
+          },
+          {
+            "tag": "li",
+            "className": "",
+            "text": "運轉分析",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "imports": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 240,
+        "below14": 228,
+        "below16": 235,
+        "fontSizes": {
+          "9": 21,
+          "10": 13,
+          "11": 186,
+          "13": 8,
+          "14": 3,
+          "15": 4,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "資料管理",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "Excel 匯入 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "資料管理 / 歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "operation": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 60,
+        "below14": 49,
+        "below16": 53,
+        "fontSizes": {
+          "9": 3,
+          "10": 9,
+          "11": 26,
+          "13": 11,
+          "14": 4,
+          "16": 1,
+          "20": 3,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "歷史分析",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "機台運轉分析 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "歷史分析 / 機台狀態",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "events": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 59,
+        "below14": 52,
+        "below16": 54,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 32,
+          "13": 9,
+          "14": 2,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "歷史分析",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "異常事件分析 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "歷史分析 / 燈號與警示",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "machines": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "機台監控 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "environment": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "環境監測 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      },
+      "settings": {
+        "title": "極印｜智慧設備監控平台",
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "bodyOverflow": false,
+        "visibleTextCount": 31,
+        "below14": 25,
+        "below16": 26,
+        "fontSizes": {
+          "9": 3,
+          "10": 8,
+          "11": 5,
+          "13": 9,
+          "14": 1,
+          "16": 1,
+          "20": 1,
+          "22": 2,
+          "36": 1
+        },
+        "smallSamples": [
+          {
+            "tag": "span",
+            "className": "brand-subtitle",
+            "text": "智慧設備監控平台",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "即時監控",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台監控",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "環境監測",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "歷史分析",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "機台運轉分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "異常事件分析",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "div",
+            "className": "nav-group",
+            "text": "資料管理",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "Excel 匯入",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "API 連線設定",
+            "fontSize": 13,
+            "lineHeight": "19.5px"
+          },
+          {
+            "tag": "strong",
+            "className": "",
+            "text": "Stage 5｜歷史資料",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "已連接本機 SQLite；即時功能依後續階段啟用",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "首頁",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "",
+            "text": "資料管理",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          },
+          {
+            "tag": "span",
+            "className": "topbar-source",
+            "text": "API 連線設定 · 本機資料來源",
+            "fontSize": 10,
+            "lineHeight": "15px"
+          },
+          {
+            "tag": "span",
+            "className": "status-chip success",
+            "text": "SQLite 本機服務",
+            "fontSize": 9,
+            "lineHeight": "13.5px"
+          },
+          {
+            "tag": "div",
+            "className": "eyebrow",
+            "text": "即時監控",
+            "fontSize": 11,
+            "lineHeight": "16.5px"
+          }
+        ],
+        "clipped": []
+      }
+    }
+  }
+}
