@@ -24,12 +24,41 @@ function importDay(db:AppDatabase,date:string,green:number,token:string,withAlar
   return confirmImport(db,preview,{nowMs:1});
 }
 
+function importThreeStateDay(db:AppDatabase,date:string,values:{green:number;yellow:number;red:number},token:string,machineId="A1"){
+  const sheets=standardizedWorkbook(date),machine=sheets[0].data[1];
+  machine[4]=machineId;machine[5]=machineId[0];machine[6]=0;machine[7]=values.red;machine[8]=values.yellow;machine[9]=values.green;machine[10]=0;machine[11]=0;
+  machine[12]=values.red+values.yellow+values.green;machine[13]=values.green/3600;machine[14]=values.yellow/3600;machine[15]=values.red/3600;machine[16]=0;
+  machine[17]=machine[12]===0?null:values.green/(machine[12] as number);machine[18]=machine[12]===0?null:values.green/(machine[12] as number);machine[19]="正常";machine[20]=null;
+  const preview=parseWorkbookSheets(sheets,Buffer.from(token));expect(preview.canConfirm).toBe(true);
+  return confirmImport(db,preview,{nowMs:1});
+}
+
+function importMachineSet(db:AppDatabase,date:string,entries:Array<{machineId:string;green:number;yellow:number;red:number}>,token:string){
+  const sheets=standardizedWorkbook(date),template=sheets[0].data[1];
+  sheets[0].data.splice(1,sheets[0].data.length-1,...entries.map(({machineId,green,yellow,red})=>{const row=[...template];row[4]=machineId;row[5]=machineId[0];row[6]=0;row[7]=red;row[8]=yellow;row[9]=green;row[10]=0;row[11]=0;row[12]=red+yellow+green;row[13]=green/3600;row[14]=yellow/3600;row[15]=red/3600;row[16]=0;row[17]=green+yellow+red===0?null:green/(green+yellow+red);row[18]=row[17];row[19]="正常";row[20]=null;return row;}));
+  sheets[5].data.find((row)=>row[0]==="機台三分鐘筆數")![1]=entries.length;
+  const preview=parseWorkbookSheets(sheets,Buffer.from(token));expect(preview.canConfirm).toBe(true);
+  return confirmImport(db,preview,{nowMs:1});
+}
+
 describe("active historical query integration",()=>{
   it("calculates an eligible six-state share from active database rows",()=>{
     const db=setup(),sheets=standardizedWorkbook("2025-06-05"),machine=sheets[0].data[1];machine[7]=0;machine[15]=0;
     const preview=parseWorkbookSheets(sheets,Buffer.from("six-state"));expect(preview.canConfirm).toBe(true);confirmImport(db,preview,{nowMs:1});
     const result=getProcessingRange(db,{startDate:"2025-06-05",endDate:"2025-06-05",bucketMinutes:60,machineIds:["A1"]});
     expect(result.stateShare).toMatchObject({denominatorSeconds:180,percent:{green:1,red:0},availability:"AVAILABLE"});
+  });
+
+  it("returns independent three-state shares and keeps 30/60-minute changes out of totals",()=>{
+    const db=setup();importThreeStateDay(db,"2025-06-05",{green:90,yellow:60,red:30},"three-state");
+    const thirty=getProcessingRange(db,{startDate:"2025-06-05",endDate:"2025-06-05",bucketMinutes:30,machineIds:["A1"]});
+    const sixty=getProcessingRange(db,{startDate:"2025-06-05",endDate:"2025-06-05",bucketMinutes:60,machineIds:["A1"]});
+    expect(thirty.threeStateShare).toMatchObject({denominatorSeconds:180,percent:{green:.5,yellow:1/3,red:1/6},availability:"AVAILABLE"});
+    expect(thirty.threeStateShareByMachine[0]).toMatchObject({machineId:"A1",share:{denominatorSeconds:180}});
+    expect(thirty.ranking).toEqual(sixty.ranking);
+    expect(thirty.threeStateShare).toEqual(sixty.threeStateShare);
+    expect(thirty.seriesByMachine[0].points).toHaveLength(48);
+    expect(sixty.seriesByMachine[0].points).toHaveLength(24);
   });
 
   it("uses only the active replacement and returns ranking, trend, state share and coverage without false zeroes",()=>{
@@ -62,18 +91,51 @@ describe("active historical query integration",()=>{
   it("aligns independent month periods and marks impossible dates NOT_APPLICABLE",()=>{
     const db=setup();importDay(db,"2025-02-28",180,"feb");importDay(db,"2025-03-29",90,"mar");
     const result=getProcessingComparison(db,{compareKind:"month",periodA:"2025-02",periodB:"2025-03",machineIds:["A1","A2"]});
-    expect(result.ranking[0].periods).toMatchObject({A:{greenHours:0.05},B:{greenHours:0.025}});
+    expect(result.ranking[0].periods).toMatchObject({A:{greenHours:0.05/28,totalGreenHours:0.05,unit:"HOURS_PER_DAY"},B:{greenHours:0.025/31,totalGreenHours:0.025,unit:"HOURS_PER_DAY"}});
     expect(result.trend[28].periods).toMatchObject({A:{availability:"NOT_APPLICABLE",greenHours:null},B:{availability:"AVAILABLE",greenHours:0.025}});
     expect(result.coverage).toMatchObject({A:{expectedIntervals:26880},B:{expectedIntervals:29760}});
+    expect(result.threeStateShareByMachine).toHaveLength(2);
   });
 
   it("uses the same active-query formulas for day and week comparisons",()=>{
     const db=setup();importDay(db,"2025-06-01",180,"day-a");importDay(db,"2025-06-08",90,"day-b");importDay(db,"2025-06-11",90,"week-b-day4");
     const day=getProcessingComparison(db,{compareKind:"day",periodA:"2025-06-01",periodB:"2025-06-08",machineIds:["A1"],bucketMinutes:30});
+    expect(day.trend).toHaveLength(24);
+    expect(day.seriesByMachine[0].trend).toHaveLength(24);
     expect(day.ranking[0].periods).toMatchObject({A:{greenHours:0.05},B:{greenHours:0.025}});
     expect(day.trend.at(-1)?.periods).toMatchObject({A:{greenHours:0.05,availability:"AVAILABLE"},B:{greenHours:0.025,availability:"AVAILABLE"}});
     const week=getProcessingComparison(db,{compareKind:"week",periodA:"2025-06-01",periodB:"2025-06-08",machineIds:["A1"]});
     expect(week.trend[3].periods).toMatchObject({A:{greenHours:null,availability:"MISSING_DATA"},B:{greenHours:0.025,availability:"AVAILABLE"}});
+  });
+
+  it("marks an overall trend point partial when not every selected machine is covered",()=>{
+    const db=setup();importDay(db,"2025-06-07",180,"partial-a1");
+    const result=getProcessingRange(db,{startDate:"2025-06-07",endDate:"2025-06-07",bucketMinutes:60,machineIds:["A1","A2"]});
+    const point=result.trend.at(-1)!;
+    expect(point).toMatchObject({greenHours:.05,coverage:{expectedIntervals:40,importedIntervals:1,eligibleIntervals:1,completeness:"PARTIAL"}});
+    expect(result.seriesByMachine.find((series)=>series.machineId==="A2")!.points.at(-1)).toMatchObject({greenHours:null,availability:"MISSING_DATA"});
+  });
+
+  it("keeps comparison relative growth unavailable when A is zero and exposes the absolute difference",()=>{
+    const db=setup();importThreeStateDay(db,"2025-06-09",{green:0,yellow:180,red:0},"zero-a");importThreeStateDay(db,"2025-06-10",{green:180,yellow:0,red:0},"positive-b");
+    const result=getProcessingComparison(db,{compareKind:"day",periodA:"2025-06-09",periodB:"2025-06-10",machineIds:["A1"]});
+    expect(result.ranking[0]).toMatchObject({difference:.05,relativeChange:null,periods:{A:{greenHours:0},B:{greenHours:.05}}});
+  });
+
+  it("marks an unfinished month without changing the full-calendar-day average denominator",()=>{
+    const db=setup();importDay(db,"2025-06-01",180,"partial-month");
+    const result=getProcessingComparison(db,{compareKind:"month",periodA:"2025-05",periodB:"2025-06",machineIds:["A1"],nowMs:Date.UTC(2025,5,15)});
+    expect(result.periods).toMatchObject({A:{partial:false,elapsedCalendarDays:31},B:{partial:true,elapsedCalendarDays:15,days:30}});
+    expect(result.ranking[0].periods.B).toMatchObject({totalGreenHours:.05,greenHours:.05/30,unit:"HOURS_PER_DAY"});
+  });
+
+  it("sorts per-machine three-state comparison by period B Green share and returns percentage-point deltas",()=>{
+    const db=setup();
+    importMachineSet(db,"2025-06-12",[{machineId:"A1",green:90,yellow:90,red:0},{machineId:"A2",green:180,yellow:0,red:0}],"share-a");
+    importMachineSet(db,"2025-06-13",[{machineId:"A1",green:180,yellow:0,red:0},{machineId:"A2",green:45,yellow:135,red:0}],"share-b");
+    const result=getProcessingComparison(db,{compareKind:"day",periodA:"2025-06-12",periodB:"2025-06-13",machineIds:["A1","A2"]});
+    expect(result.threeStateShareByMachine.map((item)=>item.machineId)).toEqual(["A1","A2"]);
+    expect(result.threeStateShareByMachine[0]).toMatchObject({machineId:"A1",periods:{A:{percent:{green:.5}},B:{percent:{green:1}}},deltaPercentagePoints:{green:50}});
   });
 
   it("returns Alarm source coverage, stable source rows and nullable duration",()=>{

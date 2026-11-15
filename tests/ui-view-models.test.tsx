@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CoverageStrip, StateShareChart, TrendChart, buildLineSegments } from "@/components/history-widgets";
+import { ComparisonRanking, CoverageStrip, OperationShareChart, StateShareChart, TrendChart, buildLineSegments } from "@/components/history-widgets";
 import { alarmSourceLabel, formatHours } from "@/features/history/history-ui-model";
 import { confirmPlan, removeSelectedUpload } from "@/features/imports/import-ui-model";
 
@@ -28,7 +28,7 @@ describe("Stage 5 UI truth-preserving view models",()=>{
   });
 
   it("renders backend coverage and six-state percentages without recalculation",()=>{
-    const coverage=renderToStaticMarkup(<CoverageStrip coverage={{requestedDays:1,daysWithActiveBatch:1,expectedIntervals:960,importedIntervals:2,greenEligibleIntervals:1,sixStateEligibleIntervals:1}}/>);
+    const coverage=renderToStaticMarkup(<CoverageStrip coverage={{requestedDays:1,daysWithActiveBatch:1,expectedIntervals:960,importedIntervals:2,greenEligibleIntervals:1,sixStateEligibleIntervals:1,threeStateEligibleIntervals:1}}/>);
     expect(coverage).toContain("960");expect(coverage).toContain("1 / 1");
     const share=renderToStaticMarkup(<StateShareChart value={{denominatorSeconds:180,availability:"AVAILABLE",seconds:{green:90,red:90},percent:{none:0,red:.5,yellow:0,green:.5,blue:0,white:0}}}/>);
     expect(share).toContain("50.0%");
@@ -40,5 +40,15 @@ describe("Stage 5 UI truth-preserving view models",()=>{
     expect(chart).toContain("時間");
     expect(chart).toContain("A1");
     expect(chart).toContain("00:00-01:00：0.000 小時");
+  });
+
+  it("renders backend three-state shares and comparison deltas without deriving business values",()=>{
+    const share=renderToStaticMarkup(<OperationShareChart label="A1" value={{denominatorSeconds:180,availability:"AVAILABLE",seconds:{green:90,yellow:60,red:30},percent:{green:.5,yellow:1/3,red:1/6}}} deltas={{green:12.5,yellow:-10,red:-2.5}}/>);
+    expect(share).toContain("50.0%");
+    expect(share).toContain("+12.5 pp");
+    expect(share).toContain("有效分母 180 秒");
+    const ranking=renderToStaticMarkup(<ComparisonRanking rows={[{machineId:"A1",periods:{A:{greenHours:0,availability:"AVAILABLE"},B:{greenHours:2,availability:"AVAILABLE"}},difference:2,relativeChange:null}]}/>);
+    expect(ranking).toContain("Δ +2.000");
+    expect(ranking).toContain("基期 0／缺資料");
   });
 });

@@ -112,6 +112,72 @@ export function calculateSixStateShare(rows: StatisticInterval[], currentRuleVer
   };
 }
 
+export const OPERATION_STATES = ["green", "yellow", "red"] as const;
+export type OperationState = (typeof OPERATION_STATES)[number];
+
+const THREE_STATE_BLOCKING_ISSUES = new Set([
+  "STATE_SEVERE_INCOMPLETE",
+  "SOURCE_QUALITY_MISSING",
+  "QUALITY_STATUS_UNKNOWN",
+]);
+
+/**
+ * V1.1 operation-state share is deliberately independent from the legacy
+ * six-state share. None/Blue/White remain stored but do not enter this
+ * denominator. Eligibility is reconstructed from traceable source values,
+ * the current quality-rule version and approved blocking issue codes so no
+ * schema migration or source rewrite is required.
+ */
+export function calculateThreeStateShare(rows: StatisticInterval[], currentRuleVersion: string, expected: number) {
+  const seconds: Record<OperationState, number> = { green: 0, yellow: 0, red: 0 };
+  let eligible = 0;
+  const excludedByReason: Record<string, number> = {};
+
+  for (const row of rows) {
+    if (!isCurrent(row, currentRuleVersion)) {
+      excludedByReason.QUALITY_RULE_VERSION_MISMATCH = (excludedByReason.QUALITY_RULE_VERSION_MISMATCH ?? 0) + 1;
+      continue;
+    }
+
+    const blockingIssue = (row.issueCodes ?? []).find((code) => THREE_STATE_BLOCKING_ISSUES.has(code));
+    if (blockingIssue) {
+      excludedByReason[blockingIssue] = (excludedByReason[blockingIssue] ?? 0) + 1;
+      continue;
+    }
+
+    const values = OPERATION_STATES.map((state) => row[`${state}Seconds` as keyof StatisticInterval] as number | null);
+    if (values.some((value) => value === null || !Number.isFinite(value))) {
+      excludedByReason.THREE_STATE_VALUE_MISSING = (excludedByReason.THREE_STATE_VALUE_MISSING ?? 0) + 1;
+      continue;
+    }
+    if (values.some((value) => value! < 0)) {
+      excludedByReason.VALUE_NEGATIVE = (excludedByReason.VALUE_NEGATIVE ?? 0) + 1;
+      continue;
+    }
+
+    OPERATION_STATES.forEach((state, index) => { seconds[state] += values[index]!; });
+    eligible += 1;
+  }
+
+  const denominatorSeconds = OPERATION_STATES.reduce((sum, state) => sum + seconds[state], 0);
+  const shares = Object.fromEntries(OPERATION_STATES.map((state) => [
+    state,
+    denominatorSeconds > 0 ? seconds[state] / denominatorSeconds : null,
+  ])) as Record<OperationState, number | null>;
+
+  return {
+    seconds,
+    shares,
+    denominatorSeconds,
+    coverage: {
+      expectedIntervals: expected,
+      importedIntervals: rows.length,
+      metricEligibleIntervals: eligible,
+      excludedByReason,
+    } satisfies MetricCoverage,
+  };
+}
+
 const taipeiParts = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
 });

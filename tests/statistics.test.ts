@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   alignComparisonPositions, bucketGreenSeconds, buildCoverage, calculateGreenHours, calculateSixStateShare, calculateStateHours,
+  calculateThreeStateShare,
   expectedIntervals, expectedIntervalsForMonth, findCompletionCandidates, groupContinuousStateRuns,
   type StatisticInterval,
 } from "@/server/statistics/history-statistics";
@@ -30,6 +31,34 @@ describe("historical aggregate truth",()=>{
     const zero=calculateSixStateShare([row({greenSeconds:0})],RULE,1);
     expect(zero.denominatorSeconds).toBe(0);
     expect(zero.shares.green).toBeNull();
+  });
+
+  it("calculates the approved Green Yellow Red share independently from None Blue and White",()=>{
+    const share=calculateThreeStateShare([
+      row({noneSeconds:null,redSeconds:30,yellowSeconds:60,greenSeconds:90,blueSeconds:null,whiteSeconds:null,sixStateShareEligible:false}),
+    ],RULE,1);
+    expect(share).toMatchObject({
+      seconds:{green:90,yellow:60,red:30},
+      shares:{green:.5,yellow:1/3,red:1/6},
+      denominatorSeconds:180,
+      coverage:{metricEligibleIntervals:1},
+    });
+  });
+
+  it("does not turn a zero three-state denominator into a fake 100 percent bar",()=>{
+    const share=calculateThreeStateShare([row({greenSeconds:0,yellowSeconds:0,redSeconds:0})],RULE,1);
+    expect(share.denominatorSeconds).toBe(0);
+    expect(share.shares).toEqual({green:null,yellow:null,red:null});
+    expect(share.coverage.metricEligibleIntervals).toBe(1);
+  });
+
+  it("excludes source-confirmed severe and missing three-state values without changing raw seconds",()=>{
+    const severe=row({greenSeconds:90,yellowSeconds:60,redSeconds:30,issueCodes:["STATE_SEVERE_INCOMPLETE"]});
+    const missing=row({greenSeconds:90,yellowSeconds:null,redSeconds:30});
+    const share=calculateThreeStateShare([severe,missing],RULE,2);
+    expect(share.denominatorSeconds).toBe(0);
+    expect(share.coverage).toMatchObject({metricEligibleIntervals:0,excludedByReason:{STATE_SEVERE_INCOMPLETE:1,THREE_STATE_VALUE_MISSING:1}});
+    expect(severe.greenSeconds).toBe(90);
   });
 
   it("excludes stale quality-rule flags with an explicit reason",()=>{

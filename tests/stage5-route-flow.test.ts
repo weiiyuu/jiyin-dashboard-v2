@@ -21,6 +21,13 @@ async function preview(bytes:Buffer,name:string){const form=new FormData();form.
 async function confirm(bytes:Buffer,name:string,p:{sha256:string;canonicalFingerprint:string;activeBatchId:number|null},action:"INSERT"|"REPLACE"){const form=new FormData();form.append("file",upload(bytes,name));form.append("expectedSha256",p.sha256);form.append("expectedCanonicalFingerprint",p.canonicalFingerprint);form.append("expectedActiveBatchId",p.activeBatchId?.toString()??"");form.append("action",action);const response=await confirmPost(request("/api/imports/confirm",{method:"POST",body:form}));return{status:response.status,body:await response.json() as {data:{batchId:number;result:string}}};}
 
 describe("Stage 5 route-level user flow",()=>{
+  it("rejects history queries without an explicit machine selection",async()=>{
+    const root=mkdtempSync(join(tmpdir(),"jiyin-stage53-no-machine-"));roots.push(root);process.env.DATABASE_PATH=join(root,"history.sqlite");
+    const response=await processingGet(request("/api/history/processing?mode=range&startDate=2025-06-01&endDate=2025-06-01&bucket=30m"));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({error:{code:"HISTORY_QUERY_INVALID"}});
+  });
+
   it("returns paginated version history with explicit sorting and filters",async()=>{
     const root=mkdtempSync(join(tmpdir(),"jiyin-stage52-history-page-"));roots.push(root);process.env.DATABASE_PATH=join(root,"history.sqlite");
     for(const date of ["2025-06-01","2025-06-02"]){const bytes=createSyntheticXlsx(standardizedWorkbook(date)),result=(await preview(bytes,`${date}.xlsx`)).data.files[0];expect((await confirm(bytes,`${date}.xlsx`,result,"INSERT")).status).toBe(200);}

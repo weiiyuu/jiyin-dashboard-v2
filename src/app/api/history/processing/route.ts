@@ -3,8 +3,7 @@ import { apiError, ok, requestId } from "@/server/http/api";
 import { getProcessingComparison, getProcessingRange, type CompareKind } from "@/server/statistics/history-service";
 
 export const runtime="nodejs";
-const ALL=["A1","A2","A3","A4","B1","B2","B3","B4"];
-function machineIds(params:URLSearchParams){const raw=params.get("machineIds");const ids=raw?raw.split(",").filter(Boolean):ALL;if(!ids.length||ids.length>8)return null;return ids;}
+function machineIds(params:URLSearchParams){const raw=params.get("machineIds");if(!raw)return null;const ids=raw.split(",").filter(Boolean);if(!ids.length||ids.length>8)return null;return ids;}
 function bucket(params:URLSearchParams):30|60|null{const raw=params.get("bucket")??"30m";return raw==="30m"?30:raw==="60m"?60:null;}
 
 export function GET(request:Request){

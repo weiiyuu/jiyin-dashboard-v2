@@ -4,7 +4,7 @@ import { Icon, type IconName } from "@/components/icon";
 
 const workspaces:Array<{title:string;english:string;description:string;features:string[];href:string;icon:IconName}>=[
   {title:"即時監控",english:"REAL-TIME MONITORING",description:"查看 A1～B4 機台監控工作區。即時資料將在後續 Collector 階段接通。",features:["機台監控","環境監測","狀態資訊"],href:"/monitoring/machines",icon:"machine"},
-  {title:"歷史分析",english:"HISTORICAL ANALYTICS",description:"使用本機匯入資料，檢視加工工時、六態趨勢與異常事件。",features:["加工工時","歷史趨勢","警示記錄"],href:"/history/processing",icon:"chart"},
+  {title:"歷史分析",english:"HISTORICAL ANALYTICS",description:"使用本機匯入資料，檢視機台運轉、三態占比與異常事件。",features:["運轉分析","歷史趨勢","警示記錄"],href:"/history/processing",icon:"chart"},
   {title:"資料管理",english:"DATA MANAGEMENT",description:"匯入標準化 Excel、檢查品質警告，並管理同日歷史版本。",features:["Excel 匯入","品質驗證","版本回復"],href:"/imports",icon:"upload"},
 ];
 
