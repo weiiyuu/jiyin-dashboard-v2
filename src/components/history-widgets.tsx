@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { availabilityLabel, type Availability } from "@/features/history/history-ui-model";
 import {
   buildTrendAxisLabels,
@@ -191,36 +191,85 @@ function shareTooltipText(row: OperationShareRow, dateLabel: string) {
   return `${row.groupLabel ? `${row.groupLabel} ` : ""}${row.label}；${dateLabel}；${parts.join("；")}；有效分母 ${row.value.denominatorSeconds.toLocaleString()} 秒`;
 }
 
+function FloatingTooltip({ anchorRef, className, id, children }: {
+  anchorRef: RefObject<HTMLElement | null>;
+  className: string;
+  id: string;
+  children: ReactNode;
+}) {
+  const tooltipRef = useRef<HTMLSpanElement>(null);
+  const [style, setStyle] = useState<CSSProperties>({ left: 16, top: 16, visibility: "hidden" });
+  useEffect(() => {
+    const anchor = anchorRef.current;
+    const tooltip = tooltipRef.current;
+    if (!anchor || !tooltip) return;
+    const update = () => {
+      const anchorBox = anchor.getBoundingClientRect();
+      const tooltipBox = tooltip.getBoundingClientRect();
+      const edge = 16;
+      const gap = 10;
+      const left = Math.min(Math.max(edge, anchorBox.left), Math.max(edge, window.innerWidth - tooltipBox.width - edge));
+      const below = anchorBox.bottom + gap;
+      const top = below + tooltipBox.height <= window.innerHeight - edge
+        ? below
+        : Math.max(edge, anchorBox.top - tooltipBox.height - gap);
+      setStyle({ left, top, visibility: "visible" });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [anchorRef]);
+  return <span className={`chart-tooltip floating-chart-tooltip ${className}`} id={id} ref={tooltipRef} role="tooltip" style={style}>{children}</span>;
+}
+
+function OperationShareRowView({ row, showGroup, dateLabel }: { row: OperationShareRow; showGroup: boolean; dateLabel: string }) {
+  const [hovered, setHovered] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const tooltipId = useId();
+  const unavailable = !row.value.denominatorSeconds;
+  return <div className="operation-share-row-wrap">{showGroup && <h3>{row.groupLabel}</h3>}<button
+    type="button"
+    ref={anchorRef}
+    className={`operation-share-row-v2 ${unavailable ? "is-empty" : ""}`}
+    data-share-row={row.id}
+    onMouseEnter={() => setHovered(true)}
+    onMouseLeave={() => setHovered(false)}
+    onFocus={() => setHovered(true)}
+    onBlur={() => setHovered(false)}
+    aria-describedby={hovered ? tooltipId : undefined}
+    aria-label={shareTooltipText(row, dateLabel)}
+  >
+    <strong className="operation-share-label">{row.label}</strong>
+    {unavailable ? <span className="operation-share-unavailable">無可計算的開機時間</span> : <span className="operation-share-stack">{operationStateConfig.map(([key, name, color]) => {
+      const percent = row.value.percent[key] ?? 0;
+      return <span key={key} className={`operation-share-segment state-${key}`} style={{ width: `${percent * 100}%`, background: color }}>{percent >= .12 && <b>{Math.round(percent * 100)}%</b>}<span className="sr-only">{name} {(percent * 100).toFixed(1)}%</span></span>;
+    })}</span>}
+    {hovered && <FloatingTooltip anchorRef={anchorRef} className="share-tooltip" id={tooltipId}>
+      <span className="share-tooltip-head"><strong>{row.groupLabel ? `${row.groupLabel} · ` : ""}{row.label}</strong><span>{dateLabel}</span></span>
+      <span className="share-tooltip-states">{operationStateConfig.map(([key, name, color]) => <span className="share-tooltip-state" key={key}>
+        <span className="share-tooltip-state-name"><i className="legend-dot" style={{ background: color }}/><b>{name}</b></span>
+        <strong>{row.value.percent[key] === null ? "不可計算" : `${(row.value.percent[key]! * 100).toFixed(1)}%`}</strong>
+        <span>{formatDurationHours(row.value.seconds[key] / 3600)} · {row.value.seconds[key].toLocaleString()} 秒</span>
+      </span>)}</span>
+      <span className="share-tooltip-denominator"><span>有效分母</span><strong>{formatDurationHours(row.value.denominatorSeconds / 3600)} · {row.value.denominatorSeconds.toLocaleString()} 秒</strong></span>
+    </FloatingTooltip>}
+  </button></div>;
+}
+
 export function OperationShareChart({ rows, dateLabel, comparisonSummary }: {
   rows: OperationShareRow[];
   dateLabel: string;
   comparisonSummary?: { label: string; greenDelta: number | null };
 }) {
-  const [hovered, setHovered] = useState<string | null>(null);
   return <div className="chart-box operation-share-chart-v2" data-chart="operation-share">
     <div className="operation-share-legend" aria-label="燈號圖例">{operationStateConfig.map(([key, name, color]) => <span key={key}><i className="legend-dot" style={{ background: color }}/>{name}</span>)}</div>
     <div className="operation-share-rows">{rows.map((row, index) => {
       const showGroup = row.groupLabel && row.groupLabel !== rows[index - 1]?.groupLabel;
-      const tooltipId = `share-tooltip-${row.id}`;
-      const unavailable = !row.value.denominatorSeconds;
-      return <div className="operation-share-row-wrap" key={row.id}>{showGroup && <h3>{row.groupLabel}</h3>}<button
-        type="button"
-        className={`operation-share-row-v2 ${unavailable ? "is-empty" : ""}`}
-        data-share-row={row.id}
-        onMouseEnter={() => setHovered(row.id)}
-        onMouseLeave={() => setHovered(null)}
-        onFocus={() => setHovered(row.id)}
-        onBlur={() => setHovered(null)}
-        aria-describedby={hovered === row.id ? tooltipId : undefined}
-        aria-label={shareTooltipText(row, dateLabel)}
-      >
-        <strong className="operation-share-label">{row.label}</strong>
-        {unavailable ? <span className="operation-share-unavailable">無可計算的開機時間</span> : <span className="operation-share-stack">{operationStateConfig.map(([key, name, color]) => {
-          const percent = row.value.percent[key] ?? 0;
-          return <span key={key} className={`operation-share-segment state-${key}`} style={{ width: `${percent * 100}%`, background: color }}>{percent >= .12 && <b>{Math.round(percent * 100)}%</b>}<span className="sr-only">{name} {(percent * 100).toFixed(1)}%</span></span>;
-        })}</span>}
-        {hovered === row.id && <span className="chart-tooltip share-tooltip" id={tooltipId} role="tooltip"><strong>{row.groupLabel ? `${row.groupLabel} · ` : ""}{row.label}</strong><span>{dateLabel}</span>{operationStateConfig.map(([key, name]) => <span key={key}>{name}：{row.value.percent[key] === null ? "不可計算" : `${(row.value.percent[key]! * 100).toFixed(1)}%`} · {formatDurationHours(row.value.seconds[key] / 3600)}</span>)}<span>有效分母 {row.value.denominatorSeconds.toLocaleString()} 秒</span></span>}
-      </button></div>;
+      return <OperationShareRowView key={row.id} row={row} showGroup={Boolean(showGroup)} dateLabel={dateLabel}/>;
     })}</div>
     {comparisonSummary && <div className="share-comparison-summary"><span>{comparisonSummary.label}</span><strong>{comparisonSummary.greenDelta === null ? "加工占比變化無法計算" : `加工占比變化 ${comparisonSummary.greenDelta >= 0 ? "+" : ""}${comparisonSummary.greenDelta.toFixed(1)} 百分點`}</strong></div>}
   </div>;
@@ -253,6 +302,13 @@ export interface LineSeries {
   details?: LinePointDetail[];
 }
 
+function trendTooltipHeading(axisMode: TrendAxisMode, index: number, fallback: string) {
+  if (axisMode === "COMPARE_DAY") return `第 ${index + 1} 小時`;
+  if (axisMode === "COMPARE_WEEK") return `第 ${index + 1} 日`;
+  if (axisMode === "COMPARE_MONTH") return `${index + 1} 日`;
+  return fallback;
+}
+
 export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ariaLabel = "機台運轉趨勢", axisMode = "RANGE_MULTI" }: {
   labels: string[];
   series: LineSeries[];
@@ -267,7 +323,7 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
   const visibleSeries = series.filter((item) => !hiddenKeys.includes(item.key));
   const all = visibleSeries.flatMap((item) => item.values);
   const hasValue = all.some((value) => value !== null);
-  const width = 960, height = 360, left = 72, right = 28, top = 24, bottom = 56;
+  const width = 960, height = 360, left = 108, right = 28, top = 24, bottom = 56;
   const maxValue = Math.max(0, ...all.map((value) => value ?? 0));
   const scale = niceHourScale(maxValue, axisMode === "RANGE_DAY_30" ? .5 : 1);
   const usableW = width - left - right, usableH = height - top - bottom;
@@ -288,22 +344,33 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
       <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
         {scale.ticks.map((tick) => { const position = y(tick); return <g key={`y-${tick}`}><line className="chart-grid" x1={left} x2={width - right} y1={position} y2={position}/><text className="chart-axis-label" x={left - 10} y={position + 4} textAnchor="end">{formatAxisHours(tick, scale.step)}</text></g>; })}
         <line className="chart-axis" x1={left} x2={left} y1={top} y2={height - bottom}/><line className="chart-axis" x1={left} x2={width - right} y1={height - bottom} y2={height - bottom}/>
-        <text className="chart-axis-title" transform={`translate(16 ${top + usableH / 2}) rotate(-90)`} textAnchor="middle">加工時間</text>
+        <text className="chart-axis-title" transform={`translate(20 ${top + usableH / 2}) rotate(-90)`} textAnchor="middle">加工時間</text>
         {axis.ticks.map((tick) => <g key={`x-${tick.index}`}><line className="chart-tick" x1={x(tick.index)} x2={x(tick.index)} y1={height - bottom} y2={height - bottom + 5}/><text className="chart-axis-label" x={x(tick.index)} y={height - 31} textAnchor="middle">{tick.label}</text></g>)}
         {axis.endLabel && <text className="chart-axis-label" x={width - right} y={height - 31} textAnchor="end">{axis.endLabel}</text>}
         <text className="chart-axis-title" x={left + usableW / 2} y={height - 7} textAnchor="middle">時間</text>
         {visibleSeries.map((item) => {
           const parts = segments(item.values);
           const dimmed = focusedSeries && focusedSeries !== item.key;
-          return <g key={item.key} className={dimmed ? "trend-series is-dimmed" : "trend-series"}>{parts.map((part, index) => <polyline key={index} fill="none" stroke={item.color} strokeWidth="2.5" points={part.map((point) => `${point.x},${point.y}`).join(" ")}/>)}{parts.flat().map((point) => <circle key={point.index} className={item.partial?.[point.index] ? "partial-point" : ""} cx={point.x} cy={point.y} r={item.partial?.[point.index] ? 4.8 : 3.6} fill={item.color} stroke="var(--bg)" strokeWidth="1.5"/>)}</g>;
+          return <g key={item.key} className={dimmed ? "trend-series is-dimmed" : "trend-series"}>{parts.map((part, index) => <polyline key={index} fill="none" stroke={item.color} strokeWidth="2.5" points={part.map((point) => `${point.x},${point.y}`).join(" ")}/>)}{parts.flat().map((point) => <circle key={point.index} className={`trend-point ${item.partial?.[point.index] ? "partial-point" : ""}`} cx={point.x} cy={point.y} r="3.8" fill={item.color} stroke="var(--bg)" strokeWidth="1.5"/>)}</g>;
         })}
         {activeIndex !== null && <line className="trend-crosshair" x1={x(activeIndex)} x2={x(activeIndex)} y1={top} y2={height - bottom}/>}
         {labels.map((_, index) => {
           const zoneWidth = Math.max(12, usableW / Math.max(1, labels.length));
-          return <rect key={`zone-${index}`} data-tooltip-zone x={Math.max(left, x(index) - zoneWidth / 2)} y={top} width={zoneWidth} height={usableH} fill="transparent" tabIndex={0} role="button" aria-label={tooltipText(index)} aria-describedby={activeIndex === index ? tooltipId : undefined} onMouseEnter={() => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} onFocus={() => setActiveIndex(index)} onBlur={() => setActiveIndex(null)}/>;
+          return <rect className="trend-tooltip-zone" key={`zone-${index}`} data-tooltip-zone x={Math.max(left, x(index) - zoneWidth / 2)} y={top} width={zoneWidth} height={usableH} fill="transparent" tabIndex={0} role="button" aria-label={tooltipText(index)} aria-describedby={activeIndex === index ? tooltipId : undefined} onMouseEnter={() => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} onFocus={() => setActiveIndex(index)} onBlur={() => setActiveIndex(null)}/>;
         })}
       </svg>
-      {activeIndex !== null && <div className={`chart-tooltip trend-tooltip ${activeIndex > labels.length / 2 ? "align-right" : ""}`} id={tooltipId} role="tooltip" style={{ left: `${x(activeIndex) / width * 100}%` }}><strong>{visibleSeries[0]?.details?.[activeIndex]?.timeLabel ?? labels[activeIndex]}</strong>{visibleSeries.map((item) => <span key={item.key}><i className="legend-dot" style={{ background: item.color }}/><b>{item.label}</b>{item.details?.[activeIndex]?.timeLabel && item.details[activeIndex].timeLabel !== visibleSeries[0]?.details?.[activeIndex]?.timeLabel ? <small>{item.details[activeIndex].timeLabel}</small> : null}<em>{item.values[activeIndex] === null ? status(item.details?.[activeIndex], null) : `${formatDurationHours(item.values[activeIndex]!)} · ${status(item.details?.[activeIndex], item.values[activeIndex])}`}</em></span>)}</div>}
+      {activeIndex !== null && <div className={`chart-tooltip trend-tooltip ${activeIndex >= (labels.length - 1) / 2 ? "align-right" : ""}`} id={tooltipId} role="tooltip" style={{ left: `${x(activeIndex) / width * 100}%` }}>
+        <span className="trend-tooltip-head"><strong>{trendTooltipHeading(axisMode, activeIndex, visibleSeries[0]?.details?.[activeIndex]?.timeLabel ?? labels[activeIndex])}</strong>{axisMode.startsWith("COMPARE") && <span>相對比較位置</span>}</span>
+        <span className="trend-tooltip-list">{visibleSeries.map((item) => {
+          const detail = item.details?.[activeIndex];
+          const value = item.values[activeIndex];
+          return <span className="trend-tooltip-row" key={item.key}>
+            <span className="trend-tooltip-series"><i className="legend-dot" style={{ background: item.color }}/><b>{item.label}</b></span>
+            {detail?.timeLabel && <span className="trend-tooltip-date">{detail.timeLabel}</span>}
+            <span className="trend-tooltip-reading"><strong>{value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : formatDurationHours(value)}</strong><span>{value === null ? "無可用數值" : status(detail, value)}</span></span>
+          </span>;
+        })}</span>
+      </div>}
     </div>}
     <div className="chart-legend interactive-legend trend-legend">{series.map((item) => <button type="button" key={item.key} className={hiddenKeys.includes(item.key) ? "is-muted" : ""} aria-pressed={!hiddenKeys.includes(item.key)} onClick={() => onToggleSeries?.(item.key)} onMouseEnter={() => setFocusedSeries(item.key)} onMouseLeave={() => setFocusedSeries(null)} onFocus={() => setFocusedSeries(item.key)} onBlur={() => setFocusedSeries(null)}><i className="legend-line" style={{ borderColor: item.color }}/>{item.label}</button>)}<span>斷線＝缺資料／不適用；描邊點＝部分覆蓋</span></div>
   </div>;

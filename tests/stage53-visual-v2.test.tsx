@@ -62,7 +62,7 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
       axisMode="RANGE_DAY_60"
       labels={["00:00-01:00","01:00-02:00"]}
       series={[
-        {key:"A1",label:"A1",color:"#62d49a",values:[0,0],details:[{timeLabel:"2025/06/01 00:00–01:00",availability:"AVAILABLE",completeness:"COMPLETE"},{timeLabel:"2025/06/01 01:00–02:00",availability:"AVAILABLE",completeness:"COMPLETE"}]},
+        {key:"A1",label:"A1",color:"#62d49a",values:[0,0],partial:[false,true],details:[{timeLabel:"2025/06/01 00:00–01:00",availability:"AVAILABLE",completeness:"COMPLETE"},{timeLabel:"2025/06/01 01:00–02:00",availability:"AVAILABLE",completeness:"PARTIAL"}]},
         {key:"A4",label:"A4",color:"#e8898b",values:[0,0],details:[{timeLabel:"2025/06/01 00:00–01:00",availability:"AVAILABLE",completeness:"COMPLETE"},{timeLabel:"2025/06/01 01:00–02:00",availability:"AVAILABLE",completeness:"COMPLETE"}]},
       ]}
     />);
@@ -71,6 +71,10 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(html).toContain("A4 0 分");
     expect(html).not.toContain("Green 工時");
     expect(html).not.toContain("stroke-dasharray");
+    expect(html).toContain('transform="translate(20');
+    expect(html).toContain('x1="108"');
+    expect(html).toContain('class="trend-point partial-point"');
+    expect(html).not.toContain('r="4.8"');
   });
 
   it("explains adaptive range grain and complete comparison periods",()=>{
