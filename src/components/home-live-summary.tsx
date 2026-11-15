@@ -1,0 +1,9 @@
+"use client";
+import { useCallback,useState } from "react";
+import Link from "next/link";
+import { fetchApiEnvelope } from "@/lib/api-client";
+import { useLocalRefresh } from "./use-local-refresh";
+import { formatTaipeiDateTime } from "@/features/live/live-ui-model";
+interface Overview {runtimeMode:"LIVE"|"DEMO";live:{status:"AVAILABLE"|"STALE"|"NO_DATA"|"DEMO_READY";lastReadingAt:string|null;dataDate:string|null};history:{activeDateFrom:string|null;activeDateTo:string|null;activeDayCount:number}}
+function liveLabel(value:Overview["live"]){if(value.status==="DEMO_READY")return `合成資料 ${value.dataDate}`;if(value.status==="AVAILABLE")return "本機即時資料可用";if(value.status==="STALE")return "本機資料已過期";return "尚未收集 Live 資料";}
+export function HomeLiveSummary(){const [data,setData]=useState<Overview|null>(null),[error,setError]=useState(false);const load=useCallback(async(signal:AbortSignal)=>{try{setData((await fetchApiEnvelope<Overview>("/api/overview",{signal})).data);setError(false);}catch(reason){if((reason as Error).name!=="AbortError")setError(true);}},[]);useLocalRefresh(load);return <section className="landing-live-summary" aria-label="本機資料摘要"><div><span>目前來源</span><strong>{data?.runtimeMode??"讀取中"}</strong><small>{data?.runtimeMode==="DEMO"?"模擬資料，不代表企業 API 成功":"只讀取 Collector 已保存資料"}</small></div><div><span>即時資料</span><strong>{error?"狀態無法讀取":data?liveLabel(data.live):"正在讀取"}</strong><small>{data?.live.lastReadingAt?`資料時間 ${formatTaipeiDateTime(data.live.lastReadingAt)}`:"不以手動連線測試冒充收集成功"}</small></div><div><span>歷史資料</span><strong>{data?.history.activeDayCount?`${data.history.activeDayCount} 個有效日期`:"尚未匯入"}</strong><small>{data?.history.activeDateFrom?`${data.history.activeDateFrom} – ${data.history.activeDateTo}`:"可由 Excel 匯入工作區新增"}</small></div><Link href="/settings/api" className="landing-status-link">查看 API 與模式設定 <span aria-hidden>→</span></Link></section>}
