@@ -84,6 +84,11 @@ async function run() {
   const range60 = await evaluate(`(() => ({points:document.querySelectorAll('[data-chart=operation-trend] circle').length,tooltipZones:document.querySelectorAll('[data-chart=operation-trend] [data-tooltip-zone]').length,has24:[...document.querySelectorAll('[data-chart=operation-trend] text')].some((node)=>node.textContent==='24:00'),ranking:[...document.querySelectorAll('.ranking-duration')].map((node)=>node.textContent),shares:[...document.querySelectorAll('[data-share-row]')].map((node)=>node.getAttribute('aria-label'))}))()`);
   await screenshot("03-range-60-1366.png");
 
+  await setControl("開始日期", "2025-06-02"); await setControl("結束日期", "2025-06-02"); await chooseMachines(["A2", "A3"]);
+  await submit("套用分析條件", "document.querySelectorAll('[data-chart=operation-ranking] .ranking-v2-row').length===2");
+  const missingMachine = await evaluate(`(() => ({ranking:[...document.querySelectorAll('.ranking-duration')].map((node)=>node.textContent),unavailable:[...document.querySelectorAll('.operation-share-unavailable')].map((node)=>node.textContent),fakeBars:document.querySelectorAll('[data-share-row="A3"] .operation-share-segment').length}))()`);
+  await screenshot("03b-range-missing-machine-1366.png");
+
   await setControl("開始日期", "2025-06-01"); await setControl("結束日期", "2025-06-05"); await chooseMachines(["A1", "A2", "B4"]);
   await submit("套用分析條件", "document.querySelectorAll('[data-chart=operation-trend] [data-tooltip-zone]').length===5");
   await clickText("整體占比"); await waitFor("document.querySelectorAll('[data-chart=operation-share] [data-share-row]').length===1", "overall share");
@@ -110,7 +115,7 @@ async function run() {
   for (const width of [1280, 1366, 1440]) { await viewport(width); await delay(120); compareLayouts[width] = await metrics(); }
   await viewport(1366); await screenshot("08-compare-month-1366.png");
   cdp.close();
-  return { empty, range30, overlapTooltip, legendInteraction: { focusedSeries, hiddenSeries }, range60: { ...range60, totalsAndSharesUnchanged: JSON.stringify(range30.ranking)===JSON.stringify(range60.ranking)&&JSON.stringify(range30.shares)===JSON.stringify(range60.shares) }, rangeLayouts, compareDay, comparisonHighlight, localModes, compareWeek, compareMonth, compareLayouts, evidenceDir };
+  return { empty, range30, overlapTooltip, legendInteraction: { focusedSeries, hiddenSeries }, range60: { ...range60, totalsAndSharesUnchanged: JSON.stringify(range30.ranking)===JSON.stringify(range60.ranking)&&JSON.stringify(range30.shares)===JSON.stringify(range60.shares) }, missingMachine, rangeLayouts, compareDay, comparisonHighlight, localModes, compareWeek, compareMonth, compareLayouts, evidenceDir };
 }
 
 try { console.log(JSON.stringify(await run(), null, 2)); } finally { chrome.kill("SIGTERM"); }

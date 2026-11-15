@@ -112,3 +112,15 @@
 - Safety: `_reference_inputs/` remained ignored/read-only; no enterprise API/file, environment file, database, credential, push, deployment, Stage 6/7 work, destructive Git operation, or data/volume deletion occurred.
 - Open issues: Real enterprise-data validation remains unclaimed by design. The existing standalone-output warning belongs to later production deployment validation, not this UI/statistics acceptance.
 - Next: Stop for Stage 5.3 review. Do not begin Stage 6/7 or push without explicit authorization.
+
+## Stage 5.3 — UAT Round 1 Visual Final V2.0
+
+- Status: Program implementation, automated regression, and public-synthetic real-browser validation complete; user visual UAT remains pending and is not claimed as passed.
+- Main changes: Rebuilt all six chart structures to the approved V2.0 names and visual hierarchy. Range ranking now uses solid shared-scale hour bars and human duration labels; range trend uses adaptive time/date axes, mouse/keyboard shared Tooltip, and legend focus/hide without jitter; range share is one full-width multi-row/aggregate chart. Comparison uses paired A/B bars, adaptive day/week/month two-line trends, full-width A/B three-state rows, and compact coverage details.
+- Visual baseline: Opened and inspected all nine ignored/read-only `stage5_3` reference images. Recorded the old-to-final gaps in `STAGE5_3_UAT_ROUND1_VISUAL_GAP_CHECK.md`; V2.0 titles, axes, labels, units, and interactions take precedence over the superseded visual spec.
+- Tests: `npm run typecheck`, `npm run lint`, `npm test` (97 passed, 1 private-workbook opt-in skipped), and `npm run build` with Webpack passed. Added unit/component coverage for dynamic zero-based nice scales, time/date ticks, time-minute labels, solid ranking bars, one-chart multi-row shares, and operable overlap readout. Existing H01–H20 statistics/quality/Active-Batch regressions remained green.
+- Browser: Production localhost Chrome used a disposable 16-date public synthetic SQLite database. VF-01–VF-12 covered empty, 30/60-minute invariance, full-green/full-yellow/valid-zero/missing-machine, multi-day, overall/per-machine, day/week/month comparison, local highlight/toggles, exact-value overlap, and 1280/1366/1440px. All measured desktop states had `scrollWidth === clientWidth` and no chart overflow. Evidence is under `docs/evidence/stage5_3_uat_v2/`.
+- Commit: `ce603c8` (primary implementation); acceptance/log evidence follows in the next local documentation commit.
+- Safety: No statistics formula, data-quality eligibility, SQLite schema, Excel/event page, enterprise API/file, real database, deployment, push, Stage 6/7, or destructive operation was used or changed.
+- Open issues: Human visual confirmation against the user's private 2025/06/01 values and subjective typography/color density remains required. `next start` continues to print the pre-existing standalone-output warning; formal production container validation remains later scope.
+- Next: Stop for user review of `STAGE5_3_UAT_ROUND1_VISUAL_ACCEPTANCE.md`; do not begin another stage.
