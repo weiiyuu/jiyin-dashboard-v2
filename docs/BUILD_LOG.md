@@ -175,3 +175,15 @@
 - Safety: No enterprise request, real Collector, product/private database, Docker Volume, Stage 5 logic, push, deployment, private file, or destructive Git operation was used or changed.
 - Open issues: Two or more supervised real Collector rounds, true Live freshness/partial-failure behavior, container TLS/network, production Docker, and the target-laptop native mode-confirm flow remain unverified. See `docs/STAGE7_ACCEPTANCE.md`.
 - Next: Stop for Stage 7 human UAT; do not begin another stage without explicit authorization.
+
+## Stage 7 — UAT Round 1 UI／UX refinement
+
+- Status: Nine-reference-image implementation, targeted regression, synthetic Demo browser validation, and responsive checks complete; subjective user UAT remains pending.
+- Main changes: Strengthened five valid machine lamp colors while keeping stale/unknown/no-data neutral; balanced each A/B 2×2 card grid against its simplified detail panel; reduced machine detail engineering fields; simplified eight environment cards with 26°C／40%RH warning semantics and area-level times; rebuilt live charts with no persistent markers for continuous data, full-plot nearest-slot hover, transient markers and keyboard points; simplified API settings and its endpoint table to user-facing language.
+- Contract compatibility: Added only the already-declared environment `fetchedAt` field to the Live latest query. Collector scheduling, sample slots, dynamic axes, NULL gaps, SQLite, Stage 5 statistics/import logic, and Live／Demo isolation remain unchanged.
+- Tests: Stage 6／7 targeted suite passed 29 tests; full Vitest passed 127 tests across 16 files with one opt-in private Excel suite skipped; `npm run typecheck`, `npm run lint` (zero warnings), `npm run build` with Webpack, and `git diff --check` passed.
+- Browser: In-app browser used `/private/tmp/jiyin-stage7-uat1.sqlite` with synthetic Demo only. At 1366px A/B grid/detail bottom deltas were both 0px and cards were equal height; nearest-slot mouse Tooltip returned four values, keyboard focus worked, legend hide survived refresh, and the API Manual Test was not clicked. 1280／1366／1440px had no page/main overflow; 760px stacked safely with no page overflow. Console had no warnings/errors. Browser captures covered the machine full page, environment cards/charts, and simplified API page.
+- Safety: All nine ignored reference images were viewed but not modified or committed. No enterprise request, real Collector, product DB/volume, Stage 5 core, push, deployment, Stage 8, or destructive operation occurred.
+- Commit: This local changeset; final hash is reported in the handoff.
+- Open issues: User taste check for glow/card density, target-Mac native Live/Demo confirmation, and supervised real multi-round Live collection remain pending.
+- Next: Stop for Stage 7 UAT Round 1 review; do not begin Stage 8.

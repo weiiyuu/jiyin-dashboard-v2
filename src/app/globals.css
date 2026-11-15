@@ -57,6 +57,80 @@
 .floating-chart-tooltip{position:fixed;z-index:1000;transform:none!important}.share-tooltip{width:min(520px,calc(100vw - 32px));min-width:min(520px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);overflow-y:auto;padding:16px;gap:13px}.share-tooltip>.share-tooltip-head{display:grid;gap:6px;padding-bottom:11px;border-bottom:1px solid var(--line)}.share-tooltip-head>strong{font-size:17px}.share-tooltip-head>span{display:block;color:var(--muted);font-size:14px;line-height:1.5}.share-tooltip>.share-tooltip-states{display:grid;gap:8px}.share-tooltip-states>.share-tooltip-state{display:grid;grid-template-columns:minmax(120px,1fr) auto minmax(185px,auto);align-items:center;gap:12px;padding:9px 10px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:rgba(255,255,255,.025)}.share-tooltip-state>.share-tooltip-state-name{display:flex;align-items:center;gap:8px;white-space:nowrap}.share-tooltip-state>strong{font-size:16px;white-space:nowrap}.share-tooltip-state>span:last-child{display:block;color:var(--muted);font-size:14px;text-align:right;white-space:nowrap}.share-tooltip>.share-tooltip-denominator{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:11px;border-top:1px solid var(--line)}.share-tooltip-denominator>span{color:var(--muted);font-size:14px}.share-tooltip-denominator>strong{font-size:15px;white-space:nowrap}
 @media(max-width:760px){.range-filter-field{grid-template-rows:auto 50px auto}.operation-share-row-v2{grid-template-columns:1fr;gap:7px}.trend-tooltip{width:calc(100vw - 32px);min-width:0}.trend-tooltip-list>.trend-tooltip-row{grid-template-columns:1fr}.trend-tooltip-row>.trend-tooltip-date,.trend-tooltip-row>.trend-tooltip-reading{grid-column:1;grid-row:auto;justify-items:start}.share-tooltip-states>.share-tooltip-state{grid-template-columns:1fr auto}.share-tooltip-state>span:last-child{grid-column:1/-1;text-align:left}.share-tooltip>.share-tooltip-denominator{align-items:flex-start;flex-direction:column}}
 
+/* Stage 7 UAT round 1: clearer live states, balanced panels and clean line charts. */
+.machine-area-layout{align-items:stretch}
+.machine-card-grid{align-content:stretch;grid-template-rows:repeat(2,minmax(0,1fr))}
+.live-machine-card{height:100%;min-height:0;border-width:2px}
+.live-machine-card.is-selected{outline:2px solid rgba(241,208,187,.92);outline-offset:-6px}
+.live-machine-card.is-selected::after{content:none}
+.live-machine-card.lamp-green{border-color:rgba(68,224,142,.9);box-shadow:inset 0 0 0 1px rgba(68,224,142,.2),0 0 28px rgba(68,224,142,.3)}
+.live-machine-card.lamp-yellow{border-color:rgba(245,203,75,.92);box-shadow:inset 0 0 0 1px rgba(245,203,75,.2),0 0 28px rgba(245,203,75,.28)}
+.live-machine-card.lamp-red{border-color:rgba(255,100,106,.9);box-shadow:inset 0 0 0 1px rgba(255,100,106,.2),0 0 28px rgba(255,100,106,.3)}
+.live-machine-card.lamp-blue{border-color:rgba(83,172,243,.92);box-shadow:inset 0 0 0 1px rgba(83,172,243,.2),0 0 28px rgba(83,172,243,.28)}
+.live-machine-card.lamp-white{border-color:rgba(255,250,245,.9);box-shadow:inset 0 0 0 1px rgba(255,250,245,.2),0 0 26px rgba(255,250,245,.24)}
+.live-machine-card.lamp-unavailable,.live-machine-card.lamp-other,.live-machine-card.lamp-unknown{border-color:rgba(155,143,145,.42);box-shadow:none}
+.lamp-badge{display:inline-flex;align-items:center;gap:8px;max-width:170px;color:#f9efec;font-size:14px;font-weight:800;line-height:1.35;text-align:right}
+.lamp-badge::before{content:"";flex:0 0 auto;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-radius:50%;background:#8f8587}
+.lamp-badge.lamp-green::before{border-color:#97f3c0;background:#42d787;box-shadow:0 0 12px rgba(66,215,135,.75)}
+.lamp-badge.lamp-yellow::before{border-color:#fff0a9;background:#efc847;box-shadow:0 0 12px rgba(239,200,71,.72)}
+.lamp-badge.lamp-red::before{border-color:#ffc0c3;background:#f56368;box-shadow:0 0 12px rgba(245,99,104,.75)}
+.lamp-badge.lamp-blue::before{border-color:#b7dfff;background:#54aaf0;box-shadow:0 0 12px rgba(84,170,240,.72)}
+.lamp-badge.lamp-white::before{border-color:#fff;background:#f7f1ed;box-shadow:0 0 12px rgba(255,255,255,.64)}
+.lamp-badge.lamp-unavailable::before,.lamp-badge.lamp-other::before,.lamp-badge.lamp-unknown::before{border-color:#b5aaac;background:#6f686a;box-shadow:none}
+.machine-card-bottom{display:grid;gap:6px;margin-top:auto;padding-top:15px}
+.machine-card-time{margin-top:0;font-size:14px}
+.machine-card-issue{color:#efc86f;font-size:14px;font-weight:750}
+.machine-detail{height:100%;align-content:start}
+.machine-detail-list{grid-template-columns:1fr}
+.machine-detail-list>div,.machine-detail-list>div:nth-child(odd),.machine-detail-list>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}
+.machine-detail-list>div:last-child{border-bottom:0}
+.machine-environment-link{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:auto;padding:14px 15px;border:1px solid var(--line);border-radius:9px;color:var(--cream);background:rgba(36,21,26,.6);font-size:15px;font-weight:750}
+.machine-environment-link:hover{border-color:var(--line-strong);background:rgba(70,42,49,.72)}
+
+.environment-area-grid>.panel{min-width:0}
+.environment-area-times{display:grid;gap:5px;color:var(--muted);font-size:13px;line-height:1.4;text-align:right}
+.environment-sensor-card{display:grid;align-content:space-between;min-height:145px;border-width:2px}
+.environment-sensor-card>strong{margin:24px 0 4px}
+.environment-sensor-card.status-normal{border-color:rgba(68,224,142,.62);box-shadow:inset 0 0 18px rgba(68,224,142,.08)}
+.environment-sensor-card.status-above_limit{border-color:rgba(255,100,106,.78);box-shadow:inset 0 0 22px rgba(255,100,106,.1),0 0 18px rgba(255,100,106,.12)}
+.environment-sensor-card.status-stale,.environment-sensor-card.status-no_data{border-color:rgba(155,143,145,.48);border-style:dashed;box-shadow:none}
+.environment-sensor-card.status-unreadable{border-color:rgba(255,100,106,.58);border-style:dashed;box-shadow:none}
+
+.live-chart-toolbar{align-items:center}
+.live-chart-range{color:var(--muted);font-size:14px;white-space:nowrap}
+.live-reference-band{fill:rgba(236,103,108,.045);pointer-events:none}
+.live-reference-label{font-size:15px}
+.live-chart-hit-area{cursor:crosshair}
+.live-keyboard-point{opacity:0;pointer-events:none}
+.live-keyboard-point:focus{opacity:1;fill:rgba(255,255,255,.14)!important;stroke:#fff!important;stroke-width:3!important}
+.live-hover-marker,.live-single-point{stroke:#28171d;stroke-width:2;pointer-events:none}
+.live-chart-tooltip{min-width:260px;max-width:360px;gap:10px;padding:14px 15px}
+.live-chart-tooltip>strong{font-size:16px}
+.live-tooltip-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 15px;padding-top:8px;border-top:1px solid rgba(255,255,255,.09)}
+.live-tooltip-row>span{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.live-tooltip-row>span>i{flex:0 0 auto;width:16px;height:3px;border-radius:4px}
+.live-tooltip-row>b{font-size:14px;white-space:nowrap}
+.live-tooltip-row>small{grid-column:1/-1;color:var(--muted);font-size:13px}
+.live-chart-note{margin:0;padding:0 20px 18px;color:var(--muted);font-size:14px}
+
+.connection-facts{grid-template-columns:1fr}
+.connection-facts>div,.connection-facts>div:nth-child(odd),.connection-facts>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}
+.connection-facts>div:last-child{border-bottom:0}
+.connection-table{min-width:760px;table-layout:fixed}
+.connection-table th:nth-child(1){width:220px}.connection-table th:nth-child(2){width:150px}.connection-table th:nth-child(3){width:205px}
+
+@media(max-width:1080px){
+  .machine-card-grid{grid-template-rows:repeat(2,minmax(170px,auto))}
+  .machine-detail{height:auto}
+  .environment-area-times{text-align:left}
+}
+@media(max-width:760px){
+  .machine-card-grid{grid-template-rows:none}
+  .live-machine-card{min-height:170px}
+  .environment-area-times{font-size:12px}
+  .live-chart-toolbar{align-items:flex-start}
+}
+
 /* Stage 5.3 human UAT round 3: user-facing tables, selects, and comparison labels. */
 select.control{appearance:none;-webkit-appearance:none;padding-right:48px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='m1 1 6 6 6-6' fill='none' stroke='%23eadbd6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;background-size:14px 9px}
 .version-result-count{align-self:end;display:flex;align-items:center;min-height:50px}.version-table{min-width:1120px;table-layout:fixed}.version-table th:nth-child(1){width:135px}.version-table th:nth-child(2){width:190px}.version-table th:nth-child(3){width:auto}.version-table th:nth-child(4){width:185px}.version-table th:nth-child(5){width:165px}.version-table th:nth-child(6){width:165px}.version-source-date,.version-time{white-space:nowrap;font-variant-numeric:tabular-nums}.version-file-name{max-width:none}.version-detail-row>td{padding:0 15px 15px;background:rgba(20,11,15,.22)}.version-detail-panel{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:rgba(20,11,15,.52)}.version-detail-panel dl{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px 18px;width:100%;margin:0}.version-detail-panel dl>div{display:grid;gap:4px;min-width:0}.version-detail-panel dt{color:var(--muted);font-size:14px}.version-detail-panel dd{margin:0;overflow-wrap:anywhere}.version-action{flex:0 0 auto}.comparison-legend{flex-wrap:wrap;gap:8px 18px}.comparison-bar-line{grid-template-columns:minmax(200px,max-content) minmax(0,1fr);gap:12px}.comparison-bar-line>b{line-height:1.35;white-space:normal}.comparison-ranking-v2 .ranking-tooltip{min-width:min(520px,calc(100vw - 48px));max-width:min(520px,calc(100vw - 48px))}
@@ -76,3 +150,11 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
 @media(max-width:1080px){.machine-area-layout{grid-template-columns:1fr}.machine-card-grid{border-right:0;border-bottom:1px solid var(--line)}.environment-area-grid,.connection-grid{grid-template-columns:1fr}.live-chart-toolbar{display:grid}.live-chart-legend{justify-content:flex-start}}
 @media(max-width:760px){.live-provider-banner,.connection-mode-banner{align-items:flex-start;display:grid}.live-provider-actions{flex-wrap:wrap}.live-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.machine-card-grid,.environment-sensor-grid{grid-template-columns:1fr;padding:14px}.machine-detail-list,.connection-facts{grid-template-columns:1fr}.machine-detail-list>div:nth-child(odd),.connection-facts>div:nth-child(odd){border-right:0}.machine-detail-list>div:nth-last-child(-n+2),.connection-facts>div:nth-last-child(-n+2){border-bottom:1px solid var(--line)}.machine-detail-list>div:last-child,.connection-facts>div:last-child{border-bottom:0}.machine-environment-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.live-chart{padding:12px}.live-chart-canvas{overflow-x:auto}.live-chart-canvas svg{min-width:720px}.live-chart-tooltip{display:none}.landing-live-summary{grid-template-columns:1fr}.landing-status-link{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.live-machine-card{transition:none}.live-machine-card:hover{transform:none}}
+
+/* Stage 7 UAT round 1 cascade overrides (kept after the Stage 7 baseline). */
+.machine-area-layout{align-items:stretch}.machine-card-grid{align-content:stretch;grid-template-rows:repeat(2,minmax(0,1fr))}.live-machine-card{height:100%;min-height:0;border-width:2px}.live-machine-card.is-selected{outline:2px solid rgba(241,208,187,.92);outline-offset:-6px}.live-machine-card.is-selected::after{content:none}
+.live-machine-card.lamp-green{border-color:rgba(68,224,142,.9);box-shadow:inset 0 0 0 1px rgba(68,224,142,.2),0 0 28px rgba(68,224,142,.3)}.live-machine-card.lamp-yellow{border-color:rgba(245,203,75,.92);box-shadow:inset 0 0 0 1px rgba(245,203,75,.2),0 0 28px rgba(245,203,75,.28)}.live-machine-card.lamp-red{border-color:rgba(255,100,106,.9);box-shadow:inset 0 0 0 1px rgba(255,100,106,.2),0 0 28px rgba(255,100,106,.3)}.live-machine-card.lamp-blue{border-color:rgba(83,172,243,.92);box-shadow:inset 0 0 0 1px rgba(83,172,243,.2),0 0 28px rgba(83,172,243,.28)}.live-machine-card.lamp-white{border-color:rgba(255,250,245,.9);box-shadow:inset 0 0 0 1px rgba(255,250,245,.2),0 0 26px rgba(255,250,245,.24)}.live-machine-card.lamp-unavailable,.live-machine-card.lamp-other,.live-machine-card.lamp-unknown{border-color:rgba(155,143,145,.42);box-shadow:none}
+.machine-card-bottom{display:grid;gap:6px;margin-top:auto;padding-top:15px}.machine-card-time{margin-top:0;font-size:14px}.machine-card-issue{color:#efc86f;font-size:14px;font-weight:750}.machine-detail{height:100%;align-content:start}.machine-detail-list{grid-template-columns:1fr}.machine-detail-list>div,.machine-detail-list>div:nth-child(odd),.machine-detail-list>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}.machine-detail-list>div:last-child{border-bottom:0}
+.environment-sensor-card{display:grid;align-content:space-between;min-height:145px;border-width:2px}.environment-sensor-card>strong{margin:24px 0 4px}.live-chart-toolbar{align-items:center}.connection-facts{grid-template-columns:1fr}.connection-facts>div,.connection-facts>div:nth-child(odd),.connection-facts>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}.connection-facts>div:last-child{border-bottom:0}.connection-table{min-width:760px;table-layout:fixed}.connection-table th:nth-child(1){width:220px}.connection-table th:nth-child(2){width:150px}.connection-table th:nth-child(3){width:205px}
+@media(max-width:1080px){.machine-card-grid{grid-template-rows:repeat(2,minmax(170px,auto))}.machine-detail{height:auto}.environment-area-times{text-align:left}}
+@media(max-width:760px){.machine-card-grid{grid-template-rows:none}.live-machine-card{min-height:170px}.environment-area-times{font-size:12px}.live-chart-toolbar{align-items:flex-start}}
