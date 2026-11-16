@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ImportIssueSummary, groupImportIssues, type ImportIssue } from "@/components/import-issue-summary";
 import { ComparisonRanking, CoverageStrip, OperationShareChart, StateShareChart, TrendChart, buildLineSegments } from "@/components/history-widgets";
 import { alarmSourceLabel, formatHours } from "@/features/history/history-ui-model";
-import { confirmPlan, removeSelectedUpload } from "@/features/imports/import-ui-model";
+import { confirmPlan, importAlarmSourceLabel, importIssueExplanation, importIssueLabels, removeSelectedUpload } from "@/features/imports/import-ui-model";
 
 describe("Stage 5 UI truth-preserving view models",()=>{
   it("removes only the selected upload before preview and requires explicit replacement approval",()=>{
@@ -13,6 +14,10 @@ describe("Stage 5 UI truth-preserving view models",()=>{
     expect(confirmPlan(conflict,true)).toMatchObject({allowed:true,action:"REPLACE"});
     expect(confirmPlan({...conflict,decision:"DUPLICATE"},true)).toMatchObject({allowed:false,reason:"DUPLICATE"});
   });
+
+  it("uses plain-language import reminders without changing source semantics",()=>{expect(importIssueLabels.DERIVED_VALUE_MISMATCH).toBe("計算結果不一致");expect(importIssueExplanation("DERIVED_VALUE_MISMATCH","technical")).toContain("依原始秒數重新計算");expect(importIssueExplanation("SOURCE_VALUE_MISSING","technical")).toBe("保留空值，不自動補 0");expect(importAlarmSourceLabel("PROVIDED_EMPTY")).toBe("已提供（0 筆）");expect(importAlarmSourceLabel("MISSING")).toBe("未提供");});
+
+  it("keeps 0, 4 and 44 import reminders compact and grouped",()=>{const issue=(index:number):ImportIssue=>({ruleCode:"DERIVED_VALUE_MISMATCH",severity:"WARNING",sheetName:"machine_status",sourceRowNumber:index+2,columnName:"加工比例",messageSafe:"technical"});expect(groupImportIssues([])).toEqual([]);expect(groupImportIssues(Array.from({length:4},(_,index)=>issue(index)))[0][1]).toHaveLength(4);const html=renderToStaticMarkup(<ImportIssueSummary title="資料提醒" items={Array.from({length:44},(_,index)=>issue(index))}/>);expect(html).toContain("資料提醒（44）");expect(html).toContain("計算結果不一致 × 44");expect(html).toContain("另有 24 則未展開");});
 
   it("keeps valid zero, missing and not-applicable labels distinct",()=>{
     expect(formatHours(0)).toBe("0.000 小時");

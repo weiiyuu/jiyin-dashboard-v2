@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode,
 import { availabilityLabel, type Availability } from "@/features/history/history-ui-model";
 import {
   buildTrendAxisLabels,
+  capacityHourScale,
   formatAxisHours,
   formatDurationHours,
   formatSignedDurationHours,
@@ -47,28 +48,31 @@ export interface RankRow {
   eligibleIntervals?: number;
 }
 
-function ScaleAxis({ maxValue, unit = "HOURS", title }: { maxValue: number; unit?: "HOURS" | "HOURS_PER_DAY"; title: string }) {
-  const scale = niceHourScale(maxValue, unit === "HOURS_PER_DAY" ? 1 : 1);
+type HourScale = { max: number; step: number; ticks: number[]; exceeded?: boolean };
+
+function ScaleAxis({ scale, unit = "HOURS", title }: { scale: HourScale; unit?: "HOURS" | "HOURS_PER_DAY"; title: string }) {
   return <div className="value-axis" aria-hidden="true"><span className="value-axis-title">{title}</span><div className="value-axis-ticks">{scale.ticks.map((tick) => <span key={tick} style={{ left: `${tick / scale.max * 100}%` }}>{formatAxisHours(tick, scale.step, unit)}</span>)}</div></div>;
 }
 
-function GridLines({ maxValue }: { maxValue: number }) {
-  const scale = niceHourScale(maxValue);
+function GridLines({ scale }: { scale: HourScale }) {
   return <>{scale.ticks.map((tick) => <i className="value-grid-line" key={tick} style={{ left: `${tick / scale.max * 100}%` }}/>)}</>;
 }
 
-export function RankingChart({ rows, highlightedMachine, onHighlight, unit = "HOURS", dateLabel }: {
+export function RankingChart({ rows, highlightedMachine, onHighlight, unit = "HOURS", dateLabel, capacityHours, expectedIntervalsPerMachine }: {
   rows: RankRow[];
   highlightedMachine?: string | null;
   onHighlight?: (machineId: string) => void;
   unit?: "HOURS" | "HOURS_PER_DAY";
   dateLabel: string;
+  capacityHours?: number;
+  expectedIntervalsPerMachine?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const maxValue = Math.max(0, ...rows.map((row) => row.greenHours ?? 0));
-  const scale = niceHourScale(maxValue, unit === "HOURS_PER_DAY" ? 1 : 1);
+  const scale:HourScale = capacityHours ? capacityHourScale(maxValue, capacityHours) : niceHourScale(maxValue, unit === "HOURS_PER_DAY" ? 1 : 1);
   return <div className="chart-box ranking-chart-v2" data-chart="operation-ranking">
-    <ScaleAxis maxValue={maxValue} unit={unit} title={unit === "HOURS_PER_DAY" ? "平均每日加工時數" : "累積時數"}/>
+    <ScaleAxis scale={scale} unit={unit} title={unit === "HOURS_PER_DAY" ? "平均每日加工時數" : "累積時數"}/>
+    {scale.exceeded&&<div className="chart-data-warning" role="note">資料超過所選期間的理論時間容量，已保留原值並擴展刻度。</div>}
     <div className="ranking-v2-list">{rows.map((row) => {
       const isMissing = row.greenHours === null;
       const label = isMissing ? "資料不足" : formatDurationHours(row.greenHours!, unit);
@@ -84,11 +88,12 @@ export function RankingChart({ rows, highlightedMachine, onHighlight, unit = "HO
         onBlur={() => setHovered(null)}
         aria-pressed={highlightedMachine === row.machineId}
         aria-describedby={hovered === row.machineId ? tooltipId : undefined}
+        aria-label={`${row.machineId}，累積加工時間 ${label}，${isMissing?availabilityLabel(row.availability):expectedIntervalsPerMachine?`可統計資料 ${row.eligibleIntervals??0} / ${expectedIntervalsPerMachine} 筆`:`可統計紀錄 ${row.eligibleIntervals??0} 筆`}`}
       >
         <strong className="ranking-machine">{row.machineId}</strong>
-        <span className="ranking-v2-plot"><GridLines maxValue={maxValue}/>{!isMissing && row.greenHours! > 0 && <span className="ranking-solid-bar" style={{ width: `${row.greenHours! / scale.max * 100}%` }}/>} {!isMissing && row.greenHours === 0 && <span className="ranking-zero-mark"/>}</span>
+        <span className="ranking-v2-plot"><GridLines scale={scale}/>{!isMissing && row.greenHours! > 0 && <span className="ranking-solid-bar" style={{ width: `${Math.min(100,row.greenHours! / scale.max * 100)}%` }}/>} {!isMissing && row.greenHours === 0 && <span className="ranking-zero-mark"/>}</span>
         <span className={`ranking-duration ${isMissing ? "is-missing" : ""}`}>{label}</span>
-        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId} · {dateLabel}</strong><span>累積加工時間：{label}</span><span>{isMissing ? availabilityLabel(row.availability) : `有效區間 ${row.eligibleIntervals?.toLocaleString() ?? "—"}`}</span></span>}
+        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId} · {dateLabel}</strong><span>累加工時間：{label}</span><span>{isMissing ? availabilityLabel(row.availability) : expectedIntervalsPerMachine ? `可統計資料：${row.eligibleIntervals?.toLocaleString() ?? "—"} / ${expectedIntervalsPerMachine.toLocaleString()} 筆（三分鐘記錄）` : `可統計紀錄：${row.eligibleIntervals?.toLocaleString() ?? "—"} 筆`}</span></span>}
       </button>;
     })}</div>
   </div>;
@@ -97,26 +102,31 @@ export function RankingChart({ rows, highlightedMachine, onHighlight, unit = "HO
 export interface CompareRankRow {
   machineId: string;
   periods: {
-    A: { greenHours: number | null; availability: Availability; unit?: "HOURS" | "HOURS_PER_DAY" };
-    B: { greenHours: number | null; availability: Availability; unit?: "HOURS" | "HOURS_PER_DAY" };
+    A: { greenHours: number | null; availability: Availability; unit?: "HOURS" | "HOURS_PER_DAY"; eligibleIntervals?: number };
+    B: { greenHours: number | null; availability: Availability; unit?: "HOURS" | "HOURS_PER_DAY"; eligibleIntervals?: number };
   };
   difference?: number | null;
   relativeChange?: number | null;
 }
 
-export function ComparisonRanking({ rows, highlightedMachine, onHighlight, periodLabels }: {
+export function comparisonRelativeChangeLabel(a:number|null,relativeChange:number|null|undefined){if(a===0)return "無法計算（前期為 0）";if(relativeChange===null||relativeChange===undefined)return "無法計算（資料不足）";return `${relativeChange>=0?"+":""}${(relativeChange*100).toFixed(1)}%`;}
+
+export function ComparisonRanking({ rows, highlightedMachine, onHighlight, periodLabels, capacityHours, expectedIntervals }: {
   rows: CompareRankRow[];
   highlightedMachine?: string | null;
   onHighlight?: (machineId: string) => void;
   periodLabels: { A: string; B: string };
+  capacityHours?: number;
+  expectedIntervals?: { A: number; B: number };
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const maxValue = Math.max(0, ...rows.flatMap((row) => [row.periods.A.greenHours ?? 0, row.periods.B.greenHours ?? 0]));
   const unit = rows[0]?.periods.A.unit ?? "HOURS";
-  const scale = niceHourScale(maxValue);
+  const scale:HourScale = capacityHours ? capacityHourScale(maxValue, capacityHours) : niceHourScale(maxValue);
   return <div className="chart-box comparison-ranking-v2" data-chart="comparison-ranking">
     <div className="chart-legend comparison-legend"><span><i className="legend-dot period-a-dot"/>{periodLabels.A}</span><span><i className="legend-dot period-b-dot"/>{periodLabels.B}</span><span>依 {periodLabels.B} 排序</span></div>
-    <ScaleAxis maxValue={maxValue} unit={unit} title={unit === "HOURS_PER_DAY" ? "平均每日加工時數" : "累積時數"}/>
+    <ScaleAxis scale={scale} unit={unit} title={unit === "HOURS_PER_DAY" ? "平均每日加工時數" : "累積時數"}/>
+    {scale.exceeded&&<div className="chart-data-warning" role="note">資料超過所選期間的理論時間容量，已保留原值並擴展刻度。</div>}
     <div className="comparison-v2-list">{rows.map((row) => {
       const a = row.periods.A.greenHours;
       const b = row.periods.B.greenHours;
@@ -134,9 +144,9 @@ export function ComparisonRanking({ rows, highlightedMachine, onHighlight, perio
         aria-describedby={hovered === row.machineId ? tooltipId : undefined}
       >
         <strong className="comparison-machine">{row.machineId}</strong>
-        <span className="comparison-bars-v2"><span className="comparison-bar-line"><b>{periodLabels.A}</b><span className="comparison-bar-plot"><GridLines maxValue={maxValue}/>{a !== null && a > 0 && <span className="comparison-solid-bar period-a" style={{ width: `${a / scale.max * 100}%` }}/>} {a === 0 && <span className="ranking-zero-mark"/>}</span></span><span className="comparison-bar-line"><b>{periodLabels.B}</b><span className="comparison-bar-plot"><GridLines maxValue={maxValue}/>{b !== null && b > 0 && <span className="comparison-solid-bar period-b" style={{ width: `${b / scale.max * 100}%` }}/>} {b === 0 && <span className="ranking-zero-mark"/>}</span></span></span>
+        <span className="comparison-bars-v2"><span className="comparison-bar-line"><b>{periodLabels.A}</b><span className="comparison-bar-plot"><GridLines scale={scale}/>{a !== null && a > 0 && <span className="comparison-solid-bar period-a" style={{ width: `${Math.min(100,a / scale.max * 100)}%` }}/>} {a === 0 && <span className="ranking-zero-mark"/>}</span></span><span className="comparison-bar-line"><b>{periodLabels.B}</b><span className="comparison-bar-plot"><GridLines scale={scale}/>{b !== null && b > 0 && <span className="comparison-solid-bar period-b" style={{ width: `${Math.min(100,b / scale.max * 100)}%` }}/>} {b === 0 && <span className="ranking-zero-mark"/>}</span></span></span>
         <span className="comparison-duration">{a === null ? "資料不足" : formatDurationHours(a, unit)}<b aria-hidden="true">→</b>{b === null ? "資料不足" : formatDurationHours(b, unit)}</span>
-        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId}</strong><span>{periodLabels.A}：{a === null ? "資料不足" : formatDurationHours(a, unit)}</span><span>{periodLabels.B}：{b === null ? "資料不足" : formatDurationHours(b, unit)}</span><span>差異：{formatSignedDurationHours(row.difference ?? null, unit)}</span><span>相對變化：{row.relativeChange === null || row.relativeChange === undefined ? "不適用" : `${row.relativeChange >= 0 ? "+" : ""}${(row.relativeChange * 100).toFixed(1)}%`}</span></span>}
+        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId}</strong><span>{periodLabels.A}：{a === null ? "資料不足" : formatDurationHours(a, unit)}</span>{expectedIntervals&&<span>可統計資料：{row.periods.A.eligibleIntervals?.toLocaleString()??"—"} / {expectedIntervals.A.toLocaleString()} 筆</span>}<span>{periodLabels.B}：{b === null ? "資料不足" : formatDurationHours(b, unit)}</span>{expectedIntervals&&<span>可統計資料：{row.periods.B.eligibleIntervals?.toLocaleString()??"—"} / {expectedIntervals.B.toLocaleString()} 筆</span>}<span>差異：{formatSignedDurationHours(row.difference ?? null, unit)}</span><span>相對變化：{comparisonRelativeChangeLabel(a,row.relativeChange)}</span></span>}
       </button>;
     })}</div>
   </div>;
@@ -291,6 +301,8 @@ export interface LinePointDetail {
   timeLabel: string;
   availability: Availability;
   completeness?: "COMPLETE" | "PARTIAL" | "MISSING";
+  eligibleIntervals?: number;
+  expectedIntervals?: number;
 }
 
 export interface LineSeries {
@@ -309,13 +321,14 @@ function trendTooltipHeading(axisMode: TrendAxisMode, index: number, fallback: s
   return fallback;
 }
 
-export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ariaLabel = "機台運轉趨勢", axisMode = "RANGE_MULTI" }: {
+export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ariaLabel = "機台運轉趨勢", axisMode = "RANGE_MULTI", capacityHours }: {
   labels: string[];
   series: LineSeries[];
   hiddenKeys?: string[];
   onToggleSeries?: (key: string) => void;
   ariaLabel?: string;
   axisMode?: TrendAxisMode;
+  capacityHours?: number;
 }) {
   const tooltipId = useId();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -325,7 +338,7 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
   const hasValue = all.some((value) => value !== null);
   const width = 960, height = 360, left = 108, right = 28, top = 24, bottom = 56;
   const maxValue = Math.max(0, ...all.map((value) => value ?? 0));
-  const scale = niceHourScale(maxValue, axisMode === "RANGE_DAY_30" ? .5 : 1);
+  const scale:HourScale = capacityHours ? capacityHourScale(maxValue, capacityHours, axisMode === "RANGE_DAY_30" ? .5 : 1) : niceHourScale(maxValue, axisMode === "RANGE_DAY_30" ? .5 : 1);
   const usableW = width - left - right, usableH = height - top - bottom;
   const x = (index: number) => left + (labels.length <= 1 ? 0 : index / (labels.length - 1) * usableW);
   const y = (value: number) => top + usableH - value / scale.max * usableH;
@@ -337,10 +350,11 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
     return result;
   };
   const axis = buildTrendAxisLabels(axisMode, labels);
-  const status = (detail: LinePointDetail | undefined, value: number | null) => value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : detail?.completeness === "PARTIAL" ? "部分覆蓋" : "完整";
+  const status = (detail: LinePointDetail | undefined, value: number | null) => value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : detail?.completeness === "PARTIAL" ? "部分資料缺漏" : "資料完整";
   const tooltipText = (index: number) => visibleSeries.map((item) => `${item.label} ${item.values[index] === null ? status(item.details?.[index], null) : formatDurationHours(item.values[index]!)} ${item.details?.[index]?.timeLabel ?? labels[index]}`).join("；");
   return <div className="chart-box operation-trend-v2" data-chart="operation-trend">
     {!hasValue ? <div className="empty-state"><div><div className="empty-icon">⌁</div><strong>所選期間沒有可用趨勢</strong><p>缺少資料的時間位置會維持空白，不會補成 0 或連線跨過。</p></div></div> : <div className="trend-plot-wrap">
+      {scale.exceeded&&<div className="chart-data-warning" role="note">資料超過此時間單位的理論容量，已保留原值並擴展刻度。</div>}
       <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
         {scale.ticks.map((tick) => { const position = y(tick); return <g key={`y-${tick}`}><line className="chart-grid" x1={left} x2={width - right} y1={position} y2={position}/><text className="chart-axis-label" x={left - 10} y={position + 4} textAnchor="end">{formatAxisHours(tick, scale.step)}</text></g>; })}
         <line className="chart-axis" x1={left} x2={left} y1={top} y2={height - bottom}/><line className="chart-axis" x1={left} x2={width - right} y1={height - bottom} y2={height - bottom}/>
@@ -367,11 +381,11 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
           return <span className="trend-tooltip-row" key={item.key}>
             <span className="trend-tooltip-series"><i className="legend-dot" style={{ background: item.color }}/><b>{item.label}</b></span>
             {detail?.timeLabel && <span className="trend-tooltip-date">{detail.timeLabel}</span>}
-            <span className="trend-tooltip-reading"><strong>{value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : formatDurationHours(value)}</strong><span>{value === null ? "無可用數值" : status(detail, value)}</span></span>
+            <span className="trend-tooltip-reading"><strong>{value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : formatDurationHours(value)}</strong><span>{value === null ? "無可用數值" : status(detail, value)}</span>{detail?.expectedIntervals!==undefined&&<span>可統計資料：{(detail.eligibleIntervals??0).toLocaleString()} / {detail.expectedIntervals.toLocaleString()} 筆</span>}</span>
           </span>;
         })}</span>
       </div>}
     </div>}
-    <div className="chart-legend interactive-legend trend-legend">{series.map((item) => <button type="button" key={item.key} className={hiddenKeys.includes(item.key) ? "is-muted" : ""} aria-pressed={!hiddenKeys.includes(item.key)} onClick={() => onToggleSeries?.(item.key)} onMouseEnter={() => setFocusedSeries(item.key)} onMouseLeave={() => setFocusedSeries(null)} onFocus={() => setFocusedSeries(item.key)} onBlur={() => setFocusedSeries(null)}><i className="legend-line" style={{ borderColor: item.color }}/>{item.label}</button>)}<span>斷線＝缺資料／不適用；描邊點＝部分覆蓋</span></div>
+    <div className="chart-legend interactive-legend trend-legend">{series.map((item) => <button type="button" key={item.key} className={hiddenKeys.includes(item.key) ? "is-muted" : ""} aria-pressed={!hiddenKeys.includes(item.key)} onClick={() => onToggleSeries?.(item.key)} onMouseEnter={() => setFocusedSeries(item.key)} onMouseLeave={() => setFocusedSeries(null)} onFocus={() => setFocusedSeries(item.key)} onBlur={() => setFocusedSeries(null)}><i className="legend-line" style={{ borderColor: item.color }}/>{item.label}</button>)}<span>斷線表示缺資料／不適用；空心圓表示部分資料缺漏</span></div>
   </div>;
 }

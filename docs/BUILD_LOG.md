@@ -252,3 +252,13 @@
 - Confirmed from existing evidence: Native `dev:all`/`start:all` scripts remain present; Compose uses ordered `migrate`, `web`, and `collector` services with one named volume; backup/restore commands and stopped-writer safeguards match README; display-mode cookies remain independent of Collector mode; retention remains 3 days and only deletes Live poll/readings; the public environment example contains blank enterprise Origins and no private credential.
 - Verified boundary: macOS native npm, Windows clean clone/`npm ci`/`dev:all` startup, macOS isolated Docker, Docker persistence, isolated backup/restore/integrity, and Demo/Live separation are recorded as passed. Windows Live, Windows `start:all`, Windows Docker, production-data recovery, Docker enterprise connectivity, private `custom_ca`, and a real npm-to-Docker cutover remain explicit manual checks.
 - Checks: Documentation-only review reused the passed Stage 8B tests/build/Docker smoke and performed focused Compose, script, README, environment-template, Git tracking, and sensitive-data checks; no enterprise request, product database operation, Collector control, Docker volume deletion, or redundant large test run was performed.
+
+## Stage 8 後 — 全平台 UAT 介面與文案修正
+
+- Status: 首頁、機台監控、機台運轉分析與 Excel 匯入 Preview／完成訊息已依正式 UAT 規格完成；等待使用者人工 UAT。
+- UI/copy: 首頁保留三個工作區；即時監控改用畫面刷新、設備來源與平台接收語彙；Excel 改為「匯入前檢查／資料提醒／可匯入」等白話文案，仍保留技術代碼、行號與版本追溯。
+- Display logic: Demo 使用明確合成 OFF 才顯示灰燈，且 A1–B4 加工完成訊號全為 OFF；Live 五色全 0、stale 或缺資料不推論未開機。累積工時排行使用 `24 × 日數`的單機容量，趨勢框依分桶與聚合語意設容量；異常超限保留原值並提示，未修改 Green、三態或品質資格計算。
+- Tests: 相關回歸 75 tests passed；完整 Vitest 145 passed，1 個私人 Excel opt-in suite skipped；`npm run typecheck`、`npm run lint`、`npm run build` (Webpack) 與 `git diff --check` passed。
+- Browser: 只使用 `/private/tmp` 公開合成 Excel 與隔離 SQLite。首頁、八檔 Preview、長檔名、Demo 機台分類、七日單機排行 168 小時上限、每日趨勢 24 小時上限與週對週比較通過。760／1280／1366／1440px 沒有頁面水平溢位；760px 排行軸已避免次末刻度與真實上限重疊。
+- Safety: 未使用企業 API、正式 SQLite／Docker Volume、`.env.local` 或私人 Excel；未停止或重啟真實 Collector，未 Push。瀏覽器截圖只保留在 Git 忽略的暫存目錄。
+- Commit: 本次本機 changeset；最終 hash 於交付回報提供。

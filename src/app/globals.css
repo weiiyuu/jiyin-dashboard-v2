@@ -212,3 +212,18 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
   .machine-detail-identity{align-items:flex-start;display:grid}.machine-detail-status{max-width:100%}
   .connection-frequency-note{display:grid}
 }
+
+/* Post-UAT: explicit Demo-only off state and user-facing monitoring categories. */
+.live-summary-card.off{border-top-color:#918789}
+.live-machine-card.lamp-off{border-color:rgba(155,143,145,.72);box-shadow:inset 0 0 0 1px rgba(155,143,145,.18),0 0 20px rgba(155,143,145,.14)}
+.lamp-badge.lamp-off::before{border-color:#c8bec0;background:#918789;box-shadow:0 0 10px rgba(155,143,145,.38)}
+.machine-detail-status.lamp-off{border-color:rgba(170,159,161,.55);color:#e1d8da;background:rgba(133,124,126,.17)}
+.machine-detail-status.lamp-off::before{background:#918789}
+.notice-icon{display:inline-flex;flex:0 0 auto;align-items:flex-start;padding-top:2px;color:#d8b77a}
+.chart-data-warning{margin:8px 0 14px;padding:9px 12px;border:1px solid rgba(226,189,91,.34);border-radius:8px;color:#f0d48e;background:rgba(82,66,28,.2);font-size:14px;line-height:1.5}
+
+@media(max-width:760px){
+  .value-axis{grid-template-columns:42px minmax(0,1fr)}
+  .value-axis-title,.value-axis-ticks{grid-column:2}
+  .value-axis-ticks span:nth-last-child(2){display:none}
+}

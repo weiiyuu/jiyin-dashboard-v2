@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { OperationShareChart, RankingChart, TrendChart } from "@/components/history-widgets";
-import { buildTrendAxisLabels, comparisonInputRange, formatDurationHours, niceHourScale, rangeGrainControl } from "@/features/history/chart-ui-model";
+import { OperationShareChart, RankingChart, TrendChart, comparisonRelativeChangeLabel } from "@/components/history-widgets";
+import { buildTrendAxisLabels, capacityHourScale, comparisonInputRange, formatDurationHours, niceHourScale, rangeGrainControl } from "@/features/history/chart-ui-model";
 
 describe("Stage 5.3 UAT visual V2 models",()=>{
   it("formats display durations to minutes without changing source precision",()=>{
@@ -22,6 +22,8 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(zero.ticks).toHaveLength(6);
   });
 
+  it("uses exact single- and multi-day physical capacity unless anomalous data requires a larger scale",()=>{expect(capacityHourScale(40,48)).toMatchObject({max:48,exceeded:false});expect(capacityHourScale(300,336)).toMatchObject({max:336,exceeded:false});expect(capacityHourScale(130,168)).toMatchObject({max:168,exceeded:false});expect(capacityHourScale(20,24).ticks.at(-1)).toBe(24);expect(capacityHourScale(25,24)).toMatchObject({max:25,exceeded:true});});
+
   it("keeps all buckets while exposing only the approved time/date tick labels",()=>{
     const thirty=buildTrendAxisLabels("RANGE_DAY_30",Array.from({length:48},(_,index)=>String(index)));
     expect(thirty.ticks.map((tick)=>tick.label)).toEqual(["00:00","03:00","06:00","09:00","12:00","15:00","18:00","21:00"]);
@@ -33,7 +35,7 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
   });
 
   it("renders R1 as solid shared-scale bars with human durations",()=>{
-    const html=renderToStaticMarkup(<RankingChart dateLabel="2025/06/01" rows={[
+    const html=renderToStaticMarkup(<RankingChart dateLabel="2025/06/01" capacityHours={24} expectedIntervalsPerMachine={480} rows={[
       {machineId:"A2",greenHours:23.999,availability:"AVAILABLE"},
       {machineId:"A1",greenHours:0,availability:"AVAILABLE"},
       {machineId:"A4",greenHours:null,availability:"MISSING_DATA"},
@@ -43,6 +45,7 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(html).toContain("資料不足");
     expect(html).not.toContain("100.0%");
     expect(html).toContain("ranking-solid-bar");
+    expect(html).toContain("可統計");
   });
 
   it("renders R3 in one full-width chart with one legend and multiple 100 percent rows",()=>{
@@ -80,9 +83,11 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
 
   it("explains adaptive range grain and complete comparison periods",()=>{
     expect(rangeGrainControl("2025-06-01","2025-06-01","30m")).toEqual({value:"30m",disabled:false,label:"30 分鐘"});
-    expect(rangeGrainControl("2025-06-01","2025-06-05","60m")).toEqual({value:"daily",disabled:true,label:"每日（跨日固定）"});
+    expect(rangeGrainControl("2025-06-01","2025-06-05","60m")).toEqual({value:"daily",disabled:true,label:"每日統計（跨日固定）"});
     expect(comparisonInputRange("day","2025-06-01")).toBe("2025/06/01");
     expect(comparisonInputRange("week","2025-06-01")).toBe("2025/06/01 – 2025/06/07");
     expect(comparisonInputRange("month","2025-02")).toBe("2025/02/01 – 2025/02/28");
   });
+
+  it("distinguishes a true zero baseline while retaining raw-ratio precision",()=>{expect(comparisonRelativeChangeLabel(0,null)).toBe("無法計算（前期為 0）");expect(comparisonRelativeChangeLabel(10/3600,1)).toBe("+100.0%");expect(formatDurationHours(10/3600)).toBe("不足 1 分");});
 });

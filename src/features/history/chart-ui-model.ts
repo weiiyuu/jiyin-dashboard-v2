@@ -45,6 +45,14 @@ export function niceHourScale(maxValue: number, zeroFallback = 1) {
   return { max, step, ticks: Array.from({ length: count + 1 }, (_, index) => rounded(index * step)) };
 }
 
+export function capacityHourScale(dataMax: number, capacity: number, zeroFallback = 1) {
+  const safeCapacity = Number.isFinite(capacity) && capacity > 0 ? capacity : zeroFallback;
+  if (dataMax > safeCapacity) return { ...niceHourScale(dataMax, zeroFallback), exceeded: true };
+  const nice = niceHourScale(safeCapacity, zeroFallback);
+  const ticks = [...nice.ticks.filter((tick) => tick < safeCapacity), safeCapacity];
+  return { max: safeCapacity, step: nice.step, ticks: [...new Set(ticks)], exceeded: false };
+}
+
 function sparseIndexes(length: number, maximumTicks = 8) {
   if (length <= maximumTicks) return Array.from({ length }, (_, index) => index);
   return [...new Set(Array.from({ length: maximumTicks }, (_, index) => Math.round(index * (length - 1) / (maximumTicks - 1))))];
@@ -105,5 +113,5 @@ export function comparisonInputRange(kind: ComparisonKind, value: string) {
 
 export function rangeGrainControl(startDate: string, endDate: string, bucket: "30m" | "60m") {
   const daily = Boolean(startDate && endDate && startDate !== endDate);
-  return { value: daily ? "daily" as const : bucket, disabled: daily, label: daily ? "每日（跨日固定）" : bucket === "30m" ? "30 分鐘" : "60 分鐘" };
+  return { value: daily ? "daily" as const : bucket, disabled: daily, label: daily ? "每日統計（跨日固定）" : bucket === "30m" ? "30 分鐘" : "60 分鐘" };
 }

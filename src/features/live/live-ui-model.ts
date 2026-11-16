@@ -1,10 +1,10 @@
 import type { ApiMeta, ProviderMode } from "@/shared/contracts/api-response";
 
 export type Freshness="FRESH"|"STALE"|"NO_DATA";
-export type LampState="GREEN"|"YELLOW"|"RED"|"BLUE"|"WHITE"|"OTHER"|"UNKNOWN";
+export type LampState="GREEN"|"YELLOW"|"RED"|"OFF"|"BLUE"|"WHITE"|"OTHER"|"UNKNOWN";
 export interface CompletionDetector {sensorId:string;sourceState:"ON"|"OFF"|"UNKNOWN";rawValue:number|null;freshness:Freshness;sensorUpdateAt:string|null;parseStatus:string;meaning:string}
-export interface LiveMachine {machineId:string;sensorId:string;lampState:LampState;activeColors:string[];freshness:Freshness;sensorUpdateAt:string|null;fetchedAt:string|null;rawStatus:number|null;rawStatusMeaning:string;parseStatus:string;completionDetector:CompletionDetector;warnings?:string[]}
-export interface MachinePayload {userSummary:{monitored:number;processing:number;standbyOrComplete:number;redAbnormal:number;otherLamp:number;unavailable:number};connection:string;areas:Array<{area:string;machines:LiveMachine[]}>}
+export interface LiveMachine {machineId:string;sensorId:string;lampState:LampState;activeColors:string[];freshness:Freshness;sensorUpdateAt:string|null;fetchedAt:string|null;rawStatus:number|null;rawStatusMeaning:string;parseStatus:string;completionDetector:CompletionDetector;warnings?:string[];lampStateSource?:"ENTERPRISE_LAMP_FIELDS"|"SYNTHETIC_EXPLICIT"}
+export interface MachinePayload {userSummary:{monitored:number;processing:number;standbyOrComplete:number;redAbnormal:number;off:number;otherLamp:number;unavailable:number};connection:string;areas:Array<{area:string;machines:LiveMachine[]}>}
 export interface EnvironmentSample {time:string;sampleSlot:string;value:number|null;observed:boolean;gapReason?:string;sensorUpdateAt?:string|null;fetchedAt?:string|null;freshness?:Freshness}
 export interface EnvironmentSeries {point:number;sensorId:string;samples:EnvironmentSample[]}
 export interface EnvironmentLatest {area:"A"|"B";metric:"temperature"|"humidity";point:number;sensorId:string;value:number|null;unit:string;freshness:Freshness;sensorUpdateAt:string|null;fetchedAt?:string|null;parseStatus?:string}
@@ -20,9 +20,9 @@ export const MACHINE_NAMES:Record<string,string>={A1:"A 區設備 1",A2:"A 區�
 export function formatTaipeiDateTime(value:string|null|undefined){if(!value)return "無資料";return new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date(value));}
 function taipeiDateTimeParts(value:string){const date=new Date(value);if(!Number.isFinite(date.getTime()))return null;const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(date),read=(type:Intl.DateTimeFormatPartTypes)=>parts.find((part)=>part.type===type)?.value??"";return {year:read("year"),month:read("month"),day:read("day"),hour:read("hour"),minute:read("minute"),second:read("second")};}
 export function formatTaipeiSourceUpdate(value:string|null|undefined,nowIso:string){if(!value)return "—";const source=taipeiDateTimeParts(value),today=taipeiDateTimeParts(nowIso);if(!source||!today)return "—";const time=`${source.hour}:${source.minute}:${source.second}`;return source.year===today.year&&source.month===today.month&&source.day===today.day?time:`${source.month}/${source.day} ${time}`;}
-export function lampLabel(state:LampState){return ({GREEN:"綠燈・加工中",YELLOW:"黃燈・待機／完成",RED:"紅燈・異常狀態",BLUE:"藍燈",WHITE:"白燈",OTHER:"多色／其他燈號",UNKNOWN:"無法判讀"} as const)[state];}
+export function lampLabel(state:LampState){return ({GREEN:"綠燈・加工中",YELLOW:"黃燈・待機／完成",RED:"紅燈・異常狀態",OFF:"灰燈・未開機",BLUE:"狀態未確認",WHITE:"狀態未確認",OTHER:"狀態未確認",UNKNOWN:"無法判讀"} as const)[state];}
 export function freshnessLabel(value:Freshness){return value==="FRESH"?"資料新鮮":value==="STALE"?"資料已過期":"尚無資料";}
-export function effectiveLampTone(machine:LiveMachine){return machine.freshness==="FRESH"?machine.lampState.toLowerCase():"unavailable";}
+export function effectiveLampTone(machine:LiveMachine){if(machine.freshness!=="FRESH")return "unavailable";return ["GREEN","YELLOW","RED","OFF"].includes(machine.lampState)?machine.lampState.toLowerCase():"unavailable";}
 export function timeToMinutes(value:string){const [hours,minutes]=value.split(":").map(Number);return hours*60+minutes;}
 function taipeiMinuteOfDay(nowIso:string){const date=new Date(nowIso);const formatter=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",hour12:false});const parts=formatter.formatToParts(date);const hour=Number(parts.find((part)=>part.type==="hour")?.value??9);const minute=Number(parts.find((part)=>part.type==="minute")?.value??0);return hour*60+minute;}
 export function visibleEndMinutes(nowIso:string){const now=taipeiMinuteOfDay(nowIso);return Math.min(17*60,Math.max(9*60+30,Math.ceil(now/30)*30));}

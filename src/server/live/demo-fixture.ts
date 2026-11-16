@@ -2,20 +2,20 @@ import { LOGICAL_SENSOR_MAPPINGS } from "@/server/enterprise/mapping";
 import { decideLampState,determineFreshness } from "@/shared/contracts/status";
 
 export const DEMO_MANIFEST={fixtureId:"synthetic-stage6-day",dataDate:"2026-01-15",demoClockAt:"2026-01-15T16:57:30+08:00",timezone:"Asia/Taipei" as const,source:"SYNTHETIC" as const};
-const lampStates=["GREEN","YELLOW","RED","BLUE","WHITE","OTHER","UNKNOWN","GREEN"] as const;
+const lampStates=["GREEN","YELLOW","GREEN","RED","YELLOW","GREEN","OFF","UNKNOWN"] as const;
 const lampValues={GREEN:{blue:0,green:1,red:0,white:0,yellow:0},YELLOW:{blue:0,green:0,red:0,white:0,yellow:1},RED:{blue:0,green:0,red:1,white:0,yellow:0},BLUE:{blue:1,green:0,red:0,white:0,yellow:0},WHITE:{blue:0,green:0,red:0,white:1,yellow:0},OTHER:{blue:0,green:1,red:1,white:0,yellow:0},UNKNOWN:{blue:0,green:0,red:0,white:0,yellow:0}} as const;
 
 export function demoMachines(staleAfterSeconds:number){
   const nowMs=Date.parse(DEMO_MANIFEST.demoClockAt),lamps=LOGICAL_SENSOR_MAPPINGS.filter((item)=>item.logicalRole==="MACHINE_LAMP");
   const completions=new Map(LOGICAL_SENSOR_MAPPINGS.filter((item)=>item.logicalRole==="MACHINE_COMPLETION").map((item)=>[item.machineId!,item]));
-  const machines=lamps.map((mapping,index)=>{const state=lampStates[index],values=lampValues[state],updateAt=index===7?nowMs-600_000:nowMs-index*10_000,decision=decideLampState(values),completion=completions.get(mapping.machineId!);return {machineId:mapping.machineId!,sensorId:mapping.sensorId,lampState:decision.state,activeColors:decision.activeColors,freshness:determineFreshness(updateAt,nowMs,staleAfterSeconds),sensorUpdateAt:new Date(updateAt).toISOString(),fetchedAt:DEMO_MANIFEST.demoClockAt,rawStatus:1,rawStatusMeaning:"UNCONFIRMED" as const,parseStatus:"VALID" as const,completionDetector:{sensorId:completion!.sensorId,sourceState:index%3===0?"ON":"OFF",rawValue:index%3===0?1:0,freshness:determineFreshness(updateAt,nowMs,staleAfterSeconds),sensorUpdateAt:new Date(updateAt).toISOString(),parseStatus:"VALID",meaning:"UNCONFIRMED_COMPLETION_SIGNAL"}};});
+  const machines=lamps.map((mapping,index)=>{const state=lampStates[index],values=state==="OFF"?lampValues.UNKNOWN:lampValues[state],updateAt=index===7?nowMs-600_000:nowMs-index*10_000,decision=state==="OFF"?{state:"OFF" as const,activeColors:[]}:decideLampState(values),completion=completions.get(mapping.machineId!);return {machineId:mapping.machineId!,sensorId:mapping.sensorId,lampState:decision.state,activeColors:decision.activeColors,freshness:determineFreshness(updateAt,nowMs,staleAfterSeconds),sensorUpdateAt:new Date(updateAt).toISOString(),fetchedAt:DEMO_MANIFEST.demoClockAt,rawStatus:state==="OFF"?0:1,rawStatusMeaning:state==="OFF"?"SYNTHETIC_EXPLICIT_OFF":"UNCONFIRMED",parseStatus:"VALID" as const,lampStateSource:state==="OFF"?"SYNTHETIC_EXPLICIT" as const:"ENTERPRISE_LAMP_FIELDS" as const,completionDetector:{sensorId:completion!.sensorId,sourceState:"OFF" as const,rawValue:0,freshness:determineFreshness(updateAt,nowMs,staleAfterSeconds),sensorUpdateAt:new Date(updateAt).toISOString(),parseStatus:"VALID",meaning:"UNCONFIRMED_COMPLETION_SIGNAL"}};});
   return machinePayload(machines);
 }
 
 function machinePayload<T extends {machineId:string;lampState:string;freshness:string}>(machines:T[]){
-  const summary={freshKnown:0,green:0,yellow:0,red:0,other:0,unknown:0,stale:0,noData:0};
-  for(const machine of machines){if(machine.freshness==="NO_DATA"){summary.noData++;continue;}if(machine.freshness==="STALE"){summary.stale++;continue;}if(["GREEN","YELLOW","RED"].includes(machine.lampState)){summary.freshKnown++;summary[machine.lampState.toLowerCase() as "green"|"yellow"|"red"]++;}else if(["OTHER","BLUE","WHITE"].includes(machine.lampState))summary.other++;else summary.unknown++;}
-  const userSummary={monitored:8,processing:summary.green,standbyOrComplete:summary.yellow,redAbnormal:summary.red,otherLamp:summary.other,unavailable:summary.unknown+summary.stale+summary.noData};
+  const summary={freshKnown:0,green:0,yellow:0,red:0,off:0,other:0,unknown:0,stale:0,noData:0};
+  for(const machine of machines){if(machine.freshness==="NO_DATA"){summary.noData++;continue;}if(machine.freshness==="STALE"){summary.stale++;continue;}if(["GREEN","YELLOW","RED"].includes(machine.lampState)){summary.freshKnown++;summary[machine.lampState.toLowerCase() as "green"|"yellow"|"red"]++;}else if(machine.lampState==="OFF")summary.off++;else if(["OTHER","BLUE","WHITE"].includes(machine.lampState))summary.other++;else summary.unknown++;}
+  const userSummary={monitored:8,processing:summary.green,standbyOrComplete:summary.yellow,redAbnormal:summary.red,off:summary.off,otherLamp:summary.other,unavailable:summary.other+summary.unknown+summary.stale+summary.noData};
   return {summary,userSummary,connection:"DEMO",areas:["A","B"].map((area)=>({area,machines:machines.filter((machine)=>machine.machineId.startsWith(area))}))};
 }
 
