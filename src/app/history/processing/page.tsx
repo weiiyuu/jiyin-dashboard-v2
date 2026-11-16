@@ -210,7 +210,7 @@ function CompareView({ value, highlightedMachine, onHighlight, trendMode, onTren
   value: CompareResult; highlightedMachine: string | null; onHighlight: (machine: string) => void; trendMode: "overall" | "single"; onTrendMode: (mode: "overall" | "single") => void; trendMachine: string; onTrendMachine: (machine: string) => void; shareMode: "overall" | "machine"; onShareMode: (mode: "overall" | "machine") => void;
 }) {
   const periodLabels = { A: periodLabel(value.periods.A), B: periodLabel(value.periods.B) };
-  const subtitle = `${compareKindLabel(value.compareKind)}：${periodLabels.A} v.s. ${periodLabels.B}`;
+  const subtitle = compareKindLabel(value.compareKind);
   const machineSeries = value.seriesByMachine.find((item) => item.machineId === trendMachine);
   const trend = trendMode === "single" && machineSeries ? machineSeries.trend : value.trend;
   const labels = trend.map((item) => String(item.position));

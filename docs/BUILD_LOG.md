@@ -299,3 +299,11 @@
 - Axis behavior: 所有真實資料點、NULL gap、分桶與 Tooltip 保留；末筆資料只在符合主要步距時顯示 X 軸標籤。單日 24:00、週比較 1–7 日及月比較日期對齊規則未變更。
 - Verification: 14 項相關 Vitest、Typecheck、Lint、Webpack Production Build 通過。隔離合成 SQLite 的瀏覽器 Smoke Test 驗證 14 天刻度為 06/01、03、05、07、09、11、13，06/14 資料點仍可顯示 Tooltip；Alarm Y 軸為 0、5、10、15 整數刻度。760／1280／1366／1440px 皆無頁面級水平溢位。
 - Safety: 未呼叫企業 API、未使用正式 SQLite／Excel／Docker Volume，未控制真實 Collector，未 Push。
+
+## Stage 8 後 — Dashboard 最終 UI UAT 收斂與交付
+
+- Status: 使用者已完成並通過最終人工 UI UAT；本輪停止功能開發，準備同步 `dev` 作為最終交付候選版本。
+- UI: 統一機台運轉與異常事件圖表的規律主刻度；修正同期加工長條與刻度共用相同比例尺；同期趨勢保留相對比較日序，Tooltip 以實際日期呈現加工時數、品質狀態與各自可統計筆數。異常事件明細沿用完整伺服器端分頁控制。
+- Tooltip: 同期加工長條使用簡短實際日期區間；同期趨勢移除重複的底部資料覆蓋橫幅，資料完整性改放回各日期列。兩類 Tooltip 均固定錨定作用中資料，不隨同一目標內的游標移動漂移。
+- Verification: 最終聚焦 history UI 測試 19 tests passed；`npm run typecheck`、`npm run lint` 與 `git diff --check` passed。依本輪範圍未重跑完整 Build 或 Stage 0～8 大型驗收。
+- Safety: 未操作企業 API、正式 SQLite／Docker Volume、`.env.local` 或真實 Collector；參考截圖保持 Git 忽略且未納入變更。

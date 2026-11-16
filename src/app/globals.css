@@ -276,3 +276,43 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
   .pagination-number-list{gap:5px}.pagination-number{min-width:42px}
   .pagination-jump{width:100%}.pagination-jump .pagination-error{text-align:left}
 }
+
+/* Final history UAT: regular scale labels, compact comparisons, and shared pagination. */
+.value-axis-ticks span:last-child{transform:translateX(-50%)}
+.value-axis-ticks span.is-terminal{transform:translateX(-100%)}
+.ranking-chart-v2{--chart-label-col:45px;--chart-value-col:150px;--chart-axis-left:61px;--chart-axis-right:166px}
+.comparison-ranking-v2{--chart-label-col:45px;--chart-value-col:235px;--chart-axis-left:61px;--chart-axis-right:251px}
+.ranking-chart-v2 .value-axis,.comparison-ranking-v2 .value-axis{grid-template-columns:var(--chart-axis-left) minmax(0,1fr) var(--chart-axis-right)}
+.ranking-chart-v2 .ranking-v2-row{grid-template-columns:var(--chart-label-col) minmax(0,1fr) var(--chart-value-col)}
+.comparison-ranking-v2 .comparison-v2-row{grid-template-columns:var(--chart-label-col) minmax(0,1fr) var(--chart-value-col)}
+.comparison-bar-line{display:block}
+.comparison-legend{justify-content:flex-start}
+.floating-chart-tooltip{left:var(--floating-tooltip-left)!important;top:var(--floating-tooltip-top)!important;right:auto!important;bottom:auto!important;transform:none!important}
+.comparison-ranking-v2 .comparison-ranking-tooltip{width:min(390px,calc(100vw - 32px));min-width:min(320px,calc(100vw - 32px));max-width:min(390px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow-y:auto;overflow-wrap:anywhere}
+.comparison-ranking-tooltip>.comparison-tooltip-period{display:grid;align-items:start;justify-content:stretch;gap:2px;padding:5px 0}
+.comparison-tooltip-period b,.comparison-tooltip-period small{white-space:normal}
+.trend-tooltip.is-comparison{width:min(360px,calc(100vw - 40px));min-width:min(320px,calc(100vw - 40px));max-width:min(360px,calc(100vw - 40px));padding:13px;gap:9px}
+.trend-tooltip.is-comparison>.trend-tooltip-head{padding-bottom:7px}
+.trend-tooltip.is-comparison .comparison-tooltip-row{box-sizing:border-box;grid-template-columns:minmax(0,1fr) auto!important;align-items:center;gap:4px 12px;padding:8px 9px;min-width:0}
+.trend-tooltip.is-comparison .comparison-tooltip-row>.trend-tooltip-series{grid-column:1;min-width:0}
+.trend-tooltip.is-comparison .comparison-tooltip-row>.trend-tooltip-series b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trend-tooltip.is-comparison .comparison-tooltip-row>.trend-tooltip-reading{grid-column:2;grid-row:1;justify-items:end;min-width:0}
+.trend-tooltip.is-comparison .comparison-tooltip-row>.trend-tooltip-meta{grid-column:1/-1;display:block;min-width:0;color:var(--muted);font-size:13px;line-height:1.4;overflow-wrap:anywhere;white-space:normal}
+.pagination-size{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.pagination-size .control{width:88px;min-height:46px;padding-block:8px}
+
+@media(max-width:1200px){
+  .ranking-chart-v2{--chart-label-col:42px;--chart-value-col:135px;--chart-axis-left:58px;--chart-axis-right:151px}
+  .comparison-ranking-v2{--chart-label-col:42px;--chart-value-col:210px;--chart-axis-left:58px;--chart-axis-right:226px}
+}
+
+@media(max-width:760px){
+  .pagination-size{width:100%;justify-content:flex-start}
+  .comparison-ranking-v2 .comparison-ranking-tooltip{width:calc(100vw - 32px);min-width:0}
+  .trend-tooltip.is-comparison{width:calc(100vw - 32px);min-width:0}
+  .trend-tooltip.is-comparison .comparison-tooltip-row{grid-template-columns:1fr!important}
+  .trend-tooltip.is-comparison .comparison-tooltip-row>.trend-tooltip-reading{grid-column:1;grid-row:auto;justify-items:start}
+  .ranking-chart-v2,.comparison-ranking-v2{--chart-axis-left:4px;--chart-axis-right:4px}
+  .ranking-chart-v2 .ranking-v2-row,.comparison-ranking-v2 .comparison-v2-row{grid-template-columns:1fr}
+  .ranking-chart-v2 .ranking-machine,.ranking-chart-v2 .ranking-duration,.comparison-ranking-v2 .comparison-machine,.comparison-ranking-v2 .comparison-duration{grid-column:1}
+}

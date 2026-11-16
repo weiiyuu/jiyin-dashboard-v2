@@ -9,9 +9,13 @@ interface ImportPaginationProps {
   total: number;
   loading: boolean;
   onPageChange: (page: number) => void;
+  pageSize?: 10 | 20 | 50;
+  onPageSizeChange?: (pageSize: 10 | 20 | 50) => void;
+  ariaLabel?: string;
+  inputId?: string;
 }
 
-export function ImportPagination({ page, totalPages, total, loading, onPageChange }: ImportPaginationProps) {
+export function Pagination({ page, totalPages, total, loading, onPageChange, pageSize, onPageSizeChange, ariaLabel = "分頁", inputId = "page-jump" }: ImportPaginationProps) {
   const [input, setInput] = useState(String(page));
   const [error, setError] = useState<string | null>(null);
   const items = useMemo(() => paginationItems(page, totalPages), [page, totalPages]);
@@ -28,8 +32,9 @@ export function ImportPagination({ page, totalPages, total, loading, onPageChang
     changePage(result.page);
   }
 
-  return <div className="pagination version-pagination" aria-label="匯入版本分頁">
+  return <div className="pagination version-pagination" aria-label={ariaLabel}>
     <span>第 {page} / {totalPages} 頁 · 共 {total} 筆</span>
+    {pageSize && onPageSizeChange && <label className="pagination-size"><span>每頁筆數</span><select className="control" value={pageSize} disabled={loading} onChange={(event) => onPageSizeChange(Number(event.target.value) as 10 | 20 | 50)}><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label>}
     <nav className="pagination-pages" aria-label="頁碼">
       <button className="button" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}>上一頁</button>
       <div className="pagination-number-list">
@@ -40,11 +45,15 @@ export function ImportPagination({ page, totalPages, total, loading, onPageChang
       <button className="button" disabled={page >= totalPages || loading} onClick={() => changePage(page + 1)}>下一頁</button>
     </nav>
     <form className="pagination-jump" onSubmit={submit} noValidate>
-      <label htmlFor="import-page-jump">前往第</label>
-      <input id="import-page-jump" className="control" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(event) => { setInput(event.target.value.trim()); setError(null); }} aria-invalid={Boolean(error)} aria-describedby={error ? "import-page-jump-error" : undefined}/>
+      <label htmlFor={inputId}>前往第</label>
+      <input id={inputId} className="control" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(event) => { setInput(event.target.value.trim()); setError(null); }} aria-invalid={Boolean(error)} aria-describedby={error ? `${inputId}-error` : undefined}/>
       <span>/ {totalPages} 頁</span>
       <button className="button" disabled={loading} type="submit">跳轉</button>
-      {error && <span className="pagination-error" id="import-page-jump-error" role="alert">{error}</span>}
+      {error && <span className="pagination-error" id={`${inputId}-error`} role="alert">{error}</span>}
     </form>
   </div>;
+}
+
+export function ImportPagination(props: ImportPaginationProps) {
+  return <Pagination {...props} ariaLabel="匯入版本分頁" inputId="import-page-jump"/>;
 }

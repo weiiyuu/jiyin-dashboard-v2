@@ -56,9 +56,9 @@ describe("Stage 5 UI truth-preserving view models",()=>{
     const ranking=renderToStaticMarkup(<ComparisonRanking periodLabels={{A:"2025/06/01",B:"2025/06/02"}} rows={[{machineId:"A1",periods:{A:{greenHours:0,availability:"AVAILABLE"},B:{greenHours:2,availability:"AVAILABLE"}},difference:2,relativeChange:null}]}/>);
     expect(ranking).toContain("0 分");
     expect(ranking).toContain("2 小時");
-    expect(ranking).toContain("依 2025/06/02 排序");
-    expect(ranking).not.toContain("期間 A");
-    expect(ranking).not.toContain("期間 B");
+    expect(ranking).not.toContain("依 2025/06/02 排序");
+    expect(ranking).not.toContain("<b>2025/06/01</b>");
+    expect(ranking).not.toContain("<b>2025/06/02</b>");
     expect(ranking).not.toContain("Infinity");
   });
 });

@@ -51,7 +51,7 @@ export interface RankRow {
 type HourScale = { max: number; step: number; ticks: number[]; exceeded?: boolean };
 
 function ScaleAxis({ scale, unit = "HOURS", title }: { scale: HourScale; unit?: "HOURS" | "HOURS_PER_DAY"; title: string }) {
-  return <div className="value-axis" aria-hidden="true"><span className="value-axis-title">{title}</span><div className="value-axis-ticks">{scale.ticks.map((tick) => <span key={tick} style={{ left: `${tick / scale.max * 100}%` }}>{formatAxisHours(tick, scale.step, unit)}</span>)}</div></div>;
+  return <div className="value-axis" aria-hidden="true"><span className="value-axis-title">{title}</span><div className="value-axis-ticks">{scale.ticks.map((tick) => <span className={tick===scale.max?"is-terminal":undefined} key={tick} style={{ left: `${tick / scale.max * 100}%` }}>{formatAxisHours(tick, scale.step, unit)}</span>)}</div></div>;
 }
 
 function GridLines({ scale }: { scale: HourScale }) {
@@ -111,6 +111,24 @@ export interface CompareRankRow {
 
 export function comparisonRelativeChangeLabel(a:number|null,relativeChange:number|null|undefined){if(a===0)return "無法計算（前期為 0）";if(relativeChange===null||relativeChange===undefined)return "無法計算（資料不足）";return `${relativeChange>=0?"+":""}${(relativeChange*100).toFixed(1)}%`;}
 
+function compactPeriodLabel(value: string) {
+  const dates = [...value.matchAll(/\d{4}[/-](\d{2})[/-](\d{2})/g)].map((match) => `${match[1]}/${match[2]}`);
+  if (dates.length >= 2) return `${dates[0]}–${dates[1]}`;
+  return dates[0] ?? value;
+}
+
+function ComparisonRankingRow({row,highlightedMachine,onHighlight,periodLabels,scale,unit,expectedIntervals}:{row:CompareRankRow;highlightedMachine?:string|null;onHighlight?:(machineId:string)=>void;periodLabels:{A:string;B:string};scale:HourScale;unit:"HOURS"|"HOURS_PER_DAY";expectedIntervals?:{A:number;B:number}}){
+  const[hovered,setHovered]=useState(false),anchorRef=useRef<HTMLSpanElement>(null),tooltipId=useId();
+  const a=row.periods.A.greenHours,b=row.periods.B.greenHours,aLabel=a===null?"資料不足":formatDurationHours(a,unit),bLabel=b===null?"資料不足":formatDurationHours(b,unit);
+  const periodA = compactPeriodLabel(periodLabels.A), periodB = compactPeriodLabel(periodLabels.B);
+  return <button type="button" className={`comparison-v2-row ${highlightedMachine===row.machineId?"is-highlighted":""} ${highlightedMachine&&highlightedMachine!==row.machineId?"is-dimmed":""}`} onClick={()=>onHighlight?.(row.machineId)} onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)} onFocus={()=>setHovered(true)} onBlur={()=>setHovered(false)} aria-pressed={highlightedMachine===row.machineId} aria-describedby={hovered?tooltipId:undefined} aria-label={`${row.machineId}，${periodLabels.A} ${aLabel}，${periodLabels.B} ${bLabel}`}>
+    <strong className="comparison-machine">{row.machineId}</strong>
+    <span className="comparison-bars-v2" ref={anchorRef}><span className="comparison-bar-line"><span className="sr-only">{periodLabels.A}</span><span className="comparison-bar-plot"><GridLines scale={scale}/>{a!==null&&a>0&&<span className="comparison-solid-bar period-a" style={{width:`${Math.min(100,a/scale.max*100)}%`}}/>}{a===0&&<span className="ranking-zero-mark"/>}</span></span><span className="comparison-bar-line"><span className="sr-only">{periodLabels.B}</span><span className="comparison-bar-plot"><GridLines scale={scale}/>{b!==null&&b>0&&<span className="comparison-solid-bar period-b" style={{width:`${Math.min(100,b/scale.max*100)}%`}}/>}{b===0&&<span className="ranking-zero-mark"/>}</span></span></span>
+    <span className="comparison-duration">{aLabel}<b aria-hidden="true">→</b>{bLabel}</span>
+    {hovered&&<FloatingTooltip anchorRef={anchorRef} anchorPosition={{xRatio:.52,yRatio:.5}} gap={20} className="comparison-ranking-tooltip" id={tooltipId}><strong>{row.machineId}</strong><span className="comparison-tooltip-period"><b>{periodA}：{aLabel}</b>{expectedIntervals&&<small>可統計 {row.periods.A.eligibleIntervals?.toLocaleString()??"—"} / {expectedIntervals.A.toLocaleString()} 筆</small>}</span><span className="comparison-tooltip-period"><b>{periodB}：{bLabel}</b>{expectedIntervals&&<small>可統計 {row.periods.B.eligibleIntervals?.toLocaleString()??"—"} / {expectedIntervals.B.toLocaleString()} 筆</small>}</span><span>差異：{formatSignedDurationHours(row.difference??null,unit)}</span><span>相對變化：{comparisonRelativeChangeLabel(a,row.relativeChange)}</span></FloatingTooltip>}
+  </button>;
+}
+
 export function ComparisonRanking({ rows, highlightedMachine, onHighlight, periodLabels, capacityHours, expectedIntervals }: {
   rows: CompareRankRow[];
   highlightedMachine?: string | null;
@@ -119,36 +137,14 @@ export function ComparisonRanking({ rows, highlightedMachine, onHighlight, perio
   capacityHours?: number;
   expectedIntervals?: { A: number; B: number };
 }) {
-  const [hovered, setHovered] = useState<string | null>(null);
   const maxValue = Math.max(0, ...rows.flatMap((row) => [row.periods.A.greenHours ?? 0, row.periods.B.greenHours ?? 0]));
   const unit = rows[0]?.periods.A.unit ?? "HOURS";
   const scale:HourScale = capacityHours ? capacityHourScale(maxValue, capacityHours) : niceHourScale(maxValue);
   return <div className="chart-box comparison-ranking-v2" data-chart="comparison-ranking">
-    <div className="chart-legend comparison-legend"><span><i className="legend-dot period-a-dot"/>{periodLabels.A}</span><span><i className="legend-dot period-b-dot"/>{periodLabels.B}</span><span>依 {periodLabels.B} 排序</span></div>
+    <div className="chart-legend comparison-legend"><span><i className="legend-dot period-a-dot"/>{periodLabels.A}</span><span><i className="legend-dot period-b-dot"/>{periodLabels.B}</span></div>
     <ScaleAxis scale={scale} unit={unit} title={unit === "HOURS_PER_DAY" ? "平均每日加工時數" : "累積時數"}/>
     {scale.exceeded&&<div className="chart-data-warning" role="note">資料超過所選期間的理論時間容量，已保留原值並擴展刻度。</div>}
-    <div className="comparison-v2-list">{rows.map((row) => {
-      const a = row.periods.A.greenHours;
-      const b = row.periods.B.greenHours;
-      const tooltipId = `compare-ranking-tooltip-${row.machineId}`;
-      return <button
-        type="button"
-        className={`comparison-v2-row ${highlightedMachine === row.machineId ? "is-highlighted" : ""} ${highlightedMachine && highlightedMachine !== row.machineId ? "is-dimmed" : ""}`}
-        key={row.machineId}
-        onClick={() => onHighlight?.(row.machineId)}
-        onMouseEnter={() => setHovered(row.machineId)}
-        onMouseLeave={() => setHovered(null)}
-        onFocus={() => setHovered(row.machineId)}
-        onBlur={() => setHovered(null)}
-        aria-pressed={highlightedMachine === row.machineId}
-        aria-describedby={hovered === row.machineId ? tooltipId : undefined}
-      >
-        <strong className="comparison-machine">{row.machineId}</strong>
-        <span className="comparison-bars-v2"><span className="comparison-bar-line"><b>{periodLabels.A}</b><span className="comparison-bar-plot"><GridLines scale={scale}/>{a !== null && a > 0 && <span className="comparison-solid-bar period-a" style={{ width: `${Math.min(100,a / scale.max * 100)}%` }}/>} {a === 0 && <span className="ranking-zero-mark"/>}</span></span><span className="comparison-bar-line"><b>{periodLabels.B}</b><span className="comparison-bar-plot"><GridLines scale={scale}/>{b !== null && b > 0 && <span className="comparison-solid-bar period-b" style={{ width: `${Math.min(100,b / scale.max * 100)}%` }}/>} {b === 0 && <span className="ranking-zero-mark"/>}</span></span></span>
-        <span className="comparison-duration">{a === null ? "資料不足" : formatDurationHours(a, unit)}<b aria-hidden="true">→</b>{b === null ? "資料不足" : formatDurationHours(b, unit)}</span>
-        {hovered === row.machineId && <span className="chart-tooltip ranking-tooltip comparison-ranking-tooltip" id={tooltipId} role="tooltip"><strong>{row.machineId}</strong><span className="comparison-tooltip-period"><b>{periodLabels.A}：{a === null ? "資料不足" : formatDurationHours(a, unit)}</b>{expectedIntervals&&<small>（可統計資料 {row.periods.A.eligibleIntervals?.toLocaleString()??"—"} / {expectedIntervals.A.toLocaleString()} 筆）</small>}</span><span className="comparison-tooltip-period"><b>{periodLabels.B}：{b === null ? "資料不足" : formatDurationHours(b, unit)}</b>{expectedIntervals&&<small>（可統計資料 {row.periods.B.eligibleIntervals?.toLocaleString()??"—"} / {expectedIntervals.B.toLocaleString()} 筆）</small>}</span><span>差異：{formatSignedDurationHours(row.difference ?? null, unit)}</span><span>相對變化：{comparisonRelativeChangeLabel(a,row.relativeChange)}</span></span>}
-      </button>;
-    })}</div>
+    <div className="comparison-v2-list">{rows.map((row)=><ComparisonRankingRow key={row.machineId} row={row} highlightedMachine={highlightedMachine} onHighlight={onHighlight} periodLabels={periodLabels} scale={scale} unit={unit} expectedIntervals={expectedIntervals}/>)}</div>
   </div>;
 }
 
@@ -201,14 +197,18 @@ function shareTooltipText(row: OperationShareRow, dateLabel: string) {
   return `${row.groupLabel ? `${row.groupLabel} ` : ""}${row.label}；${dateLabel}；${parts.join("；")}；有效分母 ${formatDurationHours(row.value.denominatorSeconds / 3600)}`;
 }
 
-function FloatingTooltip({ anchorRef, className, id, children }: {
-  anchorRef: RefObject<HTMLElement | null>;
+function FloatingTooltip({ anchorRef, anchorPosition, gap = 10, className, id, children }: {
+  anchorRef: RefObject<Element | null>;
+  anchorPosition?: { xRatio: number; yRatio: number };
+  gap?: number;
   className: string;
   id: string;
   children: ReactNode;
 }) {
   const tooltipRef = useRef<HTMLSpanElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ left: 16, top: 16, visibility: "hidden" });
+  const anchorXRatio = anchorPosition?.xRatio;
+  const anchorYRatio = anchorPosition?.yRatio;
   useEffect(() => {
     const anchor = anchorRef.current;
     const tooltip = tooltipRef.current;
@@ -217,13 +217,35 @@ function FloatingTooltip({ anchorRef, className, id, children }: {
       const anchorBox = anchor.getBoundingClientRect();
       const tooltipBox = tooltip.getBoundingClientRect();
       const edge = 16;
-      const gap = 10;
-      const left = Math.min(Math.max(edge, anchorBox.left), Math.max(edge, window.innerWidth - tooltipBox.width - edge));
-      const below = anchorBox.bottom + gap;
-      const top = below + tooltipBox.height <= window.innerHeight - edge
-        ? below
-        : Math.max(edge, anchorBox.top - tooltipBox.height - gap);
-      setStyle({ left, top, visibility: "visible" });
+      const panelBox = anchor.closest(".panel")?.getBoundingClientRect();
+      const minLeft = Math.max(edge, (panelBox?.left ?? 0) + gap);
+      const maxRight = Math.min(window.innerWidth - edge, (panelBox?.right ?? window.innerWidth) - gap);
+      const minTop = Math.max(edge, (panelBox?.top ?? 0) + gap);
+      const maxBottom = Math.min(window.innerHeight - edge, (panelBox?.bottom ?? window.innerHeight) - gap);
+      const hasAnchorPosition = anchorXRatio !== undefined && anchorYRatio !== undefined;
+      const targetX = hasAnchorPosition ? anchorBox.left + anchorBox.width * anchorXRatio : anchorBox.left;
+      const targetY = hasAnchorPosition ? anchorBox.top + anchorBox.height * anchorYRatio : anchorBox.bottom;
+      const rightSide = targetX + gap;
+      const leftSide = targetX - tooltipBox.width - gap;
+      const preferLeft = hasAnchorPosition && targetX >= ((panelBox?.left ?? 0) + (panelBox?.right ?? window.innerWidth)) / 2;
+      const horizontalCandidate = preferLeft
+        ? leftSide >= minLeft ? leftSide : rightSide
+        : rightSide + tooltipBox.width <= maxRight ? rightSide : leftSide;
+      const left = Math.min(Math.max(minLeft, horizontalCandidate), Math.max(minLeft, maxRight - tooltipBox.width));
+      const below = targetY + gap;
+      const above = targetY - tooltipBox.height - gap;
+      const preferAbove = hasAnchorPosition && targetY >= ((panelBox?.top ?? 0) + (panelBox?.bottom ?? window.innerHeight)) / 2;
+      const verticalCandidate = preferAbove
+        ? above >= minTop ? above : below
+        : below + tooltipBox.height <= maxBottom ? below : above;
+      const top = Math.min(Math.max(minTop, verticalCandidate), Math.max(minTop, maxBottom - tooltipBox.height));
+      setStyle({
+        left,
+        top,
+        visibility: "visible",
+        "--floating-tooltip-left": `${left}px`,
+        "--floating-tooltip-top": `${top}px`,
+      } as CSSProperties);
     };
     update();
     window.addEventListener("resize", update);
@@ -232,7 +254,7 @@ function FloatingTooltip({ anchorRef, className, id, children }: {
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [anchorRef]);
+  }, [anchorRef, anchorXRatio, anchorYRatio, gap]);
   return <span className={`chart-tooltip floating-chart-tooltip ${className}`} id={id} ref={tooltipRef} role="tooltip" style={style}>{children}</span>;
 }
 
@@ -316,9 +338,14 @@ export interface LineSeries {
 
 function trendTooltipHeading(axisMode: TrendAxisMode, index: number, fallback: string) {
   if (axisMode === "COMPARE_DAY") return `第 ${index + 1} 小時`;
-  if (axisMode === "COMPARE_WEEK") return `第 ${index + 1} 日`;
+  if (axisMode === "COMPARE_WEEK") return `第 ${index + 1} 天`;
   if (axisMode === "COMPARE_MONTH") return `${index + 1} 日`;
   return fallback;
+}
+
+function shortDateFromDetail(value?: string) {
+  const match = value?.match(/\d{4}[/-](\d{2})[/-](\d{2})/);
+  return match ? `${match[1]}/${match[2]}` : undefined;
 }
 
 export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ariaLabel = "機台運轉趨勢", axisMode = "RANGE_MULTI", capacityHours }: {
@@ -333,15 +360,23 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
   const tooltipId = useId();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [focusedSeries, setFocusedSeries] = useState<string | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const visibleSeries = series.filter((item) => !hiddenKeys.includes(item.key));
   const all = visibleSeries.flatMap((item) => item.values);
   const hasValue = all.some((value) => value !== null);
+  const comparisonMode = axisMode.startsWith("COMPARE");
+  const axis = buildTrendAxisLabels(axisMode, labels);
   const width = 960, height = 360, left = 108, right = 28, top = 24, bottom = 56;
   const maxValue = Math.max(0, ...all.map((value) => value ?? 0));
   const scale:HourScale = capacityHours ? capacityHourScale(maxValue, capacityHours, axisMode === "RANGE_DAY_30" ? .5 : 1) : niceHourScale(maxValue, axisMode === "RANGE_DAY_30" ? .5 : 1);
   const usableW = width - left - right, usableH = height - top - bottom;
   const x = (index: number) => left + (labels.length <= 1 ? 0 : index / (labels.length - 1) * usableW);
   const y = (value: number) => top + usableH - value / scale.max * usableH;
+  const tooltipAnchorPosition = activeIndex === null ? undefined : (() => {
+    const pointYs = visibleSeries.map((item) => item.values[activeIndex]).filter((value): value is number => value !== null).map(y);
+    const anchorY = pointYs.length ? pointYs.reduce((total, value) => total + value, 0) / pointYs.length : top + usableH / 2;
+    return { xRatio: x(activeIndex) / width, yRatio: anchorY / height };
+  })();
   const segments = (values: Array<number | null>) => {
     const result: Array<Array<{ x: number; y: number; value: number; index: number }>> = [];
     let current: Array<{ x: number; y: number; value: number; index: number }> = [];
@@ -349,19 +384,19 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
     if (current.length) result.push(current);
     return result;
   };
-  const axis = buildTrendAxisLabels(axisMode, labels);
   const status = (detail: LinePointDetail | undefined, value: number | null) => value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : detail?.completeness === "PARTIAL" ? "部分資料缺漏" : "資料完整";
   const tooltipText = (index: number) => visibleSeries.map((item) => `${item.label} ${item.values[index] === null ? status(item.details?.[index], null) : formatDurationHours(item.values[index]!)} ${item.details?.[index]?.timeLabel ?? labels[index]}`).join("；");
   return <div className="chart-box operation-trend-v2" data-chart="operation-trend">
     {!hasValue ? <div className="empty-state"><div><div className="empty-icon">⌁</div><strong>所選期間沒有可用趨勢</strong><p>缺少資料的時間位置會維持空白，不會補成 0 或連線跨過。</p></div></div> : <div className="trend-plot-wrap">
       {scale.exceeded&&<div className="chart-data-warning" role="note">資料超過此時間單位的理論容量，已保留原值並擴展刻度。</div>}
-      <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
+      <svg className="line-chart" ref={svgRef} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
         {scale.ticks.map((tick) => { const position = y(tick); return <g key={`y-${tick}`}><line className="chart-grid" x1={left} x2={width - right} y1={position} y2={position}/><text className="chart-axis-label" x={left - 10} y={position + 4} textAnchor="end">{formatAxisHours(tick, scale.step)}</text></g>; })}
         <line className="chart-axis" x1={left} x2={left} y1={top} y2={height - bottom}/><line className="chart-axis" x1={left} x2={width - right} y1={height - bottom} y2={height - bottom}/>
         <text className="chart-axis-title" transform={`translate(20 ${top + usableH / 2}) rotate(-90)`} textAnchor="middle">加工時間</text>
         {axis.ticks.map((tick) => <g key={`x-${tick.index}`}><line className="chart-tick" x1={x(tick.index)} x2={x(tick.index)} y1={height - bottom} y2={height - bottom + 5}/><text className="chart-axis-label" x={x(tick.index)} y={height - 31} textAnchor="middle">{tick.label}</text></g>)}
         {axis.endLabel && <text className="chart-axis-label" x={width - right} y={height - 31} textAnchor="end">{axis.endLabel}</text>}
-        <text className="chart-axis-title" x={left + usableW / 2} y={height - 7} textAnchor="middle">時間</text>
+        {axisMode === "COMPARE_WEEK" && <text className="chart-axis-title" x={left + usableW / 2} y={height - 7} textAnchor="middle">比較日序</text>}
+        {axisMode !== "COMPARE_WEEK" && <text className="chart-axis-title" x={left + usableW / 2} y={height - 7} textAnchor="middle">時間</text>}
         {visibleSeries.map((item) => {
           const parts = segments(item.values);
           const dimmed = focusedSeries && focusedSeries !== item.key;
@@ -373,18 +408,24 @@ export function TrendChart({ labels, series, hiddenKeys = [], onToggleSeries, ar
           return <rect className="trend-tooltip-zone" key={`zone-${index}`} data-tooltip-zone x={Math.max(left, x(index) - zoneWidth / 2)} y={top} width={zoneWidth} height={usableH} fill="transparent" tabIndex={0} role="button" aria-label={tooltipText(index)} aria-describedby={activeIndex === index ? tooltipId : undefined} onMouseEnter={() => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} onFocus={() => setActiveIndex(index)} onBlur={() => setActiveIndex(null)}/>;
         })}
       </svg>
-      {activeIndex !== null && <div className={`chart-tooltip trend-tooltip ${activeIndex >= (labels.length - 1) / 2 ? "align-right" : ""}`} id={tooltipId} role="tooltip" style={{ left: `${x(activeIndex) / width * 100}%` }}>
-        <span className="trend-tooltip-head"><strong>{trendTooltipHeading(axisMode, activeIndex, visibleSeries[0]?.details?.[activeIndex]?.timeLabel ?? labels[activeIndex])}</strong>{axisMode.startsWith("COMPARE") && <span>相對比較位置</span>}</span>
+      {activeIndex !== null && <FloatingTooltip anchorRef={svgRef} anchorPosition={tooltipAnchorPosition} gap={22} className={`trend-tooltip ${comparisonMode ? "is-comparison" : ""}`} id={tooltipId}>
+        <span className="trend-tooltip-head"><strong>{trendTooltipHeading(axisMode, activeIndex, visibleSeries[0]?.details?.[activeIndex]?.timeLabel ?? labels[activeIndex])}</strong></span>
         <span className="trend-tooltip-list">{visibleSeries.map((item) => {
           const detail = item.details?.[activeIndex];
           const value = item.values[activeIndex];
+          const compactDate = comparisonMode && axisMode !== "COMPARE_DAY" ? shortDateFromDetail(detail?.timeLabel) : detail?.timeLabel;
+          if (comparisonMode) return <span className="trend-tooltip-row comparison-tooltip-row" key={item.key}>
+            <span className="trend-tooltip-series"><i className="legend-dot" style={{ background: item.color }}/><b>{compactDate ?? "日期未提供"}</b></span>
+            <span className="trend-tooltip-reading"><strong>{value === null ? "—" : formatDurationHours(value)}</strong></span>
+            <span className="trend-tooltip-meta">{detail?.expectedIntervals !== undefined && <>可統計 {(detail.eligibleIntervals ?? 0).toLocaleString()} / {detail.expectedIntervals.toLocaleString()} 筆 · </>}{status(detail, value)}</span>
+          </span>;
           return <span className="trend-tooltip-row" key={item.key}>
             <span className="trend-tooltip-series"><i className="legend-dot" style={{ background: item.color }}/><b>{item.label}</b></span>
             {detail?.timeLabel && <span className="trend-tooltip-date">{detail.timeLabel}</span>}
             <span className="trend-tooltip-reading"><strong>{value === null ? availabilityLabel(detail?.availability ?? "MISSING_DATA") : formatDurationHours(value)}</strong><span>{value === null ? "無可用數值" : status(detail, value)}</span>{detail?.expectedIntervals!==undefined&&<span>可統計資料：{(detail.eligibleIntervals??0).toLocaleString()} / {detail.expectedIntervals.toLocaleString()} 筆</span>}</span>
           </span>;
         })}</span>
-      </div>}
+      </FloatingTooltip>}
     </div>}
     <div className="chart-legend interactive-legend trend-legend">{series.map((item) => <button type="button" key={item.key} className={hiddenKeys.includes(item.key) ? "is-muted" : ""} aria-pressed={!hiddenKeys.includes(item.key)} onClick={() => onToggleSeries?.(item.key)} onMouseEnter={() => setFocusedSeries(item.key)} onMouseLeave={() => setFocusedSeries(null)} onFocus={() => setFocusedSeries(item.key)} onBlur={() => setFocusedSeries(null)}><i className="legend-line" style={{ borderColor: item.color }}/>{item.label}</button>)}<span>斷線表示缺資料／不適用；空心圓表示部分資料缺漏</span></div>
   </div>;

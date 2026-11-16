@@ -22,7 +22,7 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(zero.ticks).toHaveLength(6);
   });
 
-  it("uses exact single- and multi-day physical capacity unless anomalous data requires a larger scale",()=>{expect(capacityHourScale(40,48)).toMatchObject({max:48,exceeded:false});expect(capacityHourScale(300,336)).toMatchObject({max:336,exceeded:false});expect(capacityHourScale(130,168)).toMatchObject({max:168,exceeded:false});expect(capacityHourScale(20,24).ticks.at(-1)).toBe(24);expect(capacityHourScale(25,24)).toMatchObject({max:25,exceeded:true});});
+  it("keeps exact physical capacity while omitting terminal labels that crowd the prior regular tick",()=>{expect(capacityHourScale(40,48)).toMatchObject({max:48,exceeded:false});expect(capacityHourScale(300,336)).toMatchObject({max:336,exceeded:false,ticks:[0,100,200,300]});expect(capacityHourScale(130,168)).toMatchObject({max:168,exceeded:false,ticks:[0,50,100,150]});expect(capacityHourScale(20,24).ticks.at(-1)).toBe(24);expect(capacityHourScale(25,24)).toMatchObject({max:25,exceeded:true});});
 
   it("keeps all buckets while exposing only the approved time/date tick labels",()=>{
     const thirty=buildTrendAxisLabels("RANGE_DAY_30",Array.from({length:48},(_,index)=>String(index)));

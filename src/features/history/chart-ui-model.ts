@@ -49,7 +49,9 @@ export function capacityHourScale(dataMax: number, capacity: number, zeroFallbac
   const safeCapacity = Number.isFinite(capacity) && capacity > 0 ? capacity : zeroFallback;
   if (dataMax > safeCapacity) return { ...niceHourScale(dataMax, zeroFallback), exceeded: true };
   const nice = niceHourScale(safeCapacity, zeroFallback);
-  const ticks = [...nice.ticks.filter((tick) => tick < safeCapacity), safeCapacity];
+  const ticks = nice.ticks.filter((tick) => tick < safeCapacity);
+  const lastRegularTick = ticks.at(-1) ?? 0;
+  if (safeCapacity - lastRegularTick >= nice.step * .6) ticks.push(safeCapacity);
   return { max: safeCapacity, step: nice.step, ticks: [...new Set(ticks)], exceeded: false };
 }
 
