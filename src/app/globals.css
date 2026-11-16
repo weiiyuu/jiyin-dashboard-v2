@@ -183,9 +183,17 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
 .machine-environment-link{padding:11px 13px}
 
 .live-series-line{shape-rendering:geometricPrecision;vector-effect:non-scaling-stroke}
-.live-reference-line{stroke:#ff777d;stroke-width:2.6;stroke-dasharray:9 6;vector-effect:non-scaling-stroke}
+.live-reference-line{stroke:#ff777d;stroke-width:3;stroke-dasharray:9 6;vector-effect:non-scaling-stroke}
 .live-reference-label{fill:#ff9da1;font-size:15px;font-weight:800}
 .endpoint-check-source{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+
+.environment-trend-range{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:rgba(39,23,28,.66)}
+.environment-trend-range strong,.environment-trend-range span{display:block}.environment-trend-range strong{font-size:16px}.environment-trend-range span{margin-top:4px;color:var(--muted);font-size:14px}
+.trend-range-switch{display:flex;flex:0 0 auto;padding:4px;border:1px solid var(--line);border-radius:9px;background:rgba(17,9,12,.72)}
+.trend-range-switch button{min-width:108px;padding:8px 12px;border:0;border-radius:6px;color:var(--muted);background:transparent;font-size:14px;font-weight:750;cursor:pointer}
+.trend-range-switch button.active{color:#fff;background:#75434d}.trend-range-switch button:focus-visible{outline:2px solid var(--cream);outline-offset:2px}
+.live-environment-chart-panel{overflow:visible}.live-chart-tooltip{width:max-content;max-width:min(340px,calc(100vw - 40px));max-height:calc(100vh - 32px);overflow-y:auto;transform:none}
+.connection-frequency-note{display:flex;flex-wrap:wrap;gap:8px 18px;padding:13px 18px;border-bottom:1px solid var(--line);color:var(--muted);font-size:14px;line-height:1.55}.connection-frequency-note span{display:inline-flex;gap:6px}.connection-frequency-note strong{color:#ead9d4}
 
 @media(max-width:1080px){
   .machine-card-grid{grid-template-rows:repeat(2,minmax(160px,auto))}
@@ -198,4 +206,6 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
   .machine-detail-list{grid-template-columns:1fr}
   .machine-detail-list>div,.machine-detail-list>div:nth-child(odd),.machine-detail-list>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}
   .machine-detail-list>div:last-child{border-bottom:0}
+  .environment-trend-range{align-items:flex-start;display:grid}.trend-range-switch{width:100%}.trend-range-switch button{flex:1;min-width:0}
+  .connection-frequency-note{display:grid}
 }

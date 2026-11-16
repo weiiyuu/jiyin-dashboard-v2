@@ -6,7 +6,7 @@ import { LiveProviderBanner } from "@/components/live-provider-banner";
 import { PageHeader } from "@/components/page-header";
 import { ErrorNotice, LoadingState, Panel, StatusChip } from "@/components/ui-states";
 import { useLocalRefresh } from "@/components/use-local-refresh";
-import { environmentStatusLabel, environmentVisualStatus, formatTaipeiDateTime, latestIso, LIVE_COLORS, visibleEndMinutes, type EnvironmentLatest, type EnvironmentPayload, type LiveMeta } from "@/features/live/live-ui-model";
+import { defaultLiveTrendRangeMode, environmentStatusLabel, environmentVisualStatus, formatTaipeiDateTime, latestIso, LIVE_COLORS, recentLiveTrendRange, visibleEndMinutes, type EnvironmentLatest, type EnvironmentPayload, type LiveMeta, type LiveTrendRangeMode } from "@/features/live/live-ui-model";
 import { fetchApiEnvelope } from "@/lib/api-client";
 
 interface EnvironmentState { responses: Record<string, EnvironmentPayload>; meta: LiveMeta }
@@ -26,6 +26,7 @@ export default function EnvironmentPage() {
   const [state, setState] = useState<EnvironmentState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rangeMode, setRangeMode] = useState<LiveTrendRangeMode | null>(null);
   const load = useCallback(async (signal: AbortSignal) => {
     setBusy(true);
     try {
@@ -44,7 +45,8 @@ export default function EnvironmentPage() {
     const build = (metric: "temperature" | "humidity") => (["A", "B"] as const).flatMap((area) => state.responses[latestKey(area, metric)].series.map((series, index) => ({ key: `${area}-${metric}-${series.point}`, label: `${area} 區${metric === "temperature" ? "溫度" : "濕度"} ${series.point}`, color: LIVE_COLORS[(area === "A" ? 0 : 2) + index], samples: series.samples })));
     return { temperature: build("temperature"), humidity: build("humidity") };
   }, [state]);
-  const endMinute = state ? visibleEndMinutes(state.meta.timeContext.now) : 570;
+  const activeRangeMode=state?(rangeMode??defaultLiveTrendRangeMode(state.meta.providerMode)):"today";
+  const trendRange=state?(activeRangeMode==="recent"?recentLiveTrendRange(state.meta.timeContext.now):{startMinute:540,endMinute:visibleEndMinutes(state.meta.timeContext.now)}):{startMinute:540,endMinute:570};
 
   return <main className="page live-page">
     <PageHeader eyebrow="LIVE ENVIRONMENT" title="環境監測" description="八個溫濕度測點獨立呈現；缺漏保留空白，不平均、不補零。" tag="09:00–17:00 台灣時間" />
@@ -56,9 +58,10 @@ export default function EnvironmentPage() {
         const items = [...state.responses[latestKey(area, "temperature")].latest, ...state.responses[latestKey(area, "humidity")].latest];
         return <Panel key={area} title={`${area} 區環境資料`} actions={<div className="environment-area-times"><span>區域最近來源更新 {formatTaipeiDateTime(latestIso(items.map((item) => item.sensorUpdateAt)))}</span><span>平台最近取得 {formatTaipeiDateTime(latestIso(items.map((item) => item.fetchedAt)))}</span></div>}><div className="environment-sensor-grid">{items.map((item) => <SensorCard key={`${item.metric}-${item.point}`} item={item} />)}</div></Panel>;
       })}</div>
+      <div className="environment-trend-range"><div><strong>趨勢時間範圍</strong><span>{activeRangeMode==="recent"?"最近 60 分鐘，保留少量右側時間留白":"今日 09:00 起至目前可見時段"}</span></div><div className="trend-range-switch" role="group" aria-label="趨勢時間範圍"><button type="button" className={activeRangeMode==="recent"?"active":""} aria-pressed={activeRangeMode==="recent"} onClick={()=>setRangeMode("recent")}>近期趨勢</button><button type="button" className={activeRangeMode==="today"?"active":""} aria-pressed={activeRangeMode==="today"} onClick={()=>setRangeMode("today")}>今日趨勢</button></div></div>
       <div className="live-chart-stack">
-        <Panel title="溫度趨勢"><LiveEnvironmentChart title="溫度趨勢" unit="°C" reference={26} series={chartSeries.temperature} endMinute={endMinute} date={state.meta.timeContext.dataDate} /><p className="live-chart-note">每 3 分鐘記錄一次；缺漏資料不連線。</p></Panel>
-        <Panel title="濕度趨勢"><LiveEnvironmentChart title="濕度趨勢" unit="%RH" reference={40} series={chartSeries.humidity} endMinute={endMinute} date={state.meta.timeContext.dataDate} /><p className="live-chart-note">每 3 分鐘記錄一次；缺漏資料不連線。</p></Panel>
+        <Panel title="溫度趨勢" className="live-environment-chart-panel"><LiveEnvironmentChart title="溫度趨勢" unit="°C" reference={26} series={chartSeries.temperature} startMinute={trendRange.startMinute} endMinute={trendRange.endMinute} date={state.meta.timeContext.dataDate} /><p className="live-chart-note">每 3 分鐘記錄一次；缺漏資料不連線。</p></Panel>
+        <Panel title="濕度趨勢" className="live-environment-chart-panel"><LiveEnvironmentChart title="濕度趨勢" unit="%RH" reference={40} series={chartSeries.humidity} startMinute={trendRange.startMinute} endMinute={trendRange.endMinute} date={state.meta.timeContext.dataDate} /><p className="live-chart-note">每 3 分鐘記錄一次；缺漏資料不連線。</p></Panel>
       </div>
     </>}
   </main>;

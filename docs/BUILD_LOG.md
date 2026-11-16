@@ -207,3 +207,11 @@
 - Focused corrections: local Collector startup now optionally loads ignored `.env.local`; endpoint health ignores routine metadata `NOT_DUE` audits; completion detector `ON/OFF` receives deterministic typed parsing while preserving source text and unknown fallback. See `STAGE6_7_LIVE_VALIDATION.md`.
 - Checks: Stage 6／7 targeted suite passed 32 tests; Typecheck, Lint, Webpack Production Build, and `git diff --check` passed. Post-fix read-only checks showed configs/groups as their latest attempted success and all eight stored detector values as OFF rather than UNKNOWN.
 - Safety: Only the three approved GET endpoints were used. No raw response, origin, credential, private SQLite, screenshot, push, deployment, Stage 8 work, or destructive operation was committed.
+
+## Stage 7 — Final pre-Stage-8 fixes
+
+- Status: Five scoped UI and threshold fixes complete; human UAT remains pending.
+- Main changes: Added a shared Live-recent／Today trend switch (Live defaults to a padded window containing the latest full 60 minutes; Demo retains its full daytime default), added viewport-aware Tooltip placement, applied the approved four-series palette and line widths, documented endpoint refresh frequencies without changing scheduling, and made 26.0°C／40.0%RH inclusive warning boundaries.
+- Checks: Stage 7 targeted component tests, Typecheck, Lint, Webpack Production Build, and `git diff --check` passed. An isolated synthetic-Demo browser smoke verified the shared range switch, full-day Demo default, exact line／legend／reference styles, an in-viewport right-edge Tooltip, API frequency copy, and no page-level horizontal overflow.
+- Safety: The existing Collector was not stopped, restarted, replaced, or queried. No enterprise API request, Collector schedule／mapping／contract, product SQLite／Docker Volume, Stage 5 logic, push, deployment, or Stage 8 work was used or changed.
+- Next: Stop for final Stage 7 human UAT before starting Stage 8.
