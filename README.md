@@ -1,5 +1,7 @@
 # jiyin-dashboard-v2
 
+主要版本變更請參閱 [CHANGELOG.md](CHANGELOG.md)。目前仍為 `Unreleased`，尚未建立正式 Git Tag 或 Release。
+
 ## 1. 專案介紹與主要功能
 
 本專案是單機版設備監控 Dashboard，提供：

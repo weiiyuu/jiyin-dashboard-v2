@@ -1,6 +1,6 @@
 # Build Log
 
-> Stage 3 implementation record. No enterprise API calls or remote pushes are permitted in this run.
+> Stage 0–8 的累積實作與驗證紀錄。每個 Stage 的結果以當時實際範圍為準；後續驗證只追加記錄，不回頭改寫過去結論。
 
 ## Stage 0 — Safe initialization
 
@@ -243,4 +243,12 @@
 - Verification: 35 focused Stage 6/8/DB tests, Typecheck, Lint, and the local Webpack Production Build passed. Docker 27.4.0 / Compose 2.31 used only project `jiyin-stage8b-smoke`, port 3190, empty enterprise Origin, and volume `jiyin-stage8b-smoke_app_data`. Container Production Build and schema v2 migration passed; Web/Collector were healthy; Collector stayed idle; a synthetic import marker survived container removal/recreation; Docker backup produced a 61-page snapshot; mutation then restore recovered the marker with `integrity_check=ok`; restored services became healthy. Smoke containers were stopped with `down` and the isolated volume was not deleted.
 - Documentation: README now covers optional Docker setup/status/logs/stop/update, native and Docker backup/restore, named-volume persistence, safe update behavior, duplicate-Collector prevention, TLS/CA handling, and recovery troubleshooting.
 - Safety: No enterprise request, real Collector control, `.env.local`, product SQLite, existing Docker volume, Stage 5–7 business logic, push, deployment, or volume deletion was performed. Docker used no private input and `_reference_inputs` remained untouched.
+- Commit: `1462d8f`.
 - Open items: Windows Docker Desktop and Windows Live remain target-machine manual checks. A future `custom_ca` deployment requires a private read-only Compose bind-mount override and has not been exercised. Moving an existing real npm database/Collector to Docker still requires separate authorization, backup, and a single-Collector cutover.
+
+## Stage 8 — Final delivery check
+
+- Status: Documentation and repository delivery review complete for the first pre-release handoff. The project remains `Unreleased`; no tag, GitHub Release, `main` merge, production migration, or deployment is claimed.
+- Confirmed from existing evidence: Native `dev:all`/`start:all` scripts remain present; Compose uses ordered `migrate`, `web`, and `collector` services with one named volume; backup/restore commands and stopped-writer safeguards match README; display-mode cookies remain independent of Collector mode; retention remains 3 days and only deletes Live poll/readings; the public environment example contains blank enterprise Origins and no private credential.
+- Verified boundary: macOS native npm, Windows clean clone/`npm ci`/`dev:all` startup, macOS isolated Docker, Docker persistence, isolated backup/restore/integrity, and Demo/Live separation are recorded as passed. Windows Live, Windows `start:all`, Windows Docker, production-data recovery, Docker enterprise connectivity, private `custom_ca`, and a real npm-to-Docker cutover remain explicit manual checks.
+- Checks: Documentation-only review reused the passed Stage 8B tests/build/Docker smoke and performed focused Compose, script, README, environment-template, Git tracking, and sensitive-data checks; no enterprise request, product database operation, Collector control, Docker volume deletion, or redundant large test run was performed.
