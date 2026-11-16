@@ -7,13 +7,58 @@
 - Node.js `24.15.x`
 - npm `11.x`
 - Git
+- Windows 10/11 或 macOS
+- 現代瀏覽器（建議使用最新版 Chrome、Edge、Firefox 或 Safari）
 
-專案可放在含空白或中文的路徑。每台電腦會使用自己的 `data/jiyin-dashboard.sqlite`，不會跨電腦同步。
+Docker 不是必要環境；本專案以 Windows／macOS 原生 npm 運行為主。專案可放在含空白或中文的路徑。每台電腦會使用自己的 `data/jiyin-dashboard.sqlite`，不會跨電腦同步。
+
+## 安裝 Node.js 與 Git
+
+1. 從 [Node.js 官方 v24.15.0 下載頁](https://nodejs.org/download/release/v24.15.0/) 安裝對應平台版本：Windows 可使用 `node-v24.15.0-x64.msi`，macOS 可使用 `node-v24.15.0.pkg`。本專案需要 Node.js `24.15.x`，不要直接改用其他主版本。
+2. npm 會隨 Node.js 一起安裝，不需要另外下載。
+3. 從 [Git 官方下載頁](https://git-scm.com/downloads/) 安裝 Windows 或 macOS 版 Git。
+4. 安裝完成後關閉並重新開啟 PowerShell 或 Terminal，再執行下列檢查。
+
+Windows PowerShell：
+
+```powershell
+node -v
+npm -v
+git --version
+```
+
+macOS Terminal：
+
+```bash
+node -v
+npm -v
+git --version
+```
+
+`node -v` 應顯示 `v24.15.x`，`npm -v` 應為 `11.x`。若 Windows PowerShell 因 `npm.ps1` 執行原則而無法執行 npm，不需要改動全機安全政策；可將指令中的 `npm` 改為 `npm.cmd`，例如 `npm.cmd ci` 或 `npm.cmd run dev:all`。
+
+## Stage 8A 測試分支
+
+目前最新 Stage 8A 位於 GitHub `dev` 分支。本輪 Windows／macOS 驗收請 Clone `dev`：
+
+```text
+git clone --branch dev https://github.com/weiiyuu/jiyin-dashboard-v2.git
+```
+
+若已 Clone 專案，可切換並更新 `dev`：
+
+```text
+git fetch origin
+git switch dev
+git pull --ff-only origin dev
+```
+
+`dev` 是目前 Stage 8A 跨平台驗收分支，不代表未來一般使用者永遠必須使用 `dev`。正式版本發佈後，應以 Repository 當時的預設／正式分支說明為準。
 
 ## Windows PowerShell
 
 ```powershell
-git clone https://github.com/weiiyuu/jiyin-dashboard-v2.git
+git clone --branch dev https://github.com/weiiyuu/jiyin-dashboard-v2.git
 Set-Location jiyin-dashboard-v2
 npm ci
 Copy-Item .env.example .env.local
@@ -23,7 +68,7 @@ npm run dev:all
 ## macOS
 
 ```bash
-git clone https://github.com/weiiyuu/jiyin-dashboard-v2.git
+git clone --branch dev https://github.com/weiiyuu/jiyin-dashboard-v2.git
 cd jiyin-dashboard-v2
 npm ci
 cp .env.example .env.local
