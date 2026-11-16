@@ -163,3 +163,92 @@ npm run start:all
 - 出現 `node`、`npm` 或 `git` 無法辨識時，先重開終端。Windows 可用 `where.exe node`／`where.exe npm`，macOS 可用 `which -a node`／`which -a npm` 檢查 PATH。
 - SQLite 持久儲存在本機 `data/jiyin-dashboard.sqlite`，正常停止與重新啟動不會自動清空，也不會自動與其他電腦同步。Live readings 依現有規則保留 3 天；Excel 匯入的歷史批次使用獨立版本管理。不要將 SQLite、`.env.local`、企業 Excel／JSON、Token 或憑證提交至 GitHub。
 - 每個瀏覽器可獨立選擇 Demo 或 Live 畫面。切換為 Demo 只會改變該瀏覽器的顯示，不會中斷背景 Live Collector。
+
+## 7. 選用：Docker Compose
+
+Docker 是第二種運行方式，原生 npm 仍是 Windows／macOS 一般使用者的首選。若要使用 Docker，請先安裝 [Docker Desktop](https://www.docker.com/products/docker-desktop/)，並確認 `docker compose version` 可正常執行。
+
+Docker 與原生 npm 都會啟動 Collector。**切換運行方式前，必須先以 `Ctrl+C` 停止原生 npm 平台**；不可同時執行兩個 Collector 對企業 API 進行收集。
+
+建立 Docker 專用的本機設定（此檔案已被 Git 排除）：
+
+Windows PowerShell：
+
+```powershell
+Copy-Item .env.example .env.docker
+```
+
+macOS Terminal：
+
+```bash
+cp .env.example .env.docker
+```
+
+Demo 使用者保留空白 Origin 即可。Live 使用者依第 4 節的相同規則編輯 `.env.docker`；設定只在容器執行時傳入，不會被寫入 Image。啟動、查看狀態與 logs：
+
+```text
+docker compose --env-file .env.docker up --build -d
+docker compose --env-file .env.docker ps
+docker compose --env-file .env.docker logs -f web collector
+```
+
+完成後開啟 <http://localhost:3000>。`migrate` 會先完成 SQLite Migration，再由獨立的 `web` 與 `collector` 服務共用同一個 named volume。未設定企業 Origin 時 Collector 只會安全待機，Demo 仍可使用。
+
+若主機的 3000 port 已被使用，可在 `.env.docker` 增加 `WEB_PORT=3190`，重新啟動後改開 <http://localhost:3190>。
+
+停止與重新啟動：
+
+```text
+docker compose --env-file .env.docker down
+docker compose --env-file .env.docker up -d
+```
+
+`down` **不會刪除** named volume，容器重建後資料仍會保留。不要執行 `docker compose down -v`。更新程式時，先完成下一節的備份，再執行：
+
+```text
+docker compose --env-file .env.docker down
+git pull --ff-only origin dev
+docker compose --env-file .env.docker up --build -d
+```
+
+`strict` 與精確 Allowlist 限制的 `allowlisted_self_signed` 可直接由 `.env.docker` 設定。若企業日後改用 `custom_ca`，必須以本機、已忽略的 private Compose override 將 CA 檔案 read-only 掛載至容器，並把 `ENTERPRISE_CA_FILE` 指向容器內路徑；不可將 CA 放入 Image 或 Git。
+
+## 8. SQLite 備份與還原
+
+備份工具使用 SQLite 的一致性備份機制，會將 WAL 中已提交的資料納入同一個可驗證的 `.sqlite` 檔案。為了避免人為選錯資料庫，建議備份與還原前都先安全停止 Web 與 Collector。備份檔位於已忽略的 `backups/`，不得提交 GitHub。
+
+### 原生 npm
+
+先在啟動平台的終端按 `Ctrl+C`，然後執行：
+
+```text
+npm run db:backup -- --output backups/jiyin-dashboard-backup.sqlite
+```
+
+還原前必須再次確認 Web 與 Collector 已停止：
+
+```text
+npm run db:restore -- --input backups/jiyin-dashboard-backup.sqlite --confirm-stopped
+```
+
+還原會先檢查備份完整性，並將還原前的資料庫保留為同目錄的 `.pre-restore-...sqlite` 安全副本。若發現 Collector lock 或 WAL／SHM sidecar，工具會拒絕還原；請找出仍在使用資料庫的程序，不要手動刪除這些檔案繞過保護。
+
+### Docker named volume
+
+以下指令只停止 Web／Collector，不刪除 volume：
+
+```text
+docker compose --env-file .env.docker stop web collector
+docker compose --env-file .env.docker --profile maintenance run --rm --no-deps maintenance node --import tsx scripts/sqlite-maintenance.ts backup --output /app/backups/jiyin-dashboard-backup.sqlite
+docker compose --env-file .env.docker up -d
+```
+
+備份會出現在主機的 `backups/`。還原時同樣先停止寫入服務：
+
+```text
+docker compose --env-file .env.docker stop web collector
+docker compose --env-file .env.docker --profile maintenance run --rm --no-deps maintenance node --import tsx scripts/sqlite-maintenance.ts restore --input /app/backups/jiyin-dashboard-backup.sqlite --confirm-stopped
+docker compose --env-file .env.docker up -d
+```
+
+若 Docker 回報 volume 權限或資料庫正在使用，請保留現狀並檢查 `docker compose --env-file .env.docker ps`；不要刪除 volume、WAL 或 lock 檔。

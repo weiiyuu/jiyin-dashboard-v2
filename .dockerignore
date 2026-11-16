@@ -5,8 +5,11 @@ coverage
 data
 logs
 volumes
+backups
 _reference_inputs
 test_api
+private_replay
+fixtures/private
 .env*
 !.env.example
 *.db

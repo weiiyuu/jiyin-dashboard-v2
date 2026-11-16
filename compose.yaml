@@ -1,41 +1,72 @@
+x-runtime-environment: &runtime-environment
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Taipei}
+  DATABASE_PATH: /app/data/jiyin-dashboard.sqlite
+  STALE_AFTER_SECONDS: ${STALE_AFTER_SECONDS:-420}
+  ENTERPRISE_API_ORIGIN: ${ENTERPRISE_API_ORIGIN:-}
+  ENTERPRISE_API_ALLOWED_ORIGINS: ${ENTERPRISE_API_ALLOWED_ORIGINS:-}
+  ENTERPRISE_TLS_MODE: ${ENTERPRISE_TLS_MODE:-strict}
+  ENTERPRISE_CA_FILE: ${ENTERPRISE_CA_FILE:-}
+  ENTERPRISE_API_AUTH_MODE: ${ENTERPRISE_API_AUTH_MODE:-none}
+  ENTERPRISE_API_AUTH_VALUE: ${ENTERPRISE_API_AUTH_VALUE:-}
+  ENTERPRISE_API_AUTH_HEADER_NAME: ${ENTERPRISE_API_AUTH_HEADER_NAME:-}
+  API_TIMEOUT_MS: ${API_TIMEOUT_MS:-20000}
+  API_MAX_RESPONSE_BYTES: ${API_MAX_RESPONSE_BYTES:-2097152}
+
+x-runtime-service: &runtime-service
+  build:
+    context: .
+    target: runner
+  image: jiyin-dashboard-v2:local
+  environment: *runtime-environment
+  volumes:
+    - app_data:/app/data
+  init: true
+  stop_grace_period: 20s
+
 services:
+  migrate:
+    <<: *runtime-service
+    command: ["node", "--import", "tsx", "scripts/sqlite-maintenance.ts", "init"]
+    restart: "no"
+
   web:
-    build:
-      context: .
-      target: development
-    command: npm run dev
-    environment:
-      APP_TIMEZONE: Asia/Taipei
-      DATABASE_PATH: /app/data/jiyin-dashboard.sqlite
-      PROVIDER_MODE: DEMO
+    <<: *runtime-service
+    command: ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     ports:
-      - "127.0.0.1:3000:3000"
-    volumes:
-      - app_data:/app/data
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 5s
       retries: 12
-      start_period: 10s
+      start_period: 20s
+    restart: unless-stopped
 
   collector:
-    build:
-      context: .
-      target: development
-    command: npm run collector:start
+    <<: *runtime-service
+    command: ["node", "--import", "tsx", "src/server/collector/main.ts"]
     depends_on:
-      web:
-        condition: service_healthy
-    environment:
-      DATABASE_PATH: /app/data/jiyin-dashboard.sqlite
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "const fs=require('node:fs');const p='/app/data/jiyin-dashboard.sqlite.collector.pid';if(!fs.existsSync(p))process.exit(1);const pid=Number(fs.readFileSync(p,'utf8'));try{process.kill(pid,0)}catch{process.exit(1)}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+
+  maintenance:
+    <<: *runtime-service
+    profiles: ["maintenance"]
+    command: ["node", "--import", "tsx", "scripts/sqlite-maintenance.ts", "init"]
     volumes:
       - app_data:/app/data
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('fs').accessSync('/app/data/jiyin-dashboard.sqlite',6)"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      - ./backups:/app/backups
+    restart: "no"
 
 volumes:
   app_data:

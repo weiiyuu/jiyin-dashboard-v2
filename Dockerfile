@@ -1,26 +1,30 @@
-FROM node:24.22.3-bookworm-slim AS deps
+FROM node:24.15.0-bookworm-slim AS dependencies
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY package.json package-lock.json ./
+RUN npm ci
 
-FROM deps AS development
-WORKDIR /app
-ENV NODE_ENV=development
-COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
-
-FROM deps AS builder
+FROM dependencies AS builder
 WORKDIR /app
 COPY . .
 RUN npm run build
 
-FROM node:24.22.3-bookworm-slim AS runner
+FROM node:24.15.0-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+
+COPY --chown=node:node --from=builder /app/package.json /app/package-lock.json ./
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/.next ./.next
+COPY --chown=node:node --from=builder /app/public ./public
+COPY --chown=node:node --from=builder /app/src ./src
+COPY --chown=node:node --from=builder /app/scripts ./scripts
+COPY --chown=node:node --from=builder /app/next.config.ts /app/tsconfig.json ./
+RUN mkdir -p /app/data /app/backups && chown -R node:node /app
+
+USER node
 EXPOSE 3000
-CMD ["node", "server.js"]
+STOPSIGNAL SIGTERM
+CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0"]
