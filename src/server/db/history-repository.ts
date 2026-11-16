@@ -38,6 +38,14 @@ export function getActiveBatchCoverage(db:AppDatabase,startDate:string,endDate:s
 }
 
 export interface AlarmQuery {startDate:string;endDate:string;sensorIds?:string[];sensorType?:string;ruleName?:string;page:number;pageSize:number}
+function alarmWhere(input:Omit<AlarmQuery,"page"|"pageSize">){
+  const clauses=["b.status='ACTIVE'","h.source_date>=?","h.source_date<=?"];
+  const parameters:Array<string|number|null>=[input.startDate,input.endDate];
+  if(input.sensorIds?.length){clauses.push(`h.sensor_id IN (${input.sensorIds.map(()=>"?").join(",")})`);parameters.push(...input.sensorIds);}
+  if(input.sensorType){clauses.push("h.sensor_type=?");parameters.push(input.sensorType);}
+  if(input.ruleName){clauses.push("h.rule_name=?");parameters.push(input.ruleName);}
+  return{where:clauses.join(" AND "),parameters};
+}
 export function getActiveAlarmEvents(db:AppDatabase,input:AlarmQuery){
   validateDate(input.startDate);validateDate(input.endDate);
   if(!Number.isInteger(input.page)||input.page<1||!Number.isInteger(input.pageSize)||input.pageSize<1||input.pageSize>200)throw new Error("Invalid pagination");
@@ -50,4 +58,15 @@ export function getActiveAlarmEvents(db:AppDatabase,input:AlarmQuery){
   const rows=db.prepare(`SELECT h.* FROM history_alarm_events h JOIN import_batches b ON b.batch_id=h.batch_id
     WHERE ${where} ORDER BY h.event_at_ms DESC,h.alarm_event_id DESC LIMIT ? OFFSET ?`).all(...parameters,input.pageSize,(input.page-1)*input.pageSize) as Array<Record<string,unknown>>;
   return{rows,total};
+}
+
+export function getAllActiveAlarmEvents(db:AppDatabase,input:Omit<AlarmQuery,"page"|"pageSize">){
+  validateDate(input.startDate);validateDate(input.endDate);
+  const {where,parameters}=alarmWhere(input);
+  return db.prepare(`SELECT h.* FROM history_alarm_events h JOIN import_batches b ON b.batch_id=h.batch_id
+    WHERE ${where} ORDER BY h.event_at_ms DESC,h.alarm_event_id DESC`).all(...parameters) as Array<Record<string,unknown>>;
+}
+
+export function getActiveHistoryDateBounds(db:AppDatabase){
+  return db.prepare("SELECT MIN(source_date) first_date,MAX(source_date) last_date FROM import_batches WHERE status='ACTIVE'").get() as {first_date:string|null;last_date:string|null};
 }

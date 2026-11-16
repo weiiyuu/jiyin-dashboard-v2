@@ -282,3 +282,13 @@
 - Browser: 使用 `/private/tmp` 隔離 SQLite 啟動本機頁面 Smoke Test，Excel 匯入頁正常載入；部分停止狀態由純輯與 Route 整合測試驗證。
 - Safety: 未使用私人 Excel、正式 SQLite／Docker Volume、真實 Collector、企業 API 或 `.env.local`；未 Push。
 - Commit: 本次本機 changeset；最終 hash 於交付回報提供。
+
+## Stage 8 後 — 異常事件分析 V2
+
+- Status: 五區資訊架構、環境警示統計與紅燈統計已完成，等待人工 UAT。
+- Alarm storage audit: SQLite Schema、Excel 欄位映射、交易寫入與 Active Batch 查詢已核對；11 個來源欄位完整保存，描述欄缺值維持 NULL，無需新增 Migration。合成匯入另驗證 `event_at_ms`、感測器、分類及 `duration_original` 實際落庫。
+- Statistics: 環境警示正向分類排除加工完成通知，未知分類不納入 KPI；英文時／分／秒原文以純函式解析且保留原文。紅燈只加總目前品質規則下 transition-eligible 的 Red 秒數，連續群組不稱故障次數，黃燈不列入 V2 KPI。
+- UI/API: 新增最近 Active Batch 預設日期、日期／類型／進階篩選、三張 KPI、單日小時／多日日趨勢、每頁 20 筆明細與展開追溯、Top 8／完整來源排行。全部類型下 Alarm 與 Red 維持獨立量綱及切換。
+- Verification: 完整 Vitest 168 tests passed、1 個私人檔案 opt-in suite skipped；最終聚焦 58 tests、Typecheck、Lint 與 Webpack Production Build passed。隔離合成 SQLite 的瀏覽器 Smoke 在 489px 與 1366px 驗證五區布局、環境警示／紅燈切換、動態單位、內部表格捲動及無頁面水平溢位。
+- Safety: 未讀取私人 Excel、未操作正式 SQLite／Docker Volume、未呼叫企業 API、未控制真實 Collector，參考圖片未納入 Git，未 Push。
+- Commit: 本次本機 changeset；最終 hash 於交付回報提供。

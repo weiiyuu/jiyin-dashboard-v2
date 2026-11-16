@@ -115,6 +115,22 @@ describe("standardized workbook parser",()=>{
     });
   });
 
+  it("persists all eleven Alarm source fields without replacing missing values",()=>{
+    const sheets=workbook("2025-06-03");
+    sheets[2].data.push(["2025-06-03 01:02:03","溫度監測器 1","temp-a1","analog","A 區","溫度過高","value >= 26","26.5","1 hour 2 minutes 3 seconds","環境/類比感測器警示","已分類"]);
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
+    const preview=parseWorkbookSheets(sheets,Buffer.from("all-alarm-fields"));
+    expect(preview.canConfirm).toBe(true);
+    const db=setup();confirmImport(db,preview,{nowMs:1});
+    expect(db.prepare(`SELECT event_time_text,event_at_ms,sensor_name,sensor_id,sensor_type,group_text,rule_name,
+      rule_condition_text,current_value_text,duration_original,initial_classification,classification_status
+      FROM history_alarm_events`).get()).toEqual({
+      event_time_text:"2025-06-03 01:02:03",event_at_ms:Date.parse("2025-06-02T17:02:03.000Z"),sensor_name:"溫度監測器 1",
+      sensor_id:"temp-a1",sensor_type:"analog",group_text:"A 區",rule_name:"溫度過高",rule_condition_text:"value >= 26",
+      current_value_text:"26.5",duration_original:"1 hour 2 minutes 3 seconds",initial_classification:"環境/類比感測器警示",classification_status:"已分類",
+    });
+  });
+
   it("preserves missing source quality and applies per-metric environment eligibility",()=>{
     const sheets=workbook("2025-06-04");
     sheets[0].data[1][19]=null;

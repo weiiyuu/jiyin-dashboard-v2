@@ -6,7 +6,7 @@ import { openDatabase, type AppDatabase } from "@/server/db/connection";
 import { applyMigrations } from "@/server/db/migrations";
 import { confirmImport } from "@/server/import/import-repository";
 import { parseWorkbookSheets } from "@/server/import/workbook-parser";
-import { getHistoryEvents, getProcessingComparison, getProcessingRange } from "@/server/statistics/history-service";
+import { getHistoryEvents, getHistoryEventsDefaults, getProcessingComparison, getProcessingRange } from "@/server/statistics/history-service";
 import { standardizedWorkbook } from "./fixtures/standardized-workbook";
 
 const roots:string[]=[];const dbs:AppDatabase[]=[];
@@ -42,6 +42,10 @@ function importMachineSet(db:AppDatabase,date:string,entries:Array<{machineId:st
 }
 
 describe("active historical query integration",()=>{
+  it("defaults the anomaly date range to the latest seven active dates without using today",()=>{
+    const db=setup();importDay(db,"2025-05-01",180,"early");importDay(db,"2025-06-10",180,"latest");
+    expect(getHistoryEventsDefaults(db)).toEqual({startDate:"2025-06-04",endDate:"2025-06-10"});
+  });
   it("calculates an eligible six-state share from active database rows",()=>{
     const db=setup(),sheets=standardizedWorkbook("2025-06-05"),machine=sheets[0].data[1];machine[7]=0;machine[15]=0;
     const preview=parseWorkbookSheets(sheets,Buffer.from("six-state"));expect(preview.canConfirm).toBe(true);confirmImport(db,preview,{nowMs:1});
@@ -158,6 +162,7 @@ describe("active historical query integration",()=>{
       {sourceDate:"2025-06-01",sourceStatus:"PROVIDED_EMPTY",rowCount:0},
       {sourceDate:"2025-06-02",sourceStatus:"PROVIDED_NONEMPTY",rowCount:1},
     ]);
+    expect(result.v2.alarm.coverage).toEqual(result.alarmCoverage);
     expect(result.items[0]).toMatchObject({kind:"ENVIRONMENT_ALARM",alarmEventId:expect.any(Number),sourceRowNumber:2,sensorId:"sensor-1",currentValue:41,durationOriginal:null});
     expect(result.pagination).toEqual({page:1,pageSize:50,total:1});
   });
@@ -177,6 +182,8 @@ describe("active historical query integration",()=>{
     const preview=parseWorkbookSheets(sheets,Buffer.from("missing-alarm-source"));confirmImport(db,preview,{nowMs:1});
     const result=getHistoryEvents(db,{startDate:"2025-06-03",endDate:"2025-06-03",machineIds:["A1"],page:1,pageSize:50});
     expect(result.alarmCoverage).toEqual([{sourceDate:"2025-06-03",sourceStatus:"MISSING",rowCount:null}]);
+    expect(result.v2.alarm.summary.count).toBeNull();
+    expect(result.v2.alarm.trend.every((point)=>point.value===null)).toBe(true);
   });
 
   it("excludes replaced Alarm rows from active history queries",()=>{
@@ -188,5 +195,47 @@ describe("active historical query integration",()=>{
     const result=getHistoryEvents(db,{startDate:"2025-06-04",endDate:"2025-06-04",machineIds:["A1"],page:1,pageSize:50});
     expect(result.items.map((item)=>item.sensorId)).toEqual(["sensor-new"]);
     expect(result.alarmCoverage[0]).toMatchObject({sourceStatus:"PROVIDED_NONEMPTY",rowCount:1});
+    expect(result.v2.alarm.details.items.map((item)=>item.sensorId)).toEqual(["sensor-new"]);
+  });
+
+  it("uses one consistent V2 classification and duration population for KPI, trend, detail and ranking",()=>{
+    const db=setup(),sheets=standardizedWorkbook("2025-06-05");
+    sheets[2].data.push(
+      ["2025-06-05 01:00:00","溫度 1","temp-1","analog","A","高溫","x",27,"1 minute","環境/類比感測器警示","已分類"],
+      ["2025-06-05 02:00:00","溫度 1","temp-1","analog","A","高溫","x",28,"3 minutes","環境/類比感測器警示","已分類"],
+      ["2025-06-05 03:00:00","溫度 2","temp-2","analog","A","高溫","x",29,null,"環境/類比感測器警示","已分類"],
+      ["2025-06-05 04:00:00","A3 燈號","lamp-a3","lamp","A","Print Complete","x",1,"2 seconds","加工完成通知","已分類"],
+    );
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=4;
+    confirmImport(db,parseWorkbookSheets(sheets,Buffer.from("v2-alarm")),{nowMs:1});
+    const result=getHistoryEvents(db,{startDate:"2025-06-05",endDate:"2025-06-05",machineIds:["A1"],mode:"all",detailKind:"alarm",page:1,pageSize:20});
+    expect(result.v2.alarm.summary).toMatchObject({count:3,averageDurationSeconds:120,maximumDurationSeconds:180,validDurationCount:2});
+    expect(result.v2.alarm.sourceBoundary).toMatchObject({environmentAlertRows:3,excludedNotificationRows:1});
+    expect(result.v2.alarm.details.items).toHaveLength(3);
+    expect(result.v2.alarm.ranking[0]).toMatchObject({key:"temp-1",value:2});
+    expect(result.v2.alarm.trend.reduce((sum,point)=>sum+(point.value??0),0)).toBe(3);
+  });
+
+  it("keeps an unknown Alarm classification visible for review without adding it to KPI or ranking",()=>{
+    const db=setup(),sheets=standardizedWorkbook("2025-06-05");
+    sheets[2].data.push(["2025-06-05 08:00:00","待確認來源","unknown-1",null,null,null,null,null,null,null,null]);
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
+    confirmImport(db,parseWorkbookSheets(sheets,Buffer.from("unknown-alarm")),{nowMs:1});
+    const result=getHistoryEvents(db,{startDate:"2025-06-05",endDate:"2025-06-05",machineIds:["A1"],page:1,pageSize:20});
+    expect(result.v2.alarm.summary).toMatchObject({count:0,unknownClassificationCount:1});
+    expect(result.v2.alarm.ranking).toEqual([]);
+    expect(result.v2.alarm.details.items[0]).toMatchObject({sensorId:"unknown-1",sourceKind:"UNKNOWN"});
+  });
+
+  it("assigns a 23:59 Alarm to its start day without clipping a cross-day duration",()=>{
+    const db=setup(),sheets=standardizedWorkbook("2025-06-06");
+    sheets[2].data.push(["2025-06-06 23:59:00","溫度 1","temp-1","analog","A","高溫","x",27,"12 hours 14 seconds","環境/類比感測器警示","已分類"]);
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=1;
+    confirmImport(db,parseWorkbookSheets(sheets,Buffer.from("cross-day-alarm")),{nowMs:1});
+    const day=getHistoryEvents(db,{startDate:"2025-06-06",endDate:"2025-06-06",machineIds:["A1"],page:1,pageSize:20});
+    expect(day.v2.alarm.summary).toMatchObject({count:1,maximumDurationSeconds:43214});
+    expect(day.v2.alarm.trend[23].value).toBe(1);
+    const next=getHistoryEvents(db,{startDate:"2025-06-07",endDate:"2025-06-07",machineIds:["A1"],page:1,pageSize:20});
+    expect(next.v2.alarm.summary.count).toBeNull();
   });
 });

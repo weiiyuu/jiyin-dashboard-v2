@@ -1,9 +1,12 @@
 import type { AppDatabase } from "@/server/db/connection";
 import {
   getActiveAlarmEvents,
+  getActiveHistoryDateBounds,
+  getAllActiveAlarmEvents,
   getActiveBatchCoverage,
   getActiveMachineIntervalsBySourceDate,
 } from "@/server/db/history-repository";
+import { classifyAlarmSource, parseAlarmDurationSeconds } from "./anomaly-events";
 import { CURRENT_QUALITY_RULE_VERSION } from "@/server/import/workbook-parser";
 import {
   bucketGreenSeconds,
@@ -509,6 +512,52 @@ export interface HistoryEventsInput {
   ruleName?: string;
   page: number;
   pageSize: number;
+  mode?: "all" | "alarm" | "red";
+  detailKind?: "alarm" | "red";
+  sensorQuery?: string;
+  ruleQuery?: string;
+}
+
+function alarmItem(row: Record<string, unknown>) {
+  const item = {
+    kind: "ENVIRONMENT_ALARM" as const,
+    alarmEventId: Number(row.alarm_event_id),
+    batchId: Number(row.batch_id),
+    sourceRowNumber: Number(row.source_row_number),
+    sourceDate: String(row.source_date),
+    eventAtMs: Number(row.event_at_ms),
+    eventTimeText: String(row.event_time_text),
+    sensorId: String(row.sensor_id),
+    sensorName: nullableText(row.sensor_name),
+    sensorType: nullableText(row.sensor_type),
+    groupText: nullableText(row.group_text),
+    ruleName: nullableText(row.rule_name),
+    ruleCondition: nullableText(row.rule_condition_text),
+    currentValue: nullableNumber(row.current_value_numeric),
+    currentValueText: nullableText(row.current_value_text),
+    durationOriginal: nullableText(row.duration_original),
+    classification: nullableText(row.initial_classification),
+    classificationStatus: nullableText(row.classification_status),
+  };
+  return { ...item, durationSeconds: parseAlarmDurationSeconds(item.durationOriginal), sourceKind: classifyAlarmSource({ sensorType: item.sensorType, initialClassification: item.classification }) };
+}
+
+function taipeiHour(ms: number) {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Taipei", hour: "2-digit", hourCycle: "h23" }).format(new Date(ms)));
+}
+
+function pageSlice<T>(items: T[], page: number, pageSize: number) {
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  return { items: items.slice((safePage - 1) * pageSize, safePage * pageSize), pagination: { page: safePage, pageSize, total, totalPages } };
+}
+
+export function getHistoryEventsDefaults(db: AppDatabase) {
+  const bounds = getActiveHistoryDateBounds(db);
+  if (!bounds.last_date) return { startDate: null, endDate: null };
+  const recent = addDays(bounds.last_date, -6);
+  return { startDate: bounds.first_date && bounds.first_date > recent ? bounds.first_date : recent, endDate: bounds.last_date };
 }
 
 export function getHistoryEvents(db: AppDatabase, input: HistoryEventsInput) {
@@ -526,6 +575,54 @@ export function getHistoryEvents(db: AppDatabase, input: HistoryEventsInput) {
     const readable = batch.alarm_source_status === "PROVIDED_NONEMPTY" || batch.alarm_source_status === "PROVIDED_EMPTY";
     return { sourceDate, sourceStatus: batch.alarm_source_status, rowCount: readable ? batch.alarm_row_count : null };
   });
+  const rawAlarmRows = getAllActiveAlarmEvents(db, {
+    startDate: input.startDate,
+    endDate: input.endDate,
+    sensorIds: input.sensorIds,
+    sensorType: input.sensorType,
+    ruleName: input.ruleName,
+  }).map(alarmItem).filter((item) => {
+    const sensorQuery = input.sensorQuery?.trim().toLowerCase();
+    const ruleQuery = input.ruleQuery?.trim().toLowerCase();
+    return (!sensorQuery || `${item.sensorId} ${item.sensorName ?? ""}`.toLowerCase().includes(sensorQuery))
+      && (!ruleQuery || (item.ruleName ?? "").toLowerCase().includes(ruleQuery));
+  });
+  const environmentAlarms = rawAlarmRows.filter((item) => item.sourceKind === "ENVIRONMENT_ALERT");
+  const unknownAlarms = rawAlarmRows.filter((item) => item.sourceKind === "UNKNOWN");
+  const reviewableAlarmRows = rawAlarmRows.filter((item) => item.sourceKind !== "NON_ANOMALY_NOTIFICATION");
+  const durations = environmentAlarms.map((item) => item.durationSeconds).filter((value): value is number => value !== null);
+  const coverageByDate = new Map(alarmCoverage.map((item) => [item.sourceDate, item]));
+  const alarmTrend = requestedDays === 1
+    ? Array.from({ length: 24 }, (_, hour) => ({
+        label: `${String(hour).padStart(2, "0")}:00`,
+        value: !["PROVIDED_EMPTY","PROVIDED_NONEMPTY"].includes(alarmCoverage[0]?.sourceStatus ?? "MISSING") ? null : environmentAlarms.filter((item) => taipeiHour(item.eventAtMs) === hour).length,
+      }))
+    : Array.from({ length: requestedDays }, (_, index) => {
+        const sourceDate = addDays(input.startDate, index);
+        return { label: sourceDate, value: !["PROVIDED_EMPTY","PROVIDED_NONEMPTY"].includes(coverageByDate.get(sourceDate)?.sourceStatus ?? "MISSING") ? null : environmentAlarms.filter((item) => item.sourceDate === sourceDate).length };
+      });
+  const alarmRanking = [...environmentAlarms.reduce((map, item) => {
+    const current = map.get(item.sensorId) ?? { key: item.sensorId, label: item.sensorName ?? item.sensorId, value: 0 };
+    current.value += 1; map.set(item.sensorId, current); return map;
+  }, new Map<string, {key:string;label:string;value:number}>()).values()].sort((a, b) => b.value - a.value || a.key.localeCompare(b.key));
+  const eligibleRedRows = rows.filter((row) => row.qualityRuleVersion === CURRENT_QUALITY_RULE_VERSION && row.transitionEligible && row.redSeconds !== null && row.redSeconds >= 0);
+  const redSeconds = eligibleRedRows.length ? eligibleRedRows.reduce((sum, row) => sum + (row.redSeconds ?? 0), 0) : null;
+  const redRuns = groupContinuousStateRuns(rows, "red", CURRENT_QUALITY_RULE_VERSION).sort((a, b) => b.startMs - a.startMs);
+  const redTrend = requestedDays === 1
+    ? Array.from({ length: 24 }, (_, hour) => {
+        const bucket = eligibleRedRows.filter((row) => taipeiHour(row.intervalStartMs) === hour);
+        return { label: `${String(hour).padStart(2, "0")}:00`, value: bucket.length ? bucket.reduce((sum, row) => sum + (row.redSeconds ?? 0), 0) / 3600 : null };
+      })
+    : Array.from({ length: requestedDays }, (_, index) => {
+        const sourceDate = addDays(input.startDate, index), bucket = eligibleRedRows.filter((row) => row.sourceDate === sourceDate);
+        return { label: sourceDate, value: bucket.length ? bucket.reduce((sum, row) => sum + (row.redSeconds ?? 0), 0) / 3600 : null };
+      });
+  const redRanking = machineIds.map((machineId) => {
+    const bucket = eligibleRedRows.filter((row) => row.machineId === machineId);
+    return { key: machineId, label: machineId, value: bucket.length ? bucket.reduce((sum, row) => sum + (row.redSeconds ?? 0), 0) / 3600 : null };
+  }).filter((item) => item.value !== null).sort((a, b) => (b.value ?? 0) - (a.value ?? 0) || a.key.localeCompare(b.key));
+  const alarmPage = pageSlice(reviewableAlarmRows, input.page, input.pageSize);
+  const redPage = pageSlice(redRuns, input.page, input.pageSize);
   const alarms = getActiveAlarmEvents(db, {
     startDate: input.startDate,
     endDate: input.endDate,
@@ -565,5 +662,30 @@ export function getHistoryEvents(db: AppDatabase, input: HistoryEventsInput) {
     alarmCoverage,
     items,
     pagination: { page: input.page, pageSize: input.pageSize, total: alarms.total },
+    v2: {
+      mode: input.mode ?? "all",
+      range: { startDate: input.startDate, endDate: input.endDate, requestedDays },
+      alarm: {
+        summary: {
+          count: alarmCoverage.every((item) => !["PROVIDED_EMPTY","PROVIDED_NONEMPTY"].includes(item.sourceStatus)) ? null : environmentAlarms.length,
+          averageDurationSeconds: durations.length ? durations.reduce((sum, value) => sum + value, 0) / durations.length : null,
+          maximumDurationSeconds: durations.length ? Math.max(...durations) : null,
+          validDurationCount: durations.length,
+          unknownClassificationCount: unknownAlarms.length,
+        },
+        sourceBoundary: { totalRows: rawAlarmRows.length, environmentAlertRows: environmentAlarms.length, excludedNotificationRows: rawAlarmRows.filter((item) => item.sourceKind === "NON_ANOMALY_NOTIFICATION").length, unknownRows: unknownAlarms.length },
+        coverage: alarmCoverage,
+        trend: alarmTrend,
+        ranking: alarmRanking,
+        details: alarmPage,
+      },
+      red: {
+        summary: { totalSeconds: redSeconds, runCount: redRuns.length, affectedMachineCount: new Set(redRuns.map((run) => run.machineId)).size },
+        coverage: { importedIntervals: rows.length, eligibleIntervals: eligibleRedRows.length, daysWithActiveBatch: batchRows.length, requestedDays },
+        trend: redTrend,
+        ranking: redRanking,
+        details: redPage,
+      },
+    },
   };
 }
