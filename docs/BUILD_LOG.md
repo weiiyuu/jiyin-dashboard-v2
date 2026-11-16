@@ -292,3 +292,10 @@
 - Verification: 完整 Vitest 168 tests passed、1 個私人檔案 opt-in suite skipped；最終聚焦 58 tests、Typecheck、Lint 與 Webpack Production Build passed。隔離合成 SQLite 的瀏覽器 Smoke 在 489px 與 1366px 驗證五區布局、環境警示／紅燈切換、動態單位、內部表格捲動及無頁面水平溢位。
 - Safety: 未讀取私人 Excel、未操作正式 SQLite／Docker Volume、未呼叫企業 API、未控制真實 Collector，參考圖片未納入 Git，未 Push。
 - Commit: 本次本機 changeset；最終 hash 於交付回報提供。
+
+## Stage 8 後 — 歷史圖表最終 UAT 修正
+
+- Status: 異常事件分析區塊順序、KPI 說明、提醒 icon 及 Alarm 整數 Y 軸已修正；異常事件與機台運轉趨勢圖改用共用的規律主要時間刻度選擇。
+- Axis behavior: 所有真實資料點、NULL gap、分桶與 Tooltip 保留；末筆資料只在符合主要步距時顯示 X 軸標籤。單日 24:00、週比較 1–7 日及月比較日期對齊規則未變更。
+- Verification: 14 項相關 Vitest、Typecheck、Lint、Webpack Production Build 通過。隔離合成 SQLite 的瀏覽器 Smoke Test 驗證 14 天刻度為 06/01、03、05、07、09、11、13，06/14 資料點仍可顯示 Tooltip；Alarm Y 軸為 0、5、10、15 整數刻度。760／1280／1366／1440px 皆無頁面級水平溢位。
+- Safety: 未呼叫企業 API、未使用正式 SQLite／Excel／Docker Volume，未控制真實 Collector，未 Push。

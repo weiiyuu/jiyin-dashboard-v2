@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { OperationShareChart, RankingChart, TrendChart, comparisonRelativeChangeLabel } from "@/components/history-widgets";
-import { buildTrendAxisLabels, capacityHourScale, comparisonInputRange, formatDurationHours, niceHourScale, rangeGrainControl } from "@/features/history/chart-ui-model";
+import { buildTrendAxisLabels, capacityHourScale, comparisonInputRange, formatDurationHours, niceHourScale, niceIntegerScale, rangeGrainControl, regularTickIndexes } from "@/features/history/chart-ui-model";
 
 describe("Stage 5.3 UAT visual V2 models",()=>{
   it("formats display durations to minutes without changing source precision",()=>{
@@ -32,6 +32,20 @@ describe("Stage 5.3 UAT visual V2 models",()=>{
     expect(week.ticks.map((tick)=>tick.label)).toEqual(["第1天","第2天","第3天","第4天","第5天","第6天","第7天"]);
     const month=buildTrendAxisLabels("COMPARE_MONTH",Array.from({length:31},(_,index)=>String(index+1)));
     expect(month.ticks.map((tick)=>tick.label)).toEqual(["1日","5日","10日","15日","20日","25日","31日"]);
+  });
+
+  it("uses regular major ticks without forcing a nearby final label",()=>{
+    const dates=Array.from({length:14},(_,index)=>`2025-06-${String(index+1).padStart(2,"0")}`);
+    expect(regularTickIndexes(dates.length)).toEqual([0,2,4,6,8,10,12]);
+    expect(buildTrendAxisLabels("RANGE_MULTI",dates).ticks.map((tick)=>tick.label)).toEqual(["06/01","06/03","06/05","06/07","06/09","06/11","06/13"]);
+    expect(regularTickIndexes(9)).toEqual([0,2,4,6,8]);
+  });
+
+  it("creates non-negative integer scales for event counts",()=>{
+    expect(niceIntegerScale(17)).toEqual({max:20,step:5,ticks:[0,5,10,15,20]});
+    const small=niceIntegerScale(3);
+    expect(small.ticks.every(Number.isInteger)).toBe(true);
+    expect(small.ticks.at(-1)).toBeGreaterThanOrEqual(3);
   });
 
   it("renders R1 as solid shared-scale bars with human durations",()=>{

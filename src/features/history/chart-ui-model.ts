@@ -53,9 +53,21 @@ export function capacityHourScale(dataMax: number, capacity: number, zeroFallbac
   return { max: safeCapacity, step: nice.step, ticks: [...new Set(ticks)], exceeded: false };
 }
 
-function sparseIndexes(length: number, maximumTicks = 8) {
-  if (length <= maximumTicks) return Array.from({ length }, (_, index) => index);
-  return [...new Set(Array.from({ length: maximumTicks }, (_, index) => Math.round(index * (length - 1) / (maximumTicks - 1))))];
+export function regularTickIndexes(length: number, maximumTicks = 8) {
+  if (length <= 0) return [];
+  const step = Math.max(1, Math.ceil(length / maximumTicks));
+  return Array.from({ length: Math.ceil(length / step) }, (_, index) => index * step).filter((index) => index < length);
+}
+
+export function niceIntegerScale(maxValue: number, maximumIntervals = 5) {
+  const safeMax = Math.max(1, Math.ceil(Number.isFinite(maxValue) ? maxValue : 0));
+  const rawStep = safeMax / maximumIntervals;
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, rawStep)));
+  const fraction = rawStep / magnitude;
+  const niceFraction = [1, 2, 5, 10].find((candidate) => candidate >= fraction) ?? 10;
+  const step = Math.max(1, niceFraction * magnitude);
+  const max = Math.ceil(safeMax / step) * step;
+  return { max, step, ticks: Array.from({ length: max / step + 1 }, (_, index) => index * step) };
 }
 
 function shortDate(value: string) {
@@ -77,7 +89,7 @@ export function buildTrendAxisLabels(mode: TrendAxisMode, positions: string[]): 
     const indexes = [0, 4, 9, 14, 19, 24, 30].filter((index) => index < positions.length);
     return { ticks: indexes.map((index) => ({ index, label: `${index + 1}日` })) };
   }
-  return { ticks: sparseIndexes(positions.length).map((index) => ({ index, label: shortDate(positions[index] ?? "") })) };
+  return { ticks: regularTickIndexes(positions.length).map((index) => ({ index, label: shortDate(positions[index] ?? "") })) };
 }
 
 export function formatAxisHours(value: number, step: number, unit: "HOURS" | "HOURS_PER_DAY" = "HOURS") {

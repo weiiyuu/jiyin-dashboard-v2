@@ -226,6 +226,7 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
 .machine-detail-status.lamp-off{border-color:rgba(170,159,161,.55);color:#e1d8da;background:rgba(133,124,126,.17)}
 .machine-detail-status.lamp-off::before{background:#918789}
 .notice-icon{display:inline-flex;flex:0 0 auto;align-items:flex-start;padding-top:2px;color:#d8b77a}
+.metric-label{display:flex;align-items:center;gap:7px}.metric-info{display:inline-grid;place-items:center;flex:0 0 auto;color:var(--muted);cursor:help;border-radius:50%;outline:none}.metric-info:hover,.metric-info:focus-visible{color:var(--cream)}.metric-info:focus-visible{box-shadow:0 0 0 2px rgba(240,203,184,.38)}
 .chart-data-warning{margin:8px 0 14px;padding:9px 12px;border:1px solid rgba(226,189,91,.34);border-radius:8px;color:#f0d48e;background:rgba(82,66,28,.2);font-size:14px;line-height:1.5}
 
 @media(max-width:760px){
