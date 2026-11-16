@@ -187,3 +187,13 @@
 - Commit: This local changeset; final hash is reported in the handoff.
 - Open issues: User taste check for glow/card density, target-Mac native Live/Demo confirmation, and supervised real multi-round Live collection remain pending.
 - Next: Stop for Stage 7 UAT Round 1 review; do not begin Stage 8.
+
+## Stage 7 — UAT Round 2 local UI and connection-status refinement
+
+- Status: Seven scoped fixes complete with synthetic／Mock regression and isolated-browser smoke; human UAT remains pending.
+- Main changes: Manual endpoint audits now drive the service-status table without changing Collector success; manual tests stop after the first failed endpoint and retain later endpoints as untested; machine cards/details were shortened together; chart paths and red warning lines were clarified; monitor refresh actions now read「更新畫面」and remain local-only.
+- Tests: Stage 6／7 targeted suite passed 32 tests; typecheck, lint, Webpack production build and `git diff --check` passed.
+- Browser: Timeout then success Mock states were verified without readings; 1280px machine cards measured 186.90px with 0px grid/detail bottom delta, compared with approximately 283px in Round 1. 1280／1366／1440／760 checks showed no obvious clipping or page overflow; chart Tooltip, gaps, transient markers and exact 26°C／40%RH labels remained operational.
+- Safety: Six ignored reference screenshots were viewed but not committed. No enterprise request, real Collector, product DB／volume, push, deployment, Stage 5 core change, or Stage 8 work occurred.
+- Commit: This local changeset; final hash is reported in the handoff.
+- Next: Stop for Stage 7 UAT Round 2 human review.

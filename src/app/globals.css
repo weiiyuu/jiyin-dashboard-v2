@@ -158,3 +158,44 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
 .environment-sensor-card{display:grid;align-content:space-between;min-height:145px;border-width:2px}.environment-sensor-card>strong{margin:24px 0 4px}.live-chart-toolbar{align-items:center}.connection-facts{grid-template-columns:1fr}.connection-facts>div,.connection-facts>div:nth-child(odd),.connection-facts>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}.connection-facts>div:last-child{border-bottom:0}.connection-table{min-width:760px;table-layout:fixed}.connection-table th:nth-child(1){width:220px}.connection-table th:nth-child(2){width:150px}.connection-table th:nth-child(3){width:205px}
 @media(max-width:1080px){.machine-card-grid{grid-template-rows:repeat(2,minmax(170px,auto))}.machine-detail{height:auto}.environment-area-times{text-align:left}}
 @media(max-width:760px){.machine-card-grid{grid-template-rows:none}.live-machine-card{min-height:170px}.environment-area-times{font-size:12px}.live-chart-toolbar{align-items:flex-start}}
+
+/* Stage 7 UAT round 2: compact monitoring layout and clearer local controls. */
+.live-auto-refresh-note{color:var(--muted);font-size:13px;white-space:nowrap}
+.live-refresh-button{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;color:#eadbd6;background:rgba(24,14,18,.42);font:inherit;font-size:14px;font-weight:750;cursor:pointer}
+.live-refresh-button:hover{border-color:var(--line-strong);background:rgba(75,48,55,.62)}
+.live-refresh-button:focus-visible{outline:2px solid var(--cream);outline-offset:2px}
+.live-refresh-button:disabled{cursor:wait;opacity:.62}
+.live-refresh-button>span{font-size:17px;line-height:1}
+
+.machine-area-layout{min-height:0}
+.machine-card-grid{gap:12px;padding:16px}
+.live-machine-card{padding:15px}
+.live-machine-card.is-selected{outline:1px solid rgba(241,208,187,.58);outline-offset:-5px}
+.machine-card-name{margin-top:9px}
+.machine-card-bottom{padding-top:10px}
+.machine-detail{gap:12px;padding:16px}
+.machine-detail-identity{padding-bottom:12px}
+.machine-detail-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+.machine-detail-list>div,.machine-detail-list>div:nth-child(odd),.machine-detail-list>div:nth-last-child(-n+2){padding:11px 12px;border-right:1px solid var(--line);border-bottom:0}
+.machine-detail-list>div:last-child{border-right:0}
+.completion-box{padding:12px}
+.completion-box p{margin:6px 0}
+.machine-environment-link{padding:11px 13px}
+
+.live-series-line{shape-rendering:geometricPrecision;vector-effect:non-scaling-stroke}
+.live-reference-line{stroke:#ff777d;stroke-width:2.6;stroke-dasharray:9 6;vector-effect:non-scaling-stroke}
+.live-reference-label{fill:#ff9da1;font-size:15px;font-weight:800}
+.endpoint-check-source{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+
+@media(max-width:1080px){
+  .machine-card-grid{grid-template-rows:repeat(2,minmax(160px,auto))}
+  .machine-detail-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .live-provider-actions{align-items:center}
+  .live-auto-refresh-note{flex-basis:100%}
+  .machine-card-grid{grid-template-rows:none}
+  .machine-detail-list{grid-template-columns:1fr}
+  .machine-detail-list>div,.machine-detail-list>div:nth-child(odd),.machine-detail-list>div:nth-last-child(-n+2){border-right:0;border-bottom:1px solid var(--line)}
+  .machine-detail-list>div:last-child{border-bottom:0}
+}

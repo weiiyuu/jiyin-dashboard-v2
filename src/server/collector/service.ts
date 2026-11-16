@@ -19,11 +19,20 @@ async function fetchWithRetry(client:EnterpriseGetter,endpoint:EnterpriseEndpoin
   }
 }
 
+async function fetchOnce(client:EnterpriseGetter,endpoint:EnterpriseEndpoint):Promise<EndpointResult>{
+  const started=Date.now();
+  try{return await client.get(endpoint,1);}catch(error){
+    const failure=error instanceof EnterpriseClientError?error:new EnterpriseClientError("NETWORK","企業 API 網路連線失敗",null,true);
+    return {endpoint,error:failure,completedAtMs:Date.now(),durationMs:Date.now()-started,attemptCount:1};
+  }
+}
+
 function audit(result:EndpointResult):EndpointAuditInput{
   if(isEndpointSuccess(result)){const responseTimeMs=Date.parse(result.envelope.responseTime);return {endpoint:result.endpoint,attempted:true,attemptCount:result.attemptCount,httpStatus:result.httpStatus,apiResponseCode:result.envelope.responseCode,apiResponseMessage:result.envelope.responseMsg,responseTimeText:result.envelope.responseTime,responseTimeMs:Number.isFinite(responseTimeMs)?responseTimeMs:null,fetchedAtMs:result.fetchedAtMs,completedAtMs:result.fetchedAtMs+result.durationMs,durationMs:result.durationMs,payloadHash:payloadHash(result.envelope.data),result:"SUCCESS",errorCode:null,errorMessageSafe:null};}
   return {endpoint:result.endpoint,attempted:true,attemptCount:result.attemptCount,httpStatus:result.error.httpStatus,apiResponseCode:null,apiResponseMessage:null,responseTimeText:null,responseTimeMs:null,fetchedAtMs:null,completedAtMs:result.completedAtMs,durationMs:result.durationMs,payloadHash:null,result:result.error.code==="SCHEMA"?"SCHEMA_ERROR":"FAILED",errorCode:result.error.code,errorMessageSafe:result.error.message};
 }
 function notDue(endpoint:EnterpriseEndpoint,nowMs:number):EndpointAuditInput{return {endpoint,attempted:false,attemptCount:0,httpStatus:null,apiResponseCode:null,apiResponseMessage:null,responseTimeText:null,responseTimeMs:null,fetchedAtMs:null,completedAtMs:nowMs,durationMs:null,payloadHash:null,result:"NOT_DUE",errorCode:null,errorMessageSafe:null};}
+function skippedAfterManualFailure(endpoint:EnterpriseEndpoint,nowMs:number):EndpointAuditInput{return {...notDue(endpoint,nowMs),errorCode:"PREVIOUS_ENDPOINT_FAILED",errorMessageSafe:"本次因前一端點失敗而未繼續"};}
 function catalogLookup(db:AppDatabase,stale:boolean){const rows=db.prepare("SELECT sensor_id,sensor_type,unit,mapping_status FROM sensor_catalog").all() as Array<{sensor_id:string;sensor_type:string|null;unit:string|null;mapping_status:string}>;return new Map(rows.map((row)=>[row.sensor_id,{sensorType:row.sensor_type,unit:row.unit,mappingStatus:row.mapping_status==="MAPPED"?(stale?"STALE_MAPPING":"MAPPED"):"UNMAPPED"} satisfies CatalogLookup]));}
 function metadataDue(db:AppDatabase,nowMs:number,refreshSeconds:number){const row=db.prepare("SELECT COUNT(*) count,MIN(last_verified_at_ms) oldest FROM sensor_catalog").get() as {count:number;oldest:number|null};return row.count===0||row.oldest===null||nowMs-row.oldest>=refreshSeconds*1000;}
 function snapshot(result:Extract<EndpointResult,{envelope:unknown}>):MetadataSnapshotInput{return {endpoint:result.endpoint as "configs"|"groups",payloadHash:payloadHash(result.envelope.data),canonicalJson:stableJson(result.envelope.data),responseTimeText:result.envelope.responseTime,responseTimeMs:Number.isFinite(Date.parse(result.envelope.responseTime))?Date.parse(result.envelope.responseTime):null,fetchedAtMs:result.fetchedAtMs};}
@@ -59,6 +68,15 @@ export function recordSkippedOverlap(db:AppDatabase,input:{trigger:CollectionTri
 export async function runManualConnectionTest(db:AppDatabase,client:EnterpriseGetter,input:{nowMs?:number;sleep?:typeof wait}={}){
   const nowMs=input.nowMs??Date.now(),settings=getSettings(db),inside=isInsideServiceWindow(nowMs);
   const pollRunId=createPollRun(db,{batchTimeText:taipeiIso(nowMs),batchTimeMs:nowMs,sampleSlotMs:null,scheduledForMs:null,startedAtMs:nowMs,providerMode:settings.providerMode,modeRevision:settings.modeRevision,withinServiceWindow:inside,triggerType:"MANUAL_TEST"});
-  const results=await Promise.all(ENDPOINTS.map((endpoint)=>fetchWithRetry(client,endpoint,input.sleep??wait)));
-  const audits=results.map(audit),status=persistManualTest(db,{pollRunId,finishedAtMs:Date.now(),audits});return {pollRunId,status,audits};
+  const results=new Map<EnterpriseEndpoint,EndpointResult>();
+  let failed=false;
+  for(const endpoint of ENDPOINTS){
+    if(failed)continue;
+    const result=await fetchOnce(client,endpoint);
+    results.set(endpoint,result);
+    if(!isEndpointSuccess(result))failed=true;
+  }
+  const finishedAtMs=Date.now();
+  const audits=ENDPOINTS.map((endpoint)=>results.has(endpoint)?audit(results.get(endpoint)!):skippedAfterManualFailure(endpoint,finishedAtMs));
+  const status=persistManualTest(db,{pollRunId,finishedAtMs,audits});return {pollRunId,status,audits};
 }
