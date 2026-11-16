@@ -166,6 +166,13 @@ npm run start:all
 - SQLite 持久儲存在本機 `data/jiyin-dashboard.sqlite`，正常停止與重新啟動不會自動清空，也不會自動與其他電腦同步。Live readings 依現有規則保留 3 天；Excel 匯入的歷史批次使用獨立版本管理。不要將 SQLite、`.env.local`、企業 Excel／JSON、Token 或憑證提交至 GitHub。
 - 每個瀏覽器可獨立選擇 Demo 或 Live 畫面。切換為 Demo 只會改變該瀏覽器的顯示，不會中斷背景 Live Collector。
 
+### Excel 大量匯入
+
+- 可在一次選檔中選取 30 份或更多標準化 `.xlsx`；瀏覽器會依既有安全限制自動拆批，不需要自行每 8 份重選一次。
+- 單次 Preview 請求仍最多 8 份、單檔最多 25 MiB；前端以每批檔案合計 49 MiB 分組，後端原有 50 MiB、解壓大小與儲存格限制仍會再次驗證。
+- Preview 不寫入 SQLite。確認後依序逐檔交易；若後續批次失敗，先前已成功資料會保留，未完成檔案必須重新檢查後再重試。
+- 同一選取集合若有多份相同來源日期，系統會暫停該日期的匯入，要求先移除多餘版本，不會依檔案順序自動覆寫。
+
 ## 7. 選用：Docker Compose
 
 Docker 是第二種運行方式，原生 npm 仍是 Windows／macOS 一般使用者的首選。若要使用 Docker，請先安裝 [Docker Desktop](https://www.docker.com/products/docker-desktop/)，並確認 `docker compose version` 可正常執行。

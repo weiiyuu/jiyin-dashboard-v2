@@ -6,6 +6,7 @@
 
 ### 重要新增功能
 
+- Excel 匯入支援一次選取大量檔案並依既有限制循序分批 Preview／Confirm，提供整體進度、部分失敗保留與安全重試；版本記錄新增頁碼導覽及指定頁跳轉。
 - 完成標準化 Excel 多檔 Preview／Confirm、資料品質分級、NULL 保留、重複與同日版本取代、Active Batch 與版本回復；所有正式寫入均使用 SQLite transaction。
 - 完成機台運轉歷史分析，包含加工時數、趨勢、三態燈號占比、資料覆蓋及日／週／月同期比較；完成異常事件、連續燈號區間與 Alarm 來源呈現。
 - 完成企業 `values`／`configs`／`groups` 客戶端、三分鐘 Collector、Sensor mapping、Live SQLite readings／audit／metadata，以及機台、環境與 API 連線狀態畫面。

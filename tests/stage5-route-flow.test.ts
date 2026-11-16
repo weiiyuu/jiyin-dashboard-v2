@@ -9,6 +9,8 @@ import { POST as activatePost } from "@/app/api/imports/[batchId]/activate/route
 import { GET as batchesGet } from "@/app/api/imports/route";
 import { GET as processingGet } from "@/app/api/history/processing/route";
 import { GET as eventsGet } from "@/app/api/history/events/route";
+import { buildUploadBatches } from "@/features/imports/bulk-import";
+import type { SelectedUpload } from "@/features/imports/import-ui-model";
 import { standardizedWorkbook } from "./fixtures/standardized-workbook";
 import { createSyntheticXlsx } from "./helpers/xlsx-writer";
 
@@ -108,6 +110,40 @@ describe("Stage 5 route-level user flow",()=>{
     }
     for(const entry of entries)expect((await confirm(entry.bytes,entry.name,entry.preview,"INSERT")).status).toBe(200);
     const db=openDatabase(process.env.DATABASE_PATH);expect(db.prepare("SELECT COUNT(*) count FROM import_batches WHERE status='ACTIVE'").get()).toEqual({count});db.close();
+  });
+
+  it.each([9,20,30])("previews and confirms %i files through safe sequential client batches",async(count)=>{
+    const root=mkdtempSync(join(tmpdir(),`jiyin-bulk-${count}-`));roots.push(root);process.env.DATABASE_PATH=join(root,"bulk.sqlite");
+    const entries=Array.from({length:count},(_,index)=>{
+      const day=String(index+1).padStart(2,"0"),name=`2025-07-${day}.xlsx`,bytes=createSyntheticXlsx(standardizedWorkbook(`2025-07-${day}`));
+      return{id:`client-${index}`,name,bytes,file:upload(bytes,name)};
+    });
+    const selected:SelectedUpload[]=entries.map((entry)=>({id:entry.id,file:entry.file}));
+    const groups=buildUploadBatches(selected);expect(groups.every((group)=>group.length<=8)).toBe(true);
+    const previews=new Map<string,PreviewFile>();
+    for(const group of groups){
+      const form=new FormData();for(const item of group){form.append("files",item.file);form.append("clientFileId",item.id);}
+      const response=await previewPost(request("/api/imports/preview",{method:"POST",body:form}));expect(response.status).toBe(200);
+      const body=await response.json() as {data:{files:Array<PreviewFile&{clientFileId:string}>}};
+      body.data.files.forEach((item)=>previews.set(item.clientFileId,item));
+    }
+    expect(previews.size).toBe(count);
+    for(const entry of entries)expect((await confirm(entry.bytes,entry.name,previews.get(entry.id)!,"INSERT")).status).toBe(200);
+    const db=openDatabase(process.env.DATABASE_PATH);expect(db.prepare("SELECT COUNT(*) count FROM import_batches WHERE status='ACTIVE'").get()).toEqual({count});db.close();
+  },60_000);
+
+  it("keeps completed files, rejects a stale same-date confirm, and makes response-loss retry idempotent",async()=>{
+    const root=mkdtempSync(join(tmpdir(),"jiyin-bulk-safety-"));roots.push(root);process.env.DATABASE_PATH=join(root,"bulk-safety.sqlite");
+    const firstBytes=createSyntheticXlsx(standardizedWorkbook("2025-08-01"));
+    const revisedSheets=standardizedWorkbook("2025-08-01");revisedSheets[0].data[1][9]=90;revisedSheets[0].data[1][12]=90;revisedSheets[0].data[1][13]=.025;
+    const revisedBytes=createSyntheticXlsx(revisedSheets);
+    const firstPreview=(await preview(firstBytes,"first.xlsx")).data.files[0],stalePreview=(await preview(revisedBytes,"revision.xlsx")).data.files[0];
+    expect(firstPreview.decision).toBe("INSERT");expect(stalePreview.decision).toBe("INSERT");
+    const firstConfirm=await confirm(firstBytes,"first.xlsx",firstPreview,"INSERT");expect(firstConfirm.status).toBe(200);
+    const duplicateRetry=await confirm(firstBytes,"first.xlsx",firstPreview,"INSERT");expect(duplicateRetry.status).toBe(200);expect(duplicateRetry.body.data.result).toBe("DUPLICATE");
+    const staleConfirm=await confirm(revisedBytes,"revision.xlsx",stalePreview,"INSERT");expect(staleConfirm.status).toBe(409);
+    const refreshed=(await preview(revisedBytes,"revision.xlsx")).data.files[0];expect(refreshed).toMatchObject({decision:"CONFLICT",activeBatchId:firstConfirm.body.data.batchId});
+    const db=openDatabase(process.env.DATABASE_PATH);expect(db.prepare("SELECT COUNT(*) count FROM import_batches").get()).toEqual({count:1});db.close();
   });
 
   it("previews without writes, imports, replaces, refreshes analysis, and rolls back the active version",async()=>{

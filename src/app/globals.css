@@ -238,3 +238,34 @@ select.control{appearance:none;-webkit-appearance:none;padding-right:48px;backgr
   .comparison-ranking-tooltip>.comparison-tooltip-period{align-items:flex-start;display:grid;gap:2px}
   .comparison-tooltip-period b,.comparison-tooltip-period small{white-space:normal}
 }
+
+/* Bulk Excel queue and focused version-history navigation. */
+.bulk-preview-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+.import-operation-progress{display:grid;gap:9px;padding:13px 15px;border:1px solid var(--line);border-radius:8px;background:rgba(24,13,17,.56)}
+.import-operation-progress>div{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.import-operation-progress strong{font-size:16px}.import-operation-progress span{color:var(--muted);font-size:14px}
+.import-operation-progress progress{width:100%;height:9px;accent-color:var(--cream)}
+.import-result-progress{display:flex;flex-wrap:wrap;gap:8px 18px;padding:11px 18px;border-bottom:1px solid var(--line);color:var(--muted);font-size:14px}
+.import-result-progress strong{margin-left:4px;color:var(--cream)}
+.import-selection-conflict{margin:12px 18px 0}.import-selection-conflict p{margin:3px 0 0}
+.file-item-rejected{border-color:rgba(239,119,123,.34);background:rgba(91,30,38,.12)}
+.file-item-rejected .file-meta{color:#e8a4a8}
+.version-pagination{justify-content:space-between;flex-wrap:wrap}
+.pagination-pages,.pagination-number-list,.pagination-jump{display:flex;align-items:center;gap:8px}
+.pagination-number-list{min-width:0}
+.pagination-number{min-width:46px;padding-inline:11px}
+.pagination-number.active{border-color:rgba(241,208,187,.68);color:#fff;background:rgba(117,67,77,.76)}
+.pagination-ellipsis{display:inline-grid;min-width:28px;place-items:center;color:var(--muted)}
+.pagination-jump{position:relative;flex-wrap:wrap}
+.pagination-jump .control{width:72px;min-height:46px;padding-inline:10px;text-align:center}
+.pagination-error{flex-basis:100%;color:#ff9ba0;font-size:14px;text-align:right}
+
+@media(max-width:760px){
+  .bulk-preview-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .import-operation-progress>div{align-items:flex-start;display:grid;gap:3px}
+  .import-result-progress{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .version-pagination{align-items:stretch}
+  .pagination-pages{width:100%;justify-content:space-between;overflow-x:auto;padding-bottom:3px}
+  .pagination-number-list{gap:5px}.pagination-number{min-width:42px}
+  .pagination-jump{width:100%}.pagination-jump .pagination-error{text-align:left}
+}

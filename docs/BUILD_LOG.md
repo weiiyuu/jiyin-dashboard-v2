@@ -262,3 +262,14 @@
 - Browser: 只使用 `/private/tmp` 公開合成 Excel 與隔離 SQLite。首頁、八檔 Preview、長檔名、Demo 機台分類、七日單機排行 168 小時上限、每日趨勢 24 小時上限與週對週比較通過。760／1280／1366／1440px 沒有頁面水平溢位；760px 排行軸已避免次末刻度與真實上限重疊。
 - Safety: 未使用企業 API、正式 SQLite／Docker Volume、`.env.local` 或私人 Excel；未停止或重啟真實 Collector，未 Push。瀏覽器截圖只保留在 Git 忽略的暫存目錄。
 - Commit: 本次本機 changeset；最終 hash 於交付回報提供。
+
+## Stage 8 後 — Excel 大量分批匯入與版本紀錄分頁
+
+- Status: 大量選檔、自動分批 Preview／Confirm、部分失敗安全重試及版本紀錄頁碼／指定頁跳轉已完成；等待使用者人工 UAT。
+- Limits: 後端維持每批 8 份、單檔 25 MiB、原始檔合計 50 MiB；前端以 49 MiB 保守分批並保留既有解壓大小、儲存格數、公式與外部連結檢查。
+- Safety: Preview 仍為零寫入；Confirm 仍逐檔使用獨立 SQLite transaction，每檔重新解析並檢查指紋及 Active Batch CAS。跨批並非單一大交易；已成功檔案在後續失敗時保留，回應中斷或版本變動必須重新 Preview。同一選取集合內的重複來源日期不會依檔案順序自動覆寫。
+- Tests: `tests/bulk-import-ui.test.ts`、`tests/stage5-route-flow.test.ts`、`tests/import.test.ts` 及私有檔案 opt-in suite 共 44 tests passed、1 skipped；包含 9／20／30 份分批、實際 Preview／Confirm、重複略過、同日衝突、回應中斷後重試、頁碼省略與跳頁輸入。`npm run typecheck`、`npm run lint` 及 Webpack Production Build passed。
+- Browser: 只使用 `/private/tmp` 隔離 SQLite 與 61 筆公開合成版本紀錄；已驗證直接頁碼、跳至末頁、無效頁碼阻擋、篩選後回到有效頁且單頁隱藏冗餘控制。
+- Known limit: 現行 API 沒有伺服器端 Preview token／TTL；Preview 只存在當前瀏覽器頁面狀態，頁面重載後必須重新檢查，Confirm 則以重新解析、指紋與 CAS 防止使用過期結果。
+- Safety boundary: 未使用企業 API、正式 Excel／SQLite／Docker Volume、真實 Collector 或私人圖片；未 Push。
+- Commit: 本次本機 changeset；最終 hash 於交付回報提供。
