@@ -8,7 +8,7 @@ import { formatTaipeiDateTime } from "@/features/live/live-ui-model";
 import { ApiClientError, fetchApiEnvelope } from "@/lib/api-client";
 
 interface EndpointStatus { endpoint: string; attempted: boolean; result: string; checkSource: "MANUAL_TEST" | "COLLECTOR" | null; lastCheckedAt: string | null; lastRunAt: string | null; httpStatus: number | null; transport: string; apiResult: string; schemaResult: string; collectionLastAttemptAt: string | null; collectionLastSuccessAt: string | null; latestDataAt: string | null; stale: boolean | null; error: { code: string; message: string } | null }
-interface ConnectionStatus { runtimeMode: "LIVE" | "DEMO"; modeRevision: number; insideServiceWindow: boolean; configured: boolean; tlsMode: string | null; authMode: string | null; collector: { lastAttemptAt: string | null; lastSuccessAt: string | null; latestSensorDataAt: string | null; lastResult: string }; manualTest: { lastAttemptAt: string | null; result: string; endpoints: Array<{ endpoint: string; result: string; error_code?: string }> }; endpoints: EndpointStatus[] }
+interface ConnectionStatus { displayMode: "LIVE" | "DEMO"; collectorMode: "LIVE" | "DEMO"; modeRevision: number; insideServiceWindow: boolean; configured: boolean; tlsMode: string | null; authMode: string | null; collector: { lastAttemptAt: string | null; lastSuccessAt: string | null; latestSensorDataAt: string | null; lastResult: string }; manualTest: { lastAttemptAt: string | null; result: string; endpoints: Array<{ endpoint: string; result: string; error_code?: string }> }; endpoints: EndpointStatus[] }
 interface RuntimeSettings { providerMode: "LIVE" | "DEMO"; modeRevision: number }
 
 function statusTone(value: string): "success" | "warning" | "error" | "info" {
@@ -60,12 +60,12 @@ export default function ApiSettingsPage() {
   useLocalRefresh(load);
 
   async function switchMode(mode: "LIVE" | "DEMO") {
-    if (!status || mode === status.runtimeMode) return;
-    const warning = mode === "DEMO" ? "切換至 Demo 後將停止自動收集，並改為顯示合成示範資料。確定切換？" : "切回 Live 後只會顯示本機已收集的真實資料，不會自動補資料。確定切換？";
+    if (!status || mode === status.displayMode) return;
+    const warning = mode === "DEMO" ? "此瀏覽器將改為顯示合成 Demo；背景 Live 收集不受影響。確定切換？" : "此瀏覽器將改為顯示本機已收集的 Live 資料；不會自動補資料。確定切換？";
     if (!window.confirm(warning)) return;
     setBusy("mode");
     try {
-      await fetchApiEnvelope<RuntimeSettings>("/api/runtime-mode", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode, expectedMode: status.runtimeMode, expectedRevision: status.modeRevision }) });
+      await fetchApiEnvelope<RuntimeSettings>("/api/runtime-mode", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode }) });
       await load(new AbortController().signal);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "模式切換失敗"); }
     finally { setBusy(null); }
@@ -73,7 +73,7 @@ export default function ApiSettingsPage() {
 
   async function manualTest() {
     if (!status || !status.configured) return;
-    const warning = `這會對三項企業資料服務各執行一次連線測試，不會保存監測資料。${status.runtimeMode === "DEMO" ? "目前是 Demo 模式，但此操作仍會連線企業服務。" : ""}${!status.insideServiceWindow ? "目前不在服務時段。" : ""}確定繼續？`;
+    const warning = `這會對三項企業資料服務各執行一次連線測試，不會保存監測資料。${status.displayMode === "DEMO" ? "目前此瀏覽器顯示 Demo，但此操作仍會連線企業服務。" : ""}${!status.insideServiceWindow ? "目前不在服務時段。" : ""}確定繼續？`;
     if (!window.confirm(warning)) return;
     setBusy("test");
     try { await fetchApiEnvelope<{ result: string }>("/api/connection-status/test", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirmOutsideWindow: !status.insideServiceWindow }) }); await load(new AbortController().signal); }
@@ -86,9 +86,9 @@ export default function ApiSettingsPage() {
     {error && <ErrorNotice message={error} onRetry={() => void load(new AbortController().signal)} />}
     {!status && !error && <LoadingState />}
     {status && <>
-      <div className={`connection-mode-banner ${status.runtimeMode.toLowerCase()}`}><div><span>目前資料來源</span><strong>{status.runtimeMode === "DEMO" ? "Demo 示範資料" : "Live 現場資料"}</strong><small>{status.runtimeMode === "DEMO" ? "使用合成資料展示畫面，不會寫入現場監測資料。" : "顯示本機已成功收集的現場資料；連線失敗時不會自動切換 Demo。"}</small></div><div className="mode-switch" role="group" aria-label="資料來源"><button type="button" className={status.runtimeMode === "LIVE" ? "active" : ""} onClick={() => void switchMode("LIVE")} disabled={busy !== null}>Live</button><button type="button" className={status.runtimeMode === "DEMO" ? "active" : ""} onClick={() => void switchMode("DEMO")} disabled={busy !== null}>Demo</button></div></div>
+      <div className={`connection-mode-banner ${status.displayMode.toLowerCase()}`}><div><span>此瀏覽器顯示資料</span><strong>{status.displayMode === "DEMO" ? "Demo 示範資料" : "Live 現場資料"}</strong><small>{status.displayMode === "DEMO" ? "使用合成資料展示畫面；背景 Live 收集不受影響。" : "顯示本機已成功收集的現場資料；連線失敗時不會自動切換 Demo。"}</small></div><div className="mode-switch" role="group" aria-label="資料來源"><button type="button" className={status.displayMode === "LIVE" ? "active" : ""} onClick={() => void switchMode("LIVE")} disabled={busy !== null}>Live</button><button type="button" className={status.displayMode === "DEMO" ? "active" : ""} onClick={() => void switchMode("DEMO")} disabled={busy !== null}>Demo</button></div></div>
       <div className="connection-grid">
-        <Panel title="自動資料收集" subtitle="只有資料成功保存後，才會顯示為收集成功。"><dl className="connection-facts"><div><dt>目前狀態</dt><dd><StatusChip tone={statusTone(status.collector.lastResult)}>{statusLabel(status.collector.lastResult)}</StatusChip></dd></div><div><dt>最近成功收集</dt><dd>{formatTaipeiDateTime(status.collector.lastSuccessAt)}</dd></div><div><dt>最新現場資料</dt><dd>{formatTaipeiDateTime(status.collector.latestSensorDataAt)}</dd></div></dl></Panel>
+        <Panel title="自動資料收集" subtitle="背景 Collector 與此瀏覽器的 Demo／Live 顯示選擇獨立運作。"><dl className="connection-facts"><div><dt>目前狀態</dt><dd><StatusChip tone={statusTone(status.collector.lastResult)}>{statusLabel(status.collector.lastResult)}</StatusChip></dd></div><div><dt>最近成功收集</dt><dd>{formatTaipeiDateTime(status.collector.lastSuccessAt)}</dd></div><div><dt>最新現場資料</dt><dd>{formatTaipeiDateTime(status.collector.latestSensorDataAt)}</dd></div></dl></Panel>
         <Panel title="手動連線測試" subtitle="只測試服務是否可用，不會保存監測資料。" actions={<button className="button primary" type="button" onClick={() => void manualTest()} disabled={!status.configured || busy !== null} aria-busy={busy === "test"}>{busy === "test" ? "正在測試…" : "測試連線"}</button>}><dl className="connection-facts" aria-live="polite"><div><dt>最近結果</dt><dd><StatusChip tone={statusTone(status.manualTest.result)}>{statusLabel(status.manualTest.result)}</StatusChip></dd></div><div><dt>最近測試</dt><dd>{formatTaipeiDateTime(status.manualTest.lastAttemptAt)}</dd></div><div><dt>本機連線設定</dt><dd>{status.configured ? "已完成" : "尚未設定（按鈕已停用）"}</dd></div></dl></Panel>
       </div>
       {!status.insideServiceWindow && <div className="notice warning"><span>i</span><div><strong>目前不在企業資料服務時段</strong><div>這不代表服務故障；現有頁面仍可顯示本機已保存的資料。</div></div></div>}

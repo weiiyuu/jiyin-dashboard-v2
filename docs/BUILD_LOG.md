@@ -223,3 +223,14 @@
 - Checks: 15 targeted tests, Typecheck, Lint, Webpack Production Build, and isolated synthetic-Demo browser smoke passed. No enterprise API, Collector control, product database, runtime-mode switch, push, deployment, or Stage 8 implementation was performed.
 - Stage 8 todo: Decouple Demo presentation mode from background Live collection so switching the UI to Demo never interrupts real data collection. This requirement is recorded only and was not implemented in Stage 7.
 - Next: Stop for final human visual confirmation.
+
+## Stage 8A — Windows／macOS native npm runtime
+
+- Status: Native npm implementation and macOS isolated verification complete; Windows 10/11 physical-machine validation remains pending and is not claimed as passed.
+- Runtime: Added cross-platform `npm run dev:all` and `npm run start:all` launchers that initialize/migrate one absolute SQLite path, start Web and Collector without shell-specific commands, propagate the same database path, reject a duplicate Collector for that database, and terminate both children from the owning terminal. Existing standalone Web/Collector commands remain available for diagnosis.
+- Demo／Live separation: Browser display mode now uses a per-browser cookie. Selecting Demo no longer changes the database Collector mode or `mode_revision`; a configured Collector independently enables guarded Live collection. A missing enterprise configuration leaves Collector safely idle while Demo and local Excel/history functions remain available.
+- Portability: Added Node 24.15 `.nvmrc`, native relative SQLite default, Windows PowerShell/macOS README instructions, Unicode/space-path coverage, and a native `next start` build configuration. Docker standalone output is intentionally deferred to Stage 8B.
+- Checks: 40 focused Stage 6–8 tests passed; Typecheck, Lint, and Webpack Production Build passed. A macOS `start:all` smoke used an isolated SQLite path containing Chinese characters and spaces on port 3188: Web became ready, unconfigured Collector remained idle without enterprise requests, Demo/API settings rendered in a real browser, and Ctrl+C stopped both child processes, released the Web port, and removed the Collector PID lock.
+- Safety: The running real Collector, `.env.local`, enterprise API, product SQLite, Docker Volume, Stage 0–7 data, push, and deployment were not touched. The smoke explicitly cleared the enterprise Origin and used `/private/tmp` only.
+- Open issues: Validate clean clone/`npm ci`, PowerShell startup/shutdown, path handling, Defender/firewall prompts, and Live Mock operation on an actual Windows 10/11 machine. Stage 8B still owns optional Docker production packaging, persistence/restart checks, backup/restore instructions, delivery FAQ, and final repository secret/history review.
+- Next: Stop for Stage 8A review; do not begin Stage 8B without authorization.

@@ -32,6 +32,7 @@ backups/
 logs/
 *.log
 *.pid
+*.collector.pid
 
 # Dependencies and build/test output
 node_modules/

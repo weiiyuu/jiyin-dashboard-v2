@@ -45,3 +45,7 @@ export function switchProviderModeCas(db:AppDatabase,mode:ProviderMode,expectedM
     return getSettings(db);
   });
 }
+
+export function ensureCollectorLiveMode(db:AppDatabase,nowMs=Date.now()):AppSettings{
+  const settings=getSettings(db);return settings.providerMode==="LIVE"?settings:switchProviderMode(db,"LIVE",settings.modeRevision,nowMs);
+}
