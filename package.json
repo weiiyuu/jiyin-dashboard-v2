@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "measure:stage5.2": "RUN_STAGE52_PERF=1 vitest run tests/stage52-performance.test.ts --reporter=verbose",
     "collector:idle": "tsx src/server/collector/idle.ts",
-    "collector:start": "node --import tsx src/server/collector/main.ts"
+    "collector:start": "node --env-file-if-exists=.env.local --import tsx src/server/collector/main.ts"
   },
   "engines": {
     "node": ">=24.15 <25"

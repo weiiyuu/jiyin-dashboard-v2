@@ -39,6 +39,11 @@ export const LOGICAL_SENSOR_MAPPINGS: readonly LogicalSensorMapping[] = [
 
 const mappingById = new Map(LOGICAL_SENSOR_MAPPINGS.map((item) => [item.sensorId, item]));
 
+export function detectorNumericValue(raw: unknown): number | null {
+  const normalized = raw === null || raw === undefined ? null : String(raw).trim().toUpperCase();
+  return normalized === "ON" ? 1 : normalized === "OFF" ? 0 : null;
+}
+
 export function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
   if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`).join(",")}}`;
@@ -113,6 +118,7 @@ export function parseValues(envelope: EnterpriseEnvelope, fetchedAtMs: number, c
     const parsedTime = sensorUpdateTimeText === null ? Number.NaN : Date.parse(sensorUpdateTimeText), sensorUpdateAtMs = Number.isFinite(parsedTime) ? parsedTime : null;
     const info = catalog.get(sensorId), type = info?.sensorType?.toLowerCase() ?? null;
     const isLamp = type === "lamp" || mappingById.get(sensorId)?.logicalRole === "MACHINE_LAMP";
+    const isDetector = type === "detector" || mappingById.get(sensorId)?.logicalRole === "MACHINE_COMPLETION";
     const rawStatus = typeof item.status === "number" && Number.isInteger(item.status) ? item.status : null;
     if (isLamp) {
       const keys = ["blue", "green", "red", "white", "yellow"] as const, valid = keys.every((key) => rawValues[key] === 0 || rawValues[key] === 1);
@@ -121,6 +127,14 @@ export function parseValues(envelope: EnterpriseEnvelope, fetchedAtMs: number, c
         lampRed: rawValues.red === 0 || rawValues.red === 1 ? rawValues.red : null, lampWhite: rawValues.white === 0 || rawValues.white === 1 ? rawValues.white : null,
         lampYellow: rawValues.yellow === 0 || rawValues.yellow === 1 ? rawValues.yellow : null,
         parseStatus: valid && sensorUpdateAtMs !== null ? "VALID" : valid ? "PARTIAL" : "INVALID", mappingStatus: info?.mappingStatus ?? "UNMAPPED" });
+      continue;
+    }
+    if (isDetector) {
+      const valueText = rawValues.value === null || rawValues.value === undefined ? null : String(rawValues.value);
+      const numericValue = detectorNumericValue(valueText);
+      readings.push({ sensorId, sensorUpdateTimeText, sensorUpdateAtMs, fetchedAtMs, rawStatus, rawValues, valueText, numericValue,
+        lampBlue:null,lampGreen:null,lampRed:null,lampWhite:null,lampYellow:null,
+        parseStatus:numericValue===null?"PARTIAL":sensorUpdateAtMs===null?"PARTIAL":"VALID",mappingStatus:info?.mappingStatus??"UNMAPPED" });
       continue;
     }
     const numeric = strictNumeric(rawValues.value, info?.unit ?? null);

@@ -197,3 +197,13 @@
 - Safety: Six ignored reference screenshots were viewed but not committed. No enterprise request, real Collector, product DB／volume, push, deployment, Stage 5 core change, or Stage 8 work occurred.
 - Commit: This local changeset; final hash is reported in the handoff.
 - Next: Stop for Stage 7 UAT Round 2 human review.
+
+## Stage 6／7 — Supervised enterprise Live validation
+
+- Status: The existing enterprise Client, manual-test route, Collector, isolated SQLite, and three Live pages were validated during the 09:00–17:00 service window. No product/history database or Demo data was used.
+- Real API: One manual test returned HTTP 200 and `responseCode="00"` for values/configs/groups with 48 values/configs, 5 groups, and 47 assignments. It wrote zero readings and did not change Collector success.
+- Collector: Two successful slots (11:54 STARTUP and 11:57 SCHEDULED) stored 48 readings each. Both slots had the same 48-Sensor set; all 48 source update times advanced, and the Collector was stopped immediately after the second slot.
+- Live UI: Eight machines and eight independent environment points displayed fresh Live data; environment charts contained both three-minute slots. API settings showed the Collector success independently from the earlier manual test.
+- Focused corrections: local Collector startup now optionally loads ignored `.env.local`; endpoint health ignores routine metadata `NOT_DUE` audits; completion detector `ON/OFF` receives deterministic typed parsing while preserving source text and unknown fallback. See `STAGE6_7_LIVE_VALIDATION.md`.
+- Checks: Stage 6／7 targeted suite passed 32 tests; Typecheck, Lint, Webpack Production Build, and `git diff --check` passed. Post-fix read-only checks showed configs/groups as their latest attempted success and all eight stored detector values as OFF rather than UNKNOWN.
+- Safety: Only the three approved GET endpoints were used. No raw response, origin, credential, private SQLite, screenshot, push, deployment, Stage 8 work, or destructive operation was committed.
