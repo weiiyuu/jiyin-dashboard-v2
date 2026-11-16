@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent, type PointerEvent } from "react";
 import { chartSegments, formatClock, liveTooltipPlacement, nearestObservedMinute, niceLiveScale, timeToMinutes, type EnvironmentSample } from "@/features/live/live-ui-model";
 
-export interface LiveChartSeries { key: string; label: string; color: string; samples: EnvironmentSample[] }
+export interface LiveChartSeries { key: string; area?: "A" | "B"; label: string; color: string; samples: EnvironmentSample[] }
 interface SelectedPoint { series: LiveChartSeries; sample: EnvironmentSample; x: number; y: number }
 interface ChartSelection { minute: number; x: number; y: number; points: SelectedPoint[]; placement: ReturnType<typeof liveTooltipPlacement> }
 
@@ -66,7 +66,7 @@ export function LiveEnvironmentChart({ title, unit, reference, series, startMinu
         {visible.flatMap((item) => item.samples.filter((sample) => { const minute=timeToMinutes(sample.time);return sample.observed&&sample.value!==null&&minute>=startMinute&&minute<=endMinute; }).map((sample) => <circle key={`${item.key}-${sample.sampleSlot}`} className="live-keyboard-point" cx={x(timeToMinutes(sample.time))} cy={y(sample.value!)} r={8} fill="transparent" tabIndex={0} onFocus={(event) => { const rect=event.currentTarget.getBoundingClientRect();setFocused(item.key);setSelection(selectionAt(timeToMinutes(sample.time),rect.top+rect.height/2,window.innerHeight)); }} onBlur={() => { setFocused(null); setSelection(null); }} aria-label={`${item.label} ${sample.time} ${sample.value}${unit}`} />))}
         {selection?.points.map((point) => <circle key={`hover-${point.series.key}`} className="live-hover-marker" cx={point.x} cy={point.y} r={5.5} fill={point.series.color} />)}
       </svg>
-      {selection && <div className="live-chart-tooltip" data-placement={`${selection.placement.vertical}-${selection.placement.horizontal}`} role="tooltip" style={{ left: `${selection.placement.leftPercent}%`, top: `${Math.min(92,Math.max(8,(selection.y/height)*100))}%`,transform:selection.placement.transform }}><strong>{formatClock(selection.minute)}</strong>{selection.points.map((point) => <div className="live-tooltip-row" key={point.series.key}><span><i style={{ background: point.series.color }} />{point.series.label}</span><b>{point.sample.value?.toFixed(1)} {unit}</b><small>來源 {sourceTime(point.sample.sensorUpdateAt)}</small></div>)}</div>}
+      {selection && <div className="live-chart-tooltip" data-placement={`${selection.placement.vertical}-${selection.placement.horizontal}`} role="tooltip" style={{ left: `${selection.placement.leftPercent}%`, top: `${Math.min(92,Math.max(8,(selection.y/height)*100))}%`,transform:selection.placement.transform }}><strong>{formatClock(selection.minute)}</strong><div className="live-tooltip-regions">{(["A","B"] as const).map((area)=><section className="live-tooltip-region" key={area}><b className="live-tooltip-region-title">{area} 區</b>{selection.points.filter((point)=>(point.series.area??point.series.key.split("-")[0])===area).map((point) => <div className="live-tooltip-row" key={point.series.key}><span><i style={{ background: point.series.color }} />{point.series.label}</span><b>{point.sample.value?.toFixed(1)} {unit}</b><small>來源 {sourceTime(point.sample.sensorUpdateAt)}</small></div>)}</section>)}</div></div>}
     </div>}
   </div>;
 }

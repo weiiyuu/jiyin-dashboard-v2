@@ -215,3 +215,11 @@
 - Checks: Stage 7 targeted component tests, Typecheck, Lint, Webpack Production Build, and `git diff --check` passed. An isolated synthetic-Demo browser smoke verified the shared range switch, full-day Demo default, exact line／legend／reference styles, an in-viewport right-edge Tooltip, API frequency copy, and no page-level horizontal overflow.
 - Safety: The existing Collector was not stopped, restarted, replaced, or queried. No enterprise API request, Collector schedule／mapping／contract, product SQLite／Docker Volume, Stage 5 logic, push, deployment, or Stage 8 work was used or changed.
 - Next: Stop for final Stage 7 human UAT before starting Stage 8.
+
+## Stage 7 — Final three UI refinements
+
+- Status: Three scoped UI refinements complete; final visual confirmation remains pending.
+- Main changes: Simplified A／B environment headers to source-time-only updates, reorganized environment Tooltips into desktop A／B columns with a narrow single-column fallback, and replaced the machine-detail lamp line with a balanced header-row status badge without changing the machine cards or state rules.
+- Checks: 15 targeted tests, Typecheck, Lint, Webpack Production Build, and isolated synthetic-Demo browser smoke passed. No enterprise API, Collector control, product database, runtime-mode switch, push, deployment, or Stage 8 implementation was performed.
+- Stage 8 todo: Decouple Demo presentation mode from background Live collection so switching the UI to Demo never interrupts real data collection. This requirement is recorded only and was not implemented in Stage 7.
+- Next: Stop for final human visual confirmation.

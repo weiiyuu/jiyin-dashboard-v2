@@ -6,7 +6,7 @@ import { LiveProviderBanner } from "@/components/live-provider-banner";
 import { PageHeader } from "@/components/page-header";
 import { ErrorNotice, LoadingState, Panel, StatusChip } from "@/components/ui-states";
 import { useLocalRefresh } from "@/components/use-local-refresh";
-import { defaultLiveTrendRangeMode, environmentStatusLabel, environmentVisualStatus, formatTaipeiDateTime, latestIso, LIVE_COLORS, recentLiveTrendRange, visibleEndMinutes, type EnvironmentLatest, type EnvironmentPayload, type LiveMeta, type LiveTrendRangeMode } from "@/features/live/live-ui-model";
+import { defaultLiveTrendRangeMode, environmentStatusLabel, environmentVisualStatus, formatTaipeiSourceUpdate, latestIso, LIVE_COLORS, recentLiveTrendRange, visibleEndMinutes, type EnvironmentLatest, type EnvironmentPayload, type LiveMeta, type LiveTrendRangeMode } from "@/features/live/live-ui-model";
 import { fetchApiEnvelope } from "@/lib/api-client";
 
 interface EnvironmentState { responses: Record<string, EnvironmentPayload>; meta: LiveMeta }
@@ -42,7 +42,7 @@ export default function EnvironmentPage() {
 
   const chartSeries = useMemo(() => {
     if (!state) return { temperature: [], humidity: [] } as Record<"temperature" | "humidity", LiveChartSeries[]>;
-    const build = (metric: "temperature" | "humidity") => (["A", "B"] as const).flatMap((area) => state.responses[latestKey(area, metric)].series.map((series, index) => ({ key: `${area}-${metric}-${series.point}`, label: `${area} 區${metric === "temperature" ? "溫度" : "濕度"} ${series.point}`, color: LIVE_COLORS[(area === "A" ? 0 : 2) + index], samples: series.samples })));
+    const build = (metric: "temperature" | "humidity") => (["A", "B"] as const).flatMap((area) => state.responses[latestKey(area, metric)].series.map((series, index) => ({ key: `${area}-${metric}-${series.point}`, area, label: `${area} 區${metric === "temperature" ? "溫度" : "濕度"} ${series.point}`, color: LIVE_COLORS[(area === "A" ? 0 : 2) + index], samples: series.samples })));
     return { temperature: build("temperature"), humidity: build("humidity") };
   }, [state]);
   const activeRangeMode=state?(rangeMode??defaultLiveTrendRangeMode(state.meta.providerMode)):"today";
@@ -56,7 +56,7 @@ export default function EnvironmentPage() {
     {state && <>
       <div className="environment-area-grid">{(["A", "B"] as const).map((area) => {
         const items = [...state.responses[latestKey(area, "temperature")].latest, ...state.responses[latestKey(area, "humidity")].latest];
-        return <Panel key={area} title={`${area} 區環境資料`} actions={<div className="environment-area-times"><span>區域最近來源更新 {formatTaipeiDateTime(latestIso(items.map((item) => item.sensorUpdateAt)))}</span><span>平台最近取得 {formatTaipeiDateTime(latestIso(items.map((item) => item.fetchedAt)))}</span></div>}><div className="environment-sensor-grid">{items.map((item) => <SensorCard key={`${item.metric}-${item.point}`} item={item} />)}</div></Panel>;
+        return <Panel key={area} title={`${area} 區環境資料`} actions={<div className="environment-area-times">資料更新 {formatTaipeiSourceUpdate(latestIso(items.map((item) => item.sensorUpdateAt)),state.meta.timeContext.now)}</div>}><div className="environment-sensor-grid">{items.map((item) => <SensorCard key={`${item.metric}-${item.point}`} item={item} />)}</div></Panel>;
       })}</div>
       <div className="environment-trend-range"><div><strong>趨勢時間範圍</strong><span>{activeRangeMode==="recent"?"最近 60 分鐘，保留少量右側時間留白":"今日 09:00 起至目前可見時段"}</span></div><div className="trend-range-switch" role="group" aria-label="趨勢時間範圍"><button type="button" className={activeRangeMode==="recent"?"active":""} aria-pressed={activeRangeMode==="recent"} onClick={()=>setRangeMode("recent")}>近期趨勢</button><button type="button" className={activeRangeMode==="today"?"active":""} aria-pressed={activeRangeMode==="today"} onClick={()=>setRangeMode("today")}>今日趨勢</button></div></div>
       <div className="live-chart-stack">
