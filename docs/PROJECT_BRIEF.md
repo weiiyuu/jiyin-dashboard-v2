@@ -36,7 +36,7 @@ agent練習/
 ├── jiyin-dashboard/            # 舊版 Next.js 專案；唯讀參考
 ├── test_api/                   # test.py、scheduler.py、收集過的 API JSON；唯讀參考
 └── jiyin-dashboard-v2/        # 新專案；未來唯一主要開發與獨立 Git repo
-    ├── PROJECT_BRIEF.md       # 本文件
+    ├── docs/PROJECT_BRIEF.md  # 本文件
     └── _reference_inputs/     # 由此次 ChatGPT 附件另行複製／解壓的參考材料；不可直接公開
 ```
 

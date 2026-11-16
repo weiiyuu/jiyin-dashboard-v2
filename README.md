@@ -111,13 +111,9 @@ nano .env.local
 ```dotenv
 ENTERPRISE_API_ORIGIN=https://<核准伺服器>:<Port>
 ENTERPRISE_API_ALLOWED_ORIGINS=https://<核准伺服器>:<Port>
-ENTERPRISE_TLS_MODE=allowlisted_self_signed
-ENTERPRISE_API_AUTH_MODE=none
-API_TIMEOUT_MS=10000
-API_MAX_RESPONSE_BYTES=2097152
 ```
 
-目前企業 API 使用 IP 白名單，不需要另外 API Key 或 Token，因此使用 `ENTERPRISE_API_AUTH_MODE=none`。`API_TIMEOUT_MS` 與 `API_MAX_RESPONSE_BYTES` 上述值也是程式預設值，保留即可。
+範本已預先設定 `ENTERPRISE_TLS_MODE=allowlisted_self_signed`、`ENTERPRISE_API_AUTH_MODE=none`、`API_TIMEOUT_MS=20000` 與 `API_MAX_RESPONSE_BYTES=2097152`，Live 使用者不需要再改這四項。目前企業 API 使用 IP 白名單，不需要另外 API Key 或 Token。
 
 `allowlisted_self_signed` **僅適用於這個經企業核准、且受 `ENTERPRISE_API_ALLOWED_ORIGINS` 精確限制的自簽憑證伺服器**，不得當成其他 HTTPS 服務的通用設定，也不要全域關閉 TLS 驗證。若企業日後提供可受信任憑證，應改用 `strict`；若提供專用 CA 檔，才使用 `custom_ca` 與 `ENTERPRISE_CA_FILE`。
 
@@ -165,5 +161,5 @@ npm run start:all
 
 - Windows PowerShell 回報 `npm.ps1` 無法執行時，不需要改動全機執行政策；將 `npm` 改成 `npm.cmd`，例如 `npm.cmd ci` 或 `npm.cmd run dev:all`。
 - 出現 `node`、`npm` 或 `git` 無法辨識時，先重開終端。Windows 可用 `where.exe node`／`where.exe npm`，macOS 可用 `which -a node`／`which -a npm` 檢查 PATH。
-- SQLite 儲存在本機 `data/jiyin-dashboard.sqlite`，不會自動與其他電腦同步。不要將 SQLite、`.env.local`、企業 Excel／JSON、Token 或憑證提交至 GitHub。
+- SQLite 持久儲存在本機 `data/jiyin-dashboard.sqlite`，正常停止與重新啟動不會自動清空，也不會自動與其他電腦同步。Live readings 依現有規則保留 3 天；Excel 匯入的歷史批次使用獨立版本管理。不要將 SQLite、`.env.local`、企業 Excel／JSON、Token 或憑證提交至 GitHub。
 - 每個瀏覽器可獨立選擇 Demo 或 Live 畫面。切換為 Demo 只會改變該瀏覽器的顯示，不會中斷背景 Live Collector。
