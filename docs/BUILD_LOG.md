@@ -273,3 +273,12 @@
 - Known limit: 現行 API 沒有伺服器端 Preview token／TTL；Preview 只存在當前瀏覽器頁面狀態，頁面重載後必須重新檢查，Confirm 則以重新解析、指紋與 CAS 防止使用過期結果。
 - Safety boundary: 未使用企業 API、正式 Excel／SQLite／Docker Volume、真實 Collector 或私人圖片；未 Push。
 - Commit: 本次本機 changeset；最終 hash 於交付回報提供。
+
+## Stage 8 後 — Excel 停止檢查後部分匯入 UAT 修正
+
+- Status: 已移除「所有已選檔案都必須 Preview 完成」的前端 Confirm 門檻；使用者停止後可先匯入已檢查且符合條件的檔案。
+- Behavior: Confirm 候選僅接受狀態為 `READY`、擁有有效 Preview、非重複／同日多檔、未匯入且已完成必要替換確認的檔案。尚未檢查、檢查失敗、需重新檢查與已完成檢查已分開呈現。
+- Verification: 15 份合成檔案案例已驗證前 8 份 Preview（3 份新增、5 份重複）後可單獨 Confirm 3 份，後 7 份未寫入；無可匯入檔案時候選清單為空，同日替換仍需明確核准。相關 27 tests、Typecheck、Lint 及 Webpack Production Build passed。
+- Browser: 使用 `/private/tmp` 隔離 SQLite 啟動本機頁面 Smoke Test，Excel 匯入頁正常載入；部分停止狀態由純輯與 Route 整合測試驗證。
+- Safety: 未使用私人 Excel、正式 SQLite／Docker Volume、真實 Collector、企業 API 或 `.env.local`；未 Push。
+- Commit: 本次本機 changeset；最終 hash 於交付回報提供。

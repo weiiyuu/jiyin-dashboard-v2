@@ -5,7 +5,7 @@ import { ImportIssueSummary, type ImportIssue } from "@/components/import-issue-
 import { ImportPagination } from "@/components/import-pagination";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorNotice, LoadingState, Panel, StatusChip } from "@/components/ui-states";
-import { buildUploadBatches, BULK_IMPORT_LIMITS, mergeByClientId, repeatedConfirmableSourceDates } from "@/features/imports/bulk-import";
+import { buildUploadBatches, BULK_IMPORT_LIMITS, confirmablePreviewIds, mergeByClientId, repeatedConfirmableSourceDates, summarizeBulkQueue } from "@/features/imports/bulk-import";
 import { confirmPlan, importAlarmSourceLabel, removeSelectedUpload, type SelectedUpload } from "@/features/imports/import-ui-model";
 import { ApiClientError, fetchApi, formatBytes } from "@/lib/api-client";
 
@@ -75,7 +75,12 @@ function previewLabel(preview: Preview) {
 }
 function queueLabel(entry: QueueEntry | undefined) {
   if (!entry) return "待檢查";
-  return ({ SELECTED: "待檢查", PREVIEWING: "檢查中", READY: "待確認", DUPLICATE: "重複略過", BLOCKED: "不能匯入", CONFIRMING: "匯入中", IMPORTED: "匯入成功", FAILED: "處理失敗", RECHECK_REQUIRED: "需重新檢查", CANCELLED: "尚未處理" } as const)[entry.status];
+  return ({ SELECTED: "尚未檢查", PREVIEWING: "檢查中", READY: "待確認", DUPLICATE: "重複略過", BLOCKED: "不能匯入", CONFIRMING: "匯入中", IMPORTED: "匯入成功", FAILED: "檢查失敗", RECHECK_REQUIRED: "需重新檢查", CANCELLED: "尚未檢查" } as const)[entry.status];
+}
+
+function queueStatusForPreview(preview: Preview): QueueStatus {
+  if (preview.decision === "INVALID" || preview.acceptance === "REVIEW_REQUIRED") return "BLOCKED";
+  return preview.decision === "DUPLICATE" ? "DUPLICATE" : "READY";
 }
 function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
@@ -126,7 +131,7 @@ export default function ImportsPage() {
     } finally {
       setBatchLoading(false);
     }
-  }, [batchDateFilter, batchFileFilter, batchPage, batchPageSize, batchSortBy, batchSortDirection]);
+  }, [batchDateFilter, batchFileFilter, batchPage, batchPageSize, batchSortBy, batchSortDirection, setBatchPage]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void loadBatches(), 200);
@@ -138,7 +143,6 @@ export default function ImportsPage() {
   const uploadBatches = useMemo(() => buildUploadBatches(selected), [selected]);
   const repeatedDates = useMemo(() => repeatedConfirmableSourceDates(previews), [previews]);
   const repeatedIds = useMemo(() => new Set([...repeatedDates.values()].flat()), [repeatedDates]);
-  const previewComplete = selected.length > 0 && selected.every((item) => previewById.has(item.id));
   const retryCandidates = selected.filter((item) => retryableStatuses.has(queue[item.id]?.status ?? "SELECTED"));
 
   function resetPreview(nextSelected: SelectedUpload[]) {
@@ -214,7 +218,7 @@ export default function ImportsPage() {
           setQueue((current) => {
             const next = { ...current };
             data.files.forEach((item) => {
-              next[item.clientFileId] = { status: item.decision === "INVALID" || item.acceptance === "REVIEW_REQUIRED" ? "BLOCKED" : item.decision === "DUPLICATE" ? "DUPLICATE" : "READY" };
+              next[item.clientFileId] = { status: queueStatusForPreview(item) };
             });
             return next;
           });
@@ -235,7 +239,11 @@ export default function ImportsPage() {
       if (cancelled) {
         const untouched = targets.filter((item) => !processedIds.has(item.id)).map((item) => item.id);
         updateQueue(untouched, { status: "CANCELLED", message: "操作已取消" });
-        setMessage({ tone: "warning", text: "已停止後續批次；已完成的檢查結果仍保留，未完成檔案可重新檢查。" });
+        const partialRepeatedIds = new Set([...repeatedConfirmableSourceDates(merged).values()].flat());
+        const partialStatuses = Object.fromEntries(merged.map((item) => [item.clientFileId, queueStatusForPreview(item)]));
+        const partialConfirmable = confirmablePreviewIds(merged, partialRepeatedIds, approved, partialStatuses).length;
+        const unchecked = selected.length - merged.length;
+        setMessage({ tone: "warning", text: `已完成 ${merged.length} 份檢查${partialConfirmable ? `，可先匯入 ${partialConfirmable} 份已檢查檔案` : ""}；另外 ${unchecked} 份尚未檢查，不會在本次匯入。` });
       } else if (failed) {
         setMessage({ tone: "warning", text: `已完成部分檢查，${failed} 份因批次請求失敗尚未取得結果；請重新檢查未完成檔案。` });
       } else {
@@ -261,12 +269,8 @@ export default function ImportsPage() {
   }
 
   async function confirmAll() {
-    const targets = selected.filter((item) => {
-      const preview = previewById.get(item.id);
-      const status = queue[item.id]?.status;
-      return preview && !repeatedIds.has(item.id) && status !== "IMPORTED" && status !== "DUPLICATE" && confirmPlan(preview, Boolean(approved[item.id])).allowed;
-    });
-    if (!previewComplete || !targets.length) return;
+    const targets = selected.filter((item) => confirmCandidateIds.has(item.id));
+    if (!targets.length) return;
     const controller = new AbortController();
     abortRef.current = controller;
     setBusy(true);
@@ -348,12 +352,11 @@ export default function ImportsPage() {
     else { setBatchSortBy(column); setBatchSortDirection("desc"); }
   }
 
-  const confirmable = previewComplete && selected.some((item) => {
-    const preview = previewById.get(item.id);
-    const status = queue[item.id]?.status;
-    return preview && !repeatedIds.has(item.id) && status !== "IMPORTED" && status !== "DUPLICATE" && confirmPlan(preview, Boolean(approved[item.id])).allowed;
-  });
-  const batchSummary = useMemo(() => ({
+  const confirmCandidateIds = new Set(confirmablePreviewIds(previews, repeatedIds, approved, Object.fromEntries(Object.entries(queue).map(([id, entry]) => [id, entry.status]))));
+  const confirmable = confirmCandidateIds.size > 0;
+  const confirmCandidatePreviews = previews.filter((item) => confirmCandidateIds.has(item.clientFileId));
+  const queueBreakdown = summarizeBulkQueue(selected.map((item) => item.id), new Set(previews.map((item) => item.clientFileId)), Object.fromEntries(Object.entries(queue).map(([id, entry]) => [id, entry.status])));
+  const batchSummary = {
     files: selected.length,
     checked: previews.length,
     inserts: previews.filter((item) => item.decision === "INSERT").length,
@@ -361,10 +364,13 @@ export default function ImportsPage() {
     conflicts: previews.filter((item) => item.decision === "CONFLICT").length,
     warnings: previews.filter((item) => item.acceptance === "ACCEPT_WITH_WARNINGS").length,
     blocked: previews.filter((item) => item.decision === "INVALID" || item.acceptance === "REVIEW_REQUIRED").length,
-    failed: Object.values(queue).filter((item) => ["FAILED", "RECHECK_REQUIRED", "CANCELLED"].includes(item.status)).length,
+    unchecked: queueBreakdown.unchecked,
+    failed: queueBreakdown.failed,
+    recheck: queueBreakdown.recheck,
     imported: Object.values(queue).filter((item) => item.status === "IMPORTED").length,
-  }), [previews, queue, selected.length]);
-  const confirmationSummary = `本次將新增 ${previews.filter((item) => item.decision === "INSERT" && item.errors.length === 0 && !repeatedIds.has(item.clientFileId)).length} 份、略過 ${batchSummary.duplicates} 份、替換 ${previews.filter((item) => item.decision === "CONFLICT" && approved[item.clientFileId] && !repeatedIds.has(item.clientFileId)).length} 份；其餘不能匯入、尚未確認或需重新檢查。`;
+  };
+  const confirmationSummary = `本次將新增 ${confirmCandidatePreviews.filter((item) => item.decision === "INSERT").length} 份、略過 ${batchSummary.duplicates} 份、替換 ${confirmCandidatePreviews.filter((item) => item.decision === "CONFLICT").length} 份；${batchSummary.unchecked ? `另有 ${batchSummary.unchecked} 份尚未檢查，不納入本次匯入。` : "其餘不能匯入、尚未確認或需重新檢查。"}`;
+  const confirmButtonLabel = batchSummary.unchecked > 0 && confirmCandidateIds.size > 0 ? `先匯入 ${confirmCandidateIds.size} 份已檢查檔案` : "匯入已確認檔案";
 
   return <main className="page">
     <PageHeader eyebrow="資料管理 / 歷史資料" title="Excel 資料匯入" description="一次選取大量標準化工作簿；系統會自動分批檢查，再以每檔獨立交易循序匯入。" tag="標準化 .XLSX"/>
@@ -382,10 +388,10 @@ export default function ImportsPage() {
         </Panel>
       </section>
 
-      {previews.length > 0 && <section className="import-section" data-import-section="preview"><Panel title="匯入前檢查" subtitle="先確認整體結果，再循序匯入；不同批次不是同一個大型交易" actions={<button className="button primary" disabled={!confirmable || busy} onClick={() => void confirmAll()}>{busy ? "匯入處理中…" : "匯入已確認檔案"}</button>}>
-        <div className="preview-batch-summary bulk-preview-summary"><div><span>已選檔案</span><strong>{batchSummary.files}</strong></div><div><span>已完成檢查</span><strong>{batchSummary.checked}</strong></div><div><span>可新增</span><strong>{batchSummary.inserts}</strong></div><div><span>完全重複</span><strong>{batchSummary.duplicates}</strong></div><div><span>需確認替換</span><strong>{batchSummary.conflicts}</strong></div><div><span>有資料提醒</span><strong>{batchSummary.warnings}</strong></div><div><span>不能匯入</span><strong>{batchSummary.blocked}</strong></div><div><span>未完成／需重查</span><strong>{batchSummary.failed}</strong></div></div>
+      {previews.length > 0 && <section className="import-section" data-import-section="preview"><Panel title="匯入前檢查" subtitle="先確認整體結果，再循序匯入；不同批次不是同一個大型交易" actions={<button className="button primary" disabled={!confirmable || busy} onClick={() => void confirmAll()}>{busy ? "匯入處理中…" : confirmButtonLabel}</button>}>
+        <div className="preview-batch-summary bulk-preview-summary"><div><span>已選檔案</span><strong>{batchSummary.files}</strong></div><div><span>已完成檢查</span><strong>{batchSummary.checked}</strong></div><div><span>可新增</span><strong>{batchSummary.inserts}</strong></div><div><span>完全重複</span><strong>{batchSummary.duplicates}</strong></div><div><span>需確認替換</span><strong>{batchSummary.conflicts}</strong></div><div><span>有資料提醒</span><strong>{batchSummary.warnings}</strong></div><div><span>不能匯入</span><strong>{batchSummary.blocked}</strong></div><div><span>尚未檢查</span><strong>{batchSummary.unchecked}</strong></div></div>
         <div className="preview-confirm-summary">{confirmationSummary}</div>
-        <div className="import-result-progress"><span>匯入成功 <strong>{batchSummary.imported}</strong></span><span>重複略過 <strong>{Object.values(queue).filter((item) => item.status === "DUPLICATE").length}</strong></span><span>失敗／需重查 <strong>{batchSummary.failed}</strong></span><span>待處理 <strong>{Object.values(queue).filter((item) => ["READY", "SELECTED", "PREVIEWING", "CONFIRMING"].includes(item.status)).length}</strong></span></div>
+        <div className="import-result-progress"><span>匯入成功 <strong>{batchSummary.imported}</strong></span><span>重複略過 <strong>{Object.values(queue).filter((item) => item.status === "DUPLICATE").length}</strong></span><span>檢查失敗 <strong>{batchSummary.failed}</strong></span><span>需重新檢查 <strong>{batchSummary.recheck}</strong></span></div>
         {repeatedDates.size > 0 && <div className="notice warning import-selection-conflict"><span>!</span><div><strong>同一批選取中有重複來源日期</strong><p>{[...repeatedDates.entries()].map(([date, ids]) => `${date}（${ids.length} 份）`).join("、")}。請每個日期只保留一份後再匯入，系統不會依檔案順序自動覆寫。</p></div></div>}
         <div className="preview-compact-list">{selected.map((file) => { const p = previewById.get(file.id); if (!p) return null; const quality = p.qualitySummary; const repeated = repeatedIds.has(file.id); return <details className={`preview-row ${p.decision.toLowerCase()}`} key={file.id} open={p.decision === "INVALID" || repeated}><summary><div className="preview-row-identity"><strong>{p.sourceDate || "來源日期無效"}</strong><span title={p.fileName}>{p.fileName}</span></div><StatusChip tone={repeated ? "error" : decisionTone[p.decision]}>{repeated ? "同日多檔，暫停匯入" : queue[file.id]?.status === "IMPORTED" ? "匯入成功" : previewLabel(p)}</StatusChip><div className="preview-row-problems"><strong>{p.errors.length} 錯誤 · {p.warnings.length} 提醒</strong><span>資料筆數：機台 {p.counts.machine.toLocaleString()}、環境 {p.counts.environment.toLocaleString()}、警示 {p.counts.alarm.toLocaleString()}</span></div><span className="preview-detail-link">展開詳情</span></summary><div className="preview-row-detail"><div className="preview-facts"><span>警示資料：{alarmLabel(p.alarmSourceStatus)}</span><span>不可匯入：{p.errors.length}</span><span>資料提醒：{p.warnings.length} 項</span><span>原始資料異常列：{p.counts.qualityIssues}</span></div>{quality && <div className="eligibility-summary"><div><span>已讀取資料</span><strong>機台 {quality.arrival.machineRows} 筆 / 環境 {quality.arrival.environmentRows} 筆</strong></div><div><span>可用於加工分析</span><strong>{quality.eligibility.greenHours} / {quality.arrival.machineRows}</strong></div><div><span>可用於燈號分析</span><strong>{quality.eligibility.sixStateShare} / {quality.arrival.machineRows}</strong></div><div><span>可用於環境平均</span><strong>{quality.eligibility.environmentAverage} / {quality.arrival.environmentRows}</strong></div></div>}{repeated && <div className="notice warning">相同來源日期出現多份候選檔案；請移除多餘檔案，不會自動選擇或覆寫。</div>}{p.activeBatchId && <div className="notice warning">目前已有啟用版本；勾選後才會整日替換。後端批次編號保留供追溯。</div>}<ImportIssueSummary title="不可匯入" items={p.errors}/><ImportIssueSummary title="資料提醒" items={p.warnings}/><div className="preview-confirm">{repeated ? "同日多檔尚未排除，不能匯入" : p.decision === "CONFLICT" ? <label className="replace-check"><input type="checkbox" checked={Boolean(approved[file.id])} disabled={queue[file.id]?.status === "IMPORTED"} onChange={(event) => setApproved((old) => ({ ...old, [file.id]: event.target.checked }))}/>確認以此檔整日替換目前啟用版本</label> : p.decision === "DUPLICATE" ? "完全重複，匯入時會略過且不重複寫入" : p.errors.length ? "此檔不可匯入；請依上方錯誤修正後重新檢查" : queue[file.id]?.status === "IMPORTED" ? "已完成匯入；此檔不會再次提交" : "可匯入；來源缺值會保留空值，不自動補 0"}</div></div></details>; })}</div>
       </Panel></section>}

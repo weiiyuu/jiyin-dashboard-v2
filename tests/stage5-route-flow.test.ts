@@ -132,6 +132,38 @@ describe("Stage 5 route-level user flow",()=>{
     const db=openDatabase(process.env.DATABASE_PATH);expect(db.prepare("SELECT COUNT(*) count FROM import_batches WHERE status='ACTIVE'").get()).toEqual({count});db.close();
   },60_000);
 
+  it("imports checked files after Preview stops and leaves unchecked files unwritten",async()=>{
+    const root=mkdtempSync(join(tmpdir(),"jiyin-bulk-partial-"));roots.push(root);process.env.DATABASE_PATH=join(root,"partial.sqlite");
+    const existing=Array.from({length:5},(_,index)=>{
+      const date=`2025-09-${String(index+1).padStart(2,"0")}`,name=`existing-${date}.xlsx`,bytes=createSyntheticXlsx(standardizedWorkbook(date));
+      return{name,bytes};
+    });
+    for(const entry of existing){
+      const checked=(await preview(entry.bytes,entry.name)).data.files[0];
+      expect((await confirm(entry.bytes,entry.name,checked,"INSERT")).status).toBe(200);
+    }
+
+    const selected=[
+      ...Array.from({length:3},(_,index)=>{const date=`2025-09-${String(index+6).padStart(2,"0")}`;return{id:`new-${index}`,name:`${date}.xlsx`,bytes:createSyntheticXlsx(standardizedWorkbook(date))};}),
+      ...existing.map((entry,index)=>({id:`duplicate-${index}`,...entry})),
+      ...Array.from({length:7},(_,index)=>{const date=`2025-09-${String(index+9).padStart(2,"0")}`;return{id:`unchecked-${index}`,name:`${date}.xlsx`,bytes:createSyntheticXlsx(standardizedWorkbook(date))};}),
+    ];
+    const form=new FormData();
+    selected.slice(0,8).forEach((entry)=>{form.append("files",upload(entry.bytes,entry.name));form.append("clientFileId",entry.id);});
+    const response=await previewPost(request("/api/imports/preview",{method:"POST",body:form}));expect(response.status).toBe(200);
+    const body=await response.json() as {data:{files:Array<PreviewFile&{clientFileId:string}>}};
+    expect(body.data.files.filter((item)=>item.decision==="INSERT")).toHaveLength(3);
+    expect(body.data.files.filter((item)=>item.decision==="DUPLICATE")).toHaveLength(5);
+    for(const item of body.data.files.filter((previewItem)=>previewItem.decision==="INSERT")){
+      const entry=selected.find((candidate)=>candidate.id===item.clientFileId)!;
+      expect((await confirm(entry.bytes,entry.name,item,"INSERT")).status).toBe(200);
+    }
+    const db=openDatabase(process.env.DATABASE_PATH);
+    expect(db.prepare("SELECT COUNT(*) count FROM import_batches").get()).toEqual({count:8});
+    expect(db.prepare("SELECT COUNT(*) count FROM import_batches WHERE source_date BETWEEN '2025-09-09' AND '2025-09-15'").get()).toEqual({count:0});
+    db.close();
+  });
+
   it("keeps completed files, rejects a stale same-date confirm, and makes response-loss retry idempotent",async()=>{
     const root=mkdtempSync(join(tmpdir(),"jiyin-bulk-safety-"));roots.push(root);process.env.DATABASE_PATH=join(root,"bulk-safety.sqlite");
     const firstBytes=createSyntheticXlsx(standardizedWorkbook("2025-08-01"));

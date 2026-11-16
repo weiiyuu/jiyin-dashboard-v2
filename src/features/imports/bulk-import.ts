@@ -1,4 +1,4 @@
-import type { SelectedUpload } from "./import-ui-model";
+import { confirmPlan, type PreviewDecision, type SelectedUpload } from "./import-ui-model";
 
 const MIB = 1024 * 1024;
 
@@ -11,6 +11,7 @@ export const BULK_IMPORT_LIMITS = {
 
 export type PaginationItem = number | "ellipsis";
 export type PageInputResult = { page: number; error: null } | { page: null; error: string };
+export interface BulkQueueBreakdown { unchecked: number; failed: number; recheck: number }
 
 export function buildUploadBatches(files: SelectedUpload[]): SelectedUpload[][] {
   const batches: SelectedUpload[][] = [];
@@ -54,6 +55,32 @@ export function repeatedConfirmableSourceDates(
     grouped.set(preview.sourceDate, [...(grouped.get(preview.sourceDate) ?? []), preview.clientFileId]);
   }
   return new Map([...grouped].filter(([, ids]) => ids.length > 1));
+}
+
+export function confirmablePreviewIds(
+  previews: Array<PreviewDecision & { clientFileId: string }>,
+  repeatedIds: ReadonlySet<string>,
+  approved: Readonly<Record<string, boolean>>,
+  statusById: Readonly<Record<string, string | undefined>>,
+): string[] {
+  return previews.flatMap((preview) => {
+    if (repeatedIds.has(preview.clientFileId) || statusById[preview.clientFileId] !== "READY") return [];
+    return confirmPlan(preview, Boolean(approved[preview.clientFileId])).allowed ? [preview.clientFileId] : [];
+  });
+}
+
+export function summarizeBulkQueue(
+  selectedIds: string[],
+  previewIds: ReadonlySet<string>,
+  statusById: Readonly<Record<string, string | undefined>>,
+): BulkQueueBreakdown {
+  return selectedIds.reduce<BulkQueueBreakdown>((summary, id) => {
+    const status = statusById[id];
+    if (!previewIds.has(id) && status !== "FAILED" && status !== "RECHECK_REQUIRED") summary.unchecked++;
+    if (status === "FAILED") summary.failed++;
+    if (status === "RECHECK_REQUIRED") summary.recheck++;
+    return summary;
+  }, { unchecked: 0, failed: 0, recheck: 0 });
 }
 
 export function paginationItems(currentPage: number, totalPages: number): PaginationItem[] {
