@@ -8,6 +8,11 @@ describe("Stage 5.3 machine operation analysis page shell",()=>{
     expect(html).toContain("機台運轉分析");
     expect(html).toContain("已選 0 台");
     expect(html).toContain("不會自動查詢全部機台");
+    const areaA=html.indexOf(">A 區<"),areaB=html.indexOf(">B 區<"),selectAll=html.indexOf(">全選<"),clear=html.indexOf(">清除<");
+    expect(areaA).toBeGreaterThan(0);
+    expect(areaB).toBeGreaterThan(areaA);
+    expect(selectAll).toBeGreaterThan(areaB);
+    expect(clear).toBeGreaterThan(selectAll);
     const ranking=html.indexOf("累積加工時數排行");
     const trend=html.indexOf("機台運轉趨勢圖");
     const share=html.indexOf("各機台燈號時間占比");

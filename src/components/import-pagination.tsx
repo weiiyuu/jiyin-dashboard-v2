@@ -13,14 +13,19 @@ interface ImportPaginationProps {
   onPageSizeChange?: (pageSize: 10 | 20 | 50) => void;
   ariaLabel?: string;
   inputId?: string;
+  layout?: "default" | "three-zone";
 }
 
-export function Pagination({ page, totalPages, total, loading, onPageChange, pageSize, onPageSizeChange, ariaLabel = "分頁", inputId = "page-jump" }: ImportPaginationProps) {
+export function Pagination({ page, totalPages, total, loading, onPageChange, pageSize, onPageSizeChange, ariaLabel = "分頁", inputId = "page-jump", layout = "default" }: ImportPaginationProps) {
   const [input, setInput] = useState(String(page));
   const [error, setError] = useState<string | null>(null);
-  const items = useMemo(() => paginationItems(page, totalPages), [page, totalPages]);
+  const items = useMemo(() => totalPages <= 1 && layout === "three-zone" ? [1] : paginationItems(page, totalPages), [layout, page, totalPages]);
+  const jumpResult = useMemo(() => parsePageInput(input, totalPages), [input, totalPages]);
+  const jumpError = layout === "three-zone" && totalPages > 1 && jumpResult.page === null
+    ? /^\d+$/.test(input) ? `請輸入 1～${totalPages} 頁` : "請輸入有效正整數頁碼"
+    : null;
 
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1 && layout === "default") return null;
 
   function changePage(target:number){setInput(String(target));setError(null);onPageChange(target);}
 
@@ -32,10 +37,32 @@ export function Pagination({ page, totalPages, total, loading, onPageChange, pag
     changePage(result.page);
   }
 
+  if (layout === "three-zone") return <div className="pagination detail-pagination" aria-label={ariaLabel}>
+    <div className="detail-pagination-info">
+      <span>共 {total} 筆</span>
+      {pageSize && onPageSizeChange && <label className="pagination-size"><span>每頁顯示</span><select className="control" value={pageSize} disabled={loading} onChange={(event) => onPageSizeChange(Number(event.target.value) as 10 | 20 | 50)}><option value={10}>10 筆</option><option value={20}>20 筆</option><option value={50}>50 筆</option></select></label>}
+    </div>
+    <nav className="pagination-pages" aria-label="頁碼">
+      <button className="button pagination-arrow" aria-label="上一頁" title="上一頁" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}><span aria-hidden>←</span></button>
+      <div className="pagination-number-list">
+        {items.map((item, index) => item === "ellipsis"
+          ? <span className="pagination-ellipsis" aria-hidden="true" key={`ellipsis-${index}`}>…</span>
+          : <button className={`button pagination-number${item === page ? " active" : ""}`} aria-current={item === page ? "page" : undefined} disabled={loading || item === page} onClick={() => changePage(item)} key={item}>{item}</button>)}
+      </div>
+      <button className="button pagination-arrow" aria-label="下一頁" title="下一頁" disabled={page >= totalPages || loading} onClick={() => changePage(page + 1)}><span aria-hidden>→</span></button>
+    </nav>
+    <form className="pagination-jump" onSubmit={submit} noValidate>
+      <label htmlFor={inputId}>前往</label>
+      <span className={`pagination-jump-input${jumpError ? " has-error" : ""}`}><input id={inputId} className="control" inputMode="numeric" pattern="[0-9]*" value={input} disabled={totalPages <= 1 || loading} onChange={(event) => { setInput(event.target.value.trim()); setError(null); }} aria-invalid={Boolean(jumpError)} aria-describedby={jumpError ? `${inputId}-tooltip` : undefined}/>{jumpError&&<span className="pagination-jump-error-tooltip" id={`${inputId}-tooltip`} role="tooltip">{jumpError}</span>}</span>
+      <span>/ {totalPages} 頁</span>
+      <button className="button" disabled={totalPages <= 1 || loading || jumpResult.page === null} type="submit">跳轉</button>
+    </form>
+  </div>;
+
   return <div className="pagination version-pagination" aria-label={ariaLabel}>
     <span>第 {page} / {totalPages} 頁 · 共 {total} 筆</span>
     {pageSize && onPageSizeChange && <label className="pagination-size"><span>每頁筆數</span><select className="control" value={pageSize} disabled={loading} onChange={(event) => onPageSizeChange(Number(event.target.value) as 10 | 20 | 50)}><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label>}
-    <nav className="pagination-pages" aria-label="頁碼">
+    {totalPages > 1 && <nav className="pagination-pages" aria-label="頁碼">
       <button className="button" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}>上一頁</button>
       <div className="pagination-number-list">
         {items.map((item, index) => item === "ellipsis"
@@ -43,14 +70,14 @@ export function Pagination({ page, totalPages, total, loading, onPageChange, pag
           : <button className={`button pagination-number${item === page ? " active" : ""}`} aria-current={item === page ? "page" : undefined} disabled={loading || item === page} onClick={() => changePage(item)} key={item}>{item}</button>)}
       </div>
       <button className="button" disabled={page >= totalPages || loading} onClick={() => changePage(page + 1)}>下一頁</button>
-    </nav>
-    <form className="pagination-jump" onSubmit={submit} noValidate>
+    </nav>}
+    {totalPages > 1 && <form className="pagination-jump" onSubmit={submit} noValidate>
       <label htmlFor={inputId}>前往第</label>
       <input id={inputId} className="control" inputMode="numeric" pattern="[0-9]*" value={input} onChange={(event) => { setInput(event.target.value.trim()); setError(null); }} aria-invalid={Boolean(error)} aria-describedby={error ? `${inputId}-error` : undefined}/>
       <span>/ {totalPages} 頁</span>
       <button className="button" disabled={loading} type="submit">跳轉</button>
       {error && <span className="pagination-error" id={`${inputId}-error`} role="alert">{error}</span>}
-    </form>
+    </form>}
   </div>;
 }
 

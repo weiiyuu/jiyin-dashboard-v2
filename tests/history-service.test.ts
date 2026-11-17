@@ -216,6 +216,33 @@ describe("active historical query integration",()=>{
     expect(result.v2.alarm.trend.reduce((sum,point)=>sum+(point.value??0),0)).toBe(3);
   });
 
+  it("filters the complete Alarm detail set by selected sensors without changing KPI, trend or ranking",()=>{
+    const db=setup(),sheets=standardizedWorkbook("2025-06-05");
+    sheets[2].data.push(
+      ["2025-06-05 01:00:00","A 區溫度監測器 1","curf","analog","A","高溫","x",27,"1 minute","環境/類比感測器警示","已分類"],
+      ["2025-06-05 02:00:00","列印B區濕度2","e5e0","analog","B","高濕","x",41,"2 minutes","環境/類比感測器警示","已分類"],
+      ["2025-06-05 03:00:00","額外環境來源","other-env","analog","其他","高溫","x",28,"3 minutes","環境/類比感測器警示","已分類"],
+    );
+    sheets[5].data.find((row)=>row[0]==="可取得警報筆數")![1]=3;
+    confirmImport(db,parseWorkbookSheets(sheets,Buffer.from("detail-sensor-filter")),{nowMs:1});
+    const all=getHistoryEvents(db,{startDate:"2025-06-05",endDate:"2025-06-05",machineIds:["A1"],mode:"alarm",detailKind:"alarm",page:1,pageSize:20});
+    const selected=getHistoryEvents(db,{startDate:"2025-06-05",endDate:"2025-06-05",machineIds:["A1"],mode:"alarm",detailKind:"alarm",detailSensorIds:["curf"],page:1,pageSize:20});
+    const empty=getHistoryEvents(db,{startDate:"2025-06-05",endDate:"2025-06-05",machineIds:["A1"],mode:"alarm",detailKind:"alarm",detailSensorIds:[],page:1,pageSize:20});
+    expect(all.v2.alarm.detailSensors).toHaveLength(9);
+    expect(all.v2.alarm.detailSensors).toEqual(expect.arrayContaining([
+      {sensorId:"curf",sensorName:"A 區溫度監測器 1",area:"A"},
+      {sensorId:"e5e0",sensorName:"B 區濕度監測器 2",area:"B"},
+      {sensorId:"other-env",sensorName:"額外環境來源",area:null},
+    ]));
+    expect(selected.v2.alarm.details.items.map((item)=>item.sensorId)).toEqual(["curf"]);
+    expect(selected.v2.alarm.details.pagination.total).toBe(1);
+    expect(empty.v2.alarm.details).toMatchObject({items:[],pagination:{page:1,total:0,totalPages:1}});
+    expect(selected.v2.alarm.summary).toEqual(all.v2.alarm.summary);
+    expect(selected.v2.alarm.trend).toEqual(all.v2.alarm.trend);
+    expect(selected.v2.alarm.ranking).toEqual(all.v2.alarm.ranking);
+    expect(empty.v2.alarm.summary).toEqual(all.v2.alarm.summary);
+  });
+
   it("keeps an unknown Alarm classification visible for review without adding it to KPI or ranking",()=>{
     const db=setup(),sheets=standardizedWorkbook("2025-06-05");
     sheets[2].data.push(["2025-06-05 08:00:00","待確認來源","unknown-1",null,null,null,null,null,null,null,null]);

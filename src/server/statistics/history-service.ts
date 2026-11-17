@@ -8,6 +8,7 @@ import {
 } from "@/server/db/history-repository";
 import { classifyAlarmSource, parseAlarmDurationSeconds } from "./anomaly-events";
 import { CURRENT_QUALITY_RULE_VERSION } from "@/server/import/workbook-parser";
+import { LOGICAL_SENSOR_MAPPINGS } from "@/server/enterprise/mapping";
 import {
   bucketGreenSeconds,
   calculateGreenHours,
@@ -516,6 +517,20 @@ export interface HistoryEventsInput {
   detailKind?: "alarm" | "red";
   sensorQuery?: string;
   ruleQuery?: string;
+  detailSensorIds?: string[];
+}
+
+const ENVIRONMENT_SENSOR_MAPPINGS = LOGICAL_SENSOR_MAPPINGS
+  .filter((item) => item.logicalRole === "ENV_TEMPERATURE" || item.logicalRole === "ENV_HUMIDITY");
+const ENVIRONMENT_SENSOR_AREAS = new Map(ENVIRONMENT_SENSOR_MAPPINGS.map((item) => [item.sensorId, item.area] as const));
+
+function alarmSensorArea(item: { sensorId: string; groupText: string | null }): "A" | "B" | null {
+  const mapped = ENVIRONMENT_SENSOR_AREAS.get(item.sensorId);
+  if (mapped) return mapped;
+  const group = item.groupText?.trim().toUpperCase().replace(/\s+/g, "");
+  if (group === "A" || group === "A區") return "A";
+  if (group === "B" || group === "B區") return "B";
+  return null;
 }
 
 function alarmItem(row: Record<string, unknown>) {
@@ -590,6 +605,23 @@ export function getHistoryEvents(db: AppDatabase, input: HistoryEventsInput) {
   const environmentAlarms = rawAlarmRows.filter((item) => item.sourceKind === "ENVIRONMENT_ALERT");
   const unknownAlarms = rawAlarmRows.filter((item) => item.sourceKind === "UNKNOWN");
   const reviewableAlarmRows = rawAlarmRows.filter((item) => item.sourceKind !== "NON_ANOMALY_NOTIFICATION");
+  const mappedDetailSensors = new Map<string, { sensorId: string; sensorName: string | null; area: "A" | "B" | null }>(
+    ENVIRONMENT_SENSOR_MAPPINGS.map((item) => [item.sensorId, {
+      sensorId: item.sensorId,
+      sensorName: `${item.area} 區${item.logicalRole === "ENV_TEMPERATURE" ? "溫度" : "濕度"}監測器 ${item.pointNumber}`,
+      area: item.area,
+    }]),
+  );
+  const detailSensors = [...reviewableAlarmRows.reduce((map, item) => {
+    const current = map.get(item.sensorId);
+    map.set(item.sensorId, {
+      sensorId: item.sensorId,
+      sensorName: current?.sensorName ?? item.sensorName ?? null,
+      area: alarmSensorArea(item) ?? current?.area ?? null,
+    });
+    return map;
+  }, mappedDetailSensors).values()]
+    .sort((a, b) => (a.area ?? "Z").localeCompare(b.area ?? "Z") || (a.sensorName ?? a.sensorId).localeCompare(b.sensorName ?? b.sensorId, "zh-Hant") || a.sensorId.localeCompare(b.sensorId));
   const durations = environmentAlarms.map((item) => item.durationSeconds).filter((value): value is number => value !== null);
   const coverageByDate = new Map(alarmCoverage.map((item) => [item.sourceDate, item]));
   const alarmTrend = requestedDays === 1
@@ -621,7 +653,10 @@ export function getHistoryEvents(db: AppDatabase, input: HistoryEventsInput) {
     const bucket = eligibleRedRows.filter((row) => row.machineId === machineId);
     return { key: machineId, label: machineId, value: bucket.length ? bucket.reduce((sum, row) => sum + (row.redSeconds ?? 0), 0) / 3600 : null };
   }).filter((item) => item.value !== null).sort((a, b) => (b.value ?? 0) - (a.value ?? 0) || a.key.localeCompare(b.key));
-  const alarmPage = pageSlice(reviewableAlarmRows, input.page, input.pageSize);
+  const detailAlarmRows = input.detailSensorIds === undefined
+    ? reviewableAlarmRows
+    : reviewableAlarmRows.filter((item) => input.detailSensorIds!.includes(item.sensorId));
+  const alarmPage = pageSlice(detailAlarmRows, input.page, input.pageSize);
   const redPage = pageSlice(redRuns, input.page, input.pageSize);
   const alarms = getActiveAlarmEvents(db, {
     startDate: input.startDate,
@@ -677,6 +712,7 @@ export function getHistoryEvents(db: AppDatabase, input: HistoryEventsInput) {
         coverage: alarmCoverage,
         trend: alarmTrend,
         ranking: alarmRanking,
+        detailSensors,
         details: alarmPage,
       },
       red: {

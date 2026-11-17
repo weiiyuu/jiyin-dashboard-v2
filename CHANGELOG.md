@@ -16,6 +16,8 @@
 
 ### 重要修正
 
+- 異常事件分析的上方條件已精簡為日期與類型；環境警示明細新增只影響表格的感測器多選，使用實際 Sensor mapping／Active Batch 來源、伺服器端篩選及獨立分頁，不會重新載入或改變 KPI、趨勢與來源排行。
+- 異常事件明細分頁改為三區工具列，保留 10／20／50 筆、規律頁碼、省略號、上下頁及指定頁跳轉；環境監測卡片顯示實際 Sensor ID，機台運轉分析新增 A／B 區取代式快捷選取。
 - 完成最終 Dashboard UI UAT 收斂：同期加工長條與時數刻度改用一致比例尺；比較 Tooltip 改以實際日期及各自品質／覆蓋資訊呈現並固定錨定作用中資料；異常事件明細補齊伺服器端頁碼、每頁筆數與指定頁跳轉。
 - 異常事件與機台運轉趨勢圖現依固定步距顯示主要 X 軸刻度，不再為末筆資料額外塞入過近標籤；全部資料點與 Tooltip 仍完整保留。Alarm 筆數趨勢改用整數 Y 軸刻度。
 - 異常事件 V2 調整為總覽、趨勢、來源排行、逐筆明細的閱讀順序，並簡化 KPI 副標與資料完整性說明。
@@ -38,6 +40,7 @@
 
 ### 尚待人工驗證
 
+- **企業 Live 連線恢復**：近期曾發生企業 API TCP ConnectTimeout；在企業服務、網路路由與白名單狀態確認前，不視為目前已恢復正常。
 - **Windows 真實 Live**：在合法網路與白名單環境確認三端點、兩個不同 sample slot、SQLite 寫入與 Live 畫面一致；失敗時不得自動改用 Demo。
 - **Windows `start:all`**：完成 Production Build 後確認 Web／Collector 共用同一 SQLite，`Ctrl+C` 能安全停止並釋放 lock，重啟後資料仍在。
 - **Windows Docker Desktop（選用）**：確認 build／Migration／healthcheck／named volume 持久化與無企業設定的 Demo 運行。

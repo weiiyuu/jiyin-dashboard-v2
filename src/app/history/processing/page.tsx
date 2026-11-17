@@ -21,6 +21,8 @@ import type { Availability } from "@/features/history/history-ui-model";
 import { fetchApi } from "@/lib/api-client";
 
 const ALL = ["A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"];
+const AREA_A = ALL.filter((machine) => machine.startsWith("A"));
+const AREA_B = ALL.filter((machine) => machine.startsWith("B"));
 const COLORS = ["#62d49a", "#e8898b", "#e2bd5b", "#69a9de", "#c79be8", "#f1a85b", "#8ed5d0", "#d7d0c9"];
 
 interface PointCoverage { completeness: "COMPLETE" | "PARTIAL" | "MISSING"; expectedIntervals?: number; eligibleIntervals?: number }
@@ -152,7 +154,7 @@ export default function ProcessingPage() {
             <div className="field"><label>{comparisonFieldLabel(kind, "B")}</label><input aria-label="期間 B" className="control" type={kind === "month" ? "month" : "date"} value={periodB} onChange={(event) => { setPeriodB(event.target.value); invalidate(); }}/></div>
           </div>}
           {mode === "compare" && <div className="comparison-guidance"><div><strong>{compareKindLabel(kind)}如何比較</strong><p>{comparisonHelp(kind)}</p></div><div className="comparison-range-preview"><span><b>期間 A</b>{previewA ?? "尚未選擇"}</span><span><b>期間 B</b>{previewB ?? "尚未選擇"}</span></div></div>}
-          <div className="machine-filter"><div className="machine-filter-head"><span className="field-label">機台篩選（已選 {machines.length} 台）</span><div className="filter-actions"><button className="button ghost" onClick={() => { setMachines(ALL); invalidate(); }}>全選</button><button className="button ghost" onClick={() => { setMachines([]); invalidate(); }}>清除</button></div></div><div className="machine-pills">{ALL.map((machine) => <label className="check-pill" key={machine}><input type="checkbox" checked={machines.includes(machine)} onChange={() => toggleMachine(machine)}/><span>{machine}</span></label>)}</div></div>
+          <div className="machine-filter"><div className="machine-filter-head"><span className="field-label">機台篩選（已選 {machines.length} 台）</span><div className="filter-actions"><button className="button ghost" onClick={() => { setMachines(AREA_A); invalidate(); }}>A 區</button><button className="button ghost" onClick={() => { setMachines(AREA_B); invalidate(); }}>B 區</button><button className="button ghost" onClick={() => { setMachines(ALL); invalidate(); }}>全選</button><button className="button ghost" onClick={() => { setMachines([]); invalidate(); }}>清除</button></div></div><div className="machine-pills">{ALL.map((machine) => <label className="check-pill" key={machine}><input type="checkbox" checked={machines.includes(machine)} onChange={() => toggleMachine(machine)}/><span>{machine}</span></label>)}</div></div>
           <div className="filter-actions"><button className="button primary" disabled={!canQuery || loading} onClick={query}>{mode === "range" ? "套用分析條件" : "比較兩個期間"}</button>{machines.length === 0 && <span className="metric-note">請至少選擇一台機台；不會自動查詢全部機台。</span>}</div>
           {crossDay && <div className="notice"><span className="notice-icon"><Icon name="notice" size={20}/></span><div><strong>已切換為每日統計</strong><div>跨日區間每天只顯示一個趨勢點；未匯入日期維持缺資料，不補 0。</div></div></div>}
         </div>

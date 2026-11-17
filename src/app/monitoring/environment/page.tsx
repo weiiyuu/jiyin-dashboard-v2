@@ -17,7 +17,7 @@ function SensorCard({ item }: { item: EnvironmentLatest }) {
   const tone = status === "NORMAL" ? "success" : status === "ABOVE_LIMIT" || status === "UNREADABLE" ? "error" : "warning";
   const metricName = item.metric === "temperature" ? "溫度監測器" : "濕度監測器";
   return <article className={`environment-sensor-card status-${status.toLowerCase()}`}>
-    <div><span>{metricName} {item.point}</span><StatusChip tone={tone}>{environmentStatusLabel(status)}</StatusChip></div>
+    <div className="environment-sensor-head"><div className="environment-sensor-identity"><span>{metricName} {item.point}</span><small>Sensor ID：{item.sensorId}</small></div><StatusChip tone={tone}>{environmentStatusLabel(status)}</StatusChip></div>
     <strong>{item.value === null ? "—" : item.value.toFixed(1)} <small>{item.metric === "temperature" ? "°C" : "%RH"}</small></strong>
   </article>;
 }

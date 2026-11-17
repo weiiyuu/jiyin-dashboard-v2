@@ -307,3 +307,12 @@
 - Tooltip: 同期加工長條使用簡短實際日期區間；同期趨勢移除重複的底部資料覆蓋橫幅，資料完整性改放回各日期列。兩類 Tooltip 均固定錨定作用中資料，不隨同一目標內的游標移動漂移。
 - Verification: 最終聚焦 history UI 測試 19 tests passed；`npm run typecheck`、`npm run lint` 與 `git diff --check` passed。依本輪範圍未重跑完整 Build 或 Stage 0～8 大型驗收。
 - Safety: 未操作企業 API、正式 SQLite／Docker Volume、`.env.local` 或真實 Collector；參考截圖保持 Git 忽略且未納入變更。
+
+## Stage 8 後 — 最終篩選、明細導覽與交付檢查
+
+- Status: 使用者已完成最終人工 UI UAT；異常明細感測器篩選、Sensor ID 顯示、明細分頁與機台區域快捷選取已完成，停止功能開發並進入 `dev` 交付。
+- UI/query: 異常分析上方只保留日期與異常類型；環境感測器多選只作用於完整明細查詢，翻頁、每頁筆數與跳頁只局部更新明細。八個既有環境 mapping 使用標準顯示名稱，其他有效 Alarm 來源保留原名；環境監測卡片顯示其實際資料來源 Sensor ID。機台運轉分析新增 A／B 區取代式快捷選取，既有全選、清除及個別選取不變。
+- Pagination: 明細使用三區單列工具列（總筆數／每頁筆數、置中頁碼、指定跳頁）；單頁仍保留穩定布局，無效跳頁只顯示輸入框錯誤狀態與不占版面的提示。
+- Verification: `git diff --check`、Typecheck、Lint、Webpack Production Build 通過；完整 Vitest 為 172 passed、1 個私人 Excel opt-in suite skipped。Build 僅讀取既有本機環境，未發出企業請求。
+- Safety: Git 追蹤與歷史檔名檢查未發現 `.env.local`、企業 Excel／JSON、SQLite／WAL／SHM、憑證或 `_reference_inputs`；公開範本的 Origin 保持空白。未操作正式 SQLite、Docker Volume、企業 API 或真實 Collector。
+- Open items: 近期企業 API 曾發生 TCP ConnectTimeout，外部網路／企業服務恢復仍待受控人工驗證；Windows 真實 Live、Windows `start:all`、Windows Docker Desktop、正式資料恢復、Docker 企業連線、私人 `custom_ca` 與 npm-to-Docker 正式切換仍未宣稱通過。
